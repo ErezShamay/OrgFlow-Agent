@@ -1,0 +1,23 @@
+[
+  {
+    "project_id": "p1",
+    "project_name": "מגדלי הצפון",
+    "status": "ACTIVE",
+    "supervisor_name": "יוסי כהן",
+    "supervisor_email": "yossi@example.com"
+  },
+  {
+    "project_id": "p2",
+    "project_name": "גני השרון",
+    "status": "ACTIVE",
+    "supervisor_name": "דנה לוי",
+    "supervisor_email": "dana@example.com"
+  },
+  {
+    "project_id": "p3",
+    "project_name": "פארק הים",
+    "status": "ACTIVE",
+    "supervisor_name": "אבי מזרחי",
+    "supervisor_email": "avi@example.com"
+  }
+]
