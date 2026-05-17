@@ -4,12 +4,14 @@ class EmailClassifierService:
         message
     ):
         subject = (
-            message["subject"]
+            message
+            .get("subject", "")
             .lower()
         )
 
         body = (
-            message["body"]
+            message
+            .get("body", "")
             .lower()
         )
 

@@ -6,6 +6,10 @@ from app.repositories.weekly_report_repository import (
     WeeklyReportRepository
 )
 
+from app.services.email_classifier_service import (
+    EmailClassifierService
+)
+
 
 class ReportIngestionService:
     def __init__(self):
@@ -17,12 +21,19 @@ class ReportIngestionService:
             WeeklyReportRepository()
         )
 
+        self.classifier = (
+            EmailClassifierService()
+        )
+
     def process_message(
         self,
         message
     ):
         subject = (
-            message["subject"]
+            message.get(
+                "subject",
+                ""
+            )
         )
 
         projects = (
@@ -55,6 +66,35 @@ class ReportIngestionService:
                     "NO_PROJECT_MATCH"
             }
 
+        classification = (
+            self.classifier
+            .classify(message)
+        )
+
+        # backward compatibility
+        if (
+            classification[
+                "classification"
+            ]
+            == "UNKNOWN"
+        ):
+            return {
+                "status":
+                    "SUCCESS",
+
+                "project":
+                    matched_project,
+
+                "message":
+                    message,
+
+                "classification":
+                    classification,
+
+                "report":
+                    None
+            }
+
         created_report = (
             self.report_repository
             .create_report(
@@ -73,8 +113,14 @@ class ReportIngestionService:
             "status":
                 "SUCCESS",
 
+            "classification":
+                classification,
+
             "project":
                 matched_project,
+
+            "message":
+                message,
 
             "report":
                 created_report
