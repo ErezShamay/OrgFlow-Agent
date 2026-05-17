@@ -2,43 +2,58 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.agent.orchestrator import Orchestrator
+from app.agent.workflow_history import (
+    WorkflowHistory
+)
+from app.services.approval_service import (
+    ApprovalService
+)
 
-
-app = FastAPI(title="OrgFlow Agent")
-
-
-class AgentRunRequest(BaseModel):
-    user_request: str
-
-
-class ConfirmRequest(BaseModel):
-    run_id: str
-
+app = FastAPI()
 
 orchestrator = Orchestrator()
+workflow_history = WorkflowHistory()
+approval_service = ApprovalService()
+
+
+class AgentRequest(BaseModel):
+    user_request: str
+
 
 @app.get("/")
 def root():
     return {
-        "message": "OrgFlow Agent is running",
-        "docs": "http://127.0.0.1:8000/docs"
+        "message": "OrgFlow AI Agent is running"
     }
 
-@app.get("/health")
-def health_check():
-    return {
-        "status": "OK",
-        "service": "OrgFlow Agent"
-    }
 
 @app.post("/agent/run")
-def run_agent(request: AgentRunRequest):
-    return orchestrator.run(request.user_request)
+def run_agent(
+    request: AgentRequest
+):
+    return orchestrator.run(
+        request.user_request
+    )
 
-@app.post("/agent/confirm")
-def confirm_workflow(request: ConfirmRequest):
-    return orchestrator.confirm(request.run_id)
 
 @app.get("/workflow-runs")
 def get_workflow_runs():
-    return orchestrator.get_history()
+    return workflow_history.get_runs()
+
+
+@app.post("/approval/{approval_id}/approve")
+def approve_request(
+    approval_id: int
+):
+    return approval_service.approve(
+        approval_id
+    )
+
+
+@app.get("/approval/{approval_id}")
+def get_approval_request(
+    approval_id: int
+):
+    return approval_service.get_request(
+        approval_id
+    )

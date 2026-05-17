@@ -1,44 +1,86 @@
-import json
-from pathlib import Path
-
-
 class ReportTool:
     def __init__(self):
-        self.reports_file = Path(__file__).resolve().parent.parent / "data" / "reports.json"
+        pass
 
     def get_weekly_reports(self):
-        reports = self._load_reports()
-
         return [
-            report for report in reports
-            if report.get("report_type") == "WEEKLY"
+            {
+                "project_name":
+                    "מגדלי הצפון",
+
+                "submitted":
+                    True
+            },
+            {
+                "project_name":
+                    "פארק הים",
+
+                "submitted":
+                    True
+            }
         ]
 
-    def find_missing_reports(self, active_projects, weekly_reports):
-        reported_project_ids = {
-            report["project_id"] for report in weekly_reports
-        }
+    def find_missing_reports(
+        self,
+        active_projects,
+        weekly_reports
+    ):
+        submitted_projects = []
 
-        missing_projects = [
-            project for project in active_projects
-            if project["project_id"] not in reported_project_ids
-        ]
+        for report in weekly_reports:
+            if report.get("submitted"):
+                submitted_projects.append(
+                    report["project_name"]
+                )
+
+        missing_projects = []
+
+        for project in active_projects:
+            if (
+                project["project_name"]
+                not in submitted_projects
+            ):
+                missing_projects.append(
+                    project
+                )
 
         return missing_projects
 
-    def get_latest_report_by_project_id(self, project_id: str):
-        reports = self._load_reports()
+    def get_latest_report_by_project_id(
+        self,
+        project_id: str
+    ):
+        return {
+            "id":
+                "mock-report-id",
 
-        project_reports = [
-            report for report in reports
-            if report["project_id"] == project_id
-        ]
+            "project_id":
+                project_id,
 
-        if not project_reports:
-            return None
+            "report_date":
+                "2026-05-17",
 
-        return project_reports[-1]
+            "summary":
+                "Weekly progress report",
 
-    def _load_reports(self):
-        with open(self.reports_file, "r", encoding="utf-8") as file:
-            return json.load(file)
+            "status":
+                "SUBMITTED"
+        }
+
+    def get_latest_report(
+        self,
+        project_name: str
+    ):
+        return {
+            "project_name":
+                project_name,
+
+            "report_date":
+                "2026-05-17",
+
+            "summary":
+                "Weekly progress report",
+
+            "status":
+                "SUBMITTED"
+        }

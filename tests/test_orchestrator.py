@@ -54,3 +54,14 @@ def test_llm_fallback_find_report_workflow():
     assert result["status"] == "SUCCESS"
     assert result["project"]["project_name"] == "מגדלי הצפון"
     assert result["intent_result"]["source"] == "LLM_MOCK"
+
+def test_llm_entity_extraction_fallback():
+    orchestrator = Orchestrator()
+
+    result = orchestrator.run(
+        "אני צריך את הדוח של מגדלי הצפון"
+    )
+
+    assert result["status"] == "SUCCESS"
+    assert result["project"]["project_name"] == "מגדלי הצפון"
+    assert result["intent_result"]["source"] == "LLM_MOCK"

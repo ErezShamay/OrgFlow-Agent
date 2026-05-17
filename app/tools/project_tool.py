@@ -1,70 +1,80 @@
-import json
-from pathlib import Path
-from difflib import get_close_matches
+from app.repositories.project_repository import (
+    ProjectRepository
+)
 
 
 class ProjectTool:
     def __init__(self):
-        self.projects_file = Path(__file__).resolve().parent.parent / "data" / "projects.json"
+        self.repository = (
+            ProjectRepository()
+        )
 
-    def get_active_projects(self):
-        projects = self._load_projects()
-
-        return [
-            project for project in projects
-            if project.get("status") == "ACTIVE"
-        ]
-
-    def find_project_by_name(self, project_name: str):
-        projects = self._load_projects()
-
-        # Exact match
-        for project in projects:
-            if project["project_name"] == project_name:
-                return {
-                    "match_status": "EXACT_MATCH",
-                    "project": project,
-                    "suggestions": []
-                }
-
-        # Contains match
-        for project in projects:
-            if project_name in project["project_name"] or project["project_name"] in project_name:
-                return {
-                    "match_status": "PARTIAL_MATCH",
-                    "project": project,
-                    "suggestions": []
-                }
-
-        # Fuzzy match
-        project_names = [project["project_name"] for project in projects]
-        matches = get_close_matches(project_name, project_names, n=3, cutoff=0.7)
-
-        if len(matches) == 1:
-            matched_project = next(
-                project for project in projects
-                if project["project_name"] == matches[0]
+    def find_project_by_name(
+        self,
+        project_name: str
+    ):
+        projects = (
+            self.repository
+            .find_by_name(
+                project_name
             )
+        )
 
+        if not projects:
             return {
-                "match_status": "FUZZY_MATCH",
-                "project": matched_project,
-                "suggestions": []
+                "match_status":
+                    "NOT_FOUND",
+
+                "project": None,
+
+                "projects": []
             }
 
-        if len(matches) > 1:
+        if len(projects) == 1:
             return {
-                "match_status": "MULTIPLE_MATCHES",
-                "project": None,
-                "suggestions": matches
+                "match_status":
+                    "EXACT_MATCH",
+
+                "project":
+                    projects[0],
+
+                "projects":
+                    projects
             }
 
         return {
-            "match_status": "NOT_FOUND",
-            "project": None,
-            "suggestions": []
+            "match_status":
+                "MULTIPLE_MATCHES",
+
+            "project":
+                projects[0],
+
+            "projects":
+                projects
         }
 
-    def _load_projects(self):
-        with open(self.projects_file, "r", encoding="utf-8") as file:
-            return json.load(file)
+    def get_all_projects(self):
+        return (
+            self.repository
+            .get_all_projects()
+        )
+
+    # backward compatibility
+    def get_active_projects(self):
+        projects = (
+            self.repository
+            .get_all_projects()
+        )
+
+        active_projects = []
+
+        for project in projects:
+            if (
+                project.get("status")
+                == "ACTIVE"
+            ):
+                active_projects.append(
+                    project
+                )
+
+        return active_projects
