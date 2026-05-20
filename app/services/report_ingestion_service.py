@@ -2,6 +2,10 @@ from app.tools.project_tool import (
     ProjectTool
 )
 
+from app.services.finding_extraction_service import (
+    FindingExtractionService,
+)
+
 from app.repositories.weekly_report_repository import (
     WeeklyReportRepository
 )
@@ -12,7 +16,9 @@ from app.services.email_classifier_service import (
 
 
 class ReportIngestionService:
+
     def __init__(self):
+
         self.project_tool = (
             ProjectTool()
         )
@@ -25,13 +31,25 @@ class ReportIngestionService:
             EmailClassifierService()
         )
 
+        self.finding_extraction_service = (
+            FindingExtractionService()
+        )
+
     def process_message(
         self,
         message
     ):
+
         subject = (
             message.get(
                 "subject",
+                ""
+            )
+        )
+
+        body = (
+            message.get(
+                "body",
                 ""
             )
         )
@@ -44,6 +62,7 @@ class ReportIngestionService:
         matched_project = None
 
         for project in projects:
+
             project_name = (
                 project[
                     "project_name"
@@ -54,6 +73,7 @@ class ReportIngestionService:
                 project_name
                 in subject
             ):
+
                 matched_project = (
                     project
                 )
@@ -61,6 +81,7 @@ class ReportIngestionService:
                 break
 
         if not matched_project:
+
             return {
                 "status":
                     "NO_PROJECT_MATCH"
@@ -78,6 +99,7 @@ class ReportIngestionService:
             ]
             == "UNKNOWN"
         ):
+
             return {
                 "status":
                     "SUCCESS",
@@ -92,7 +114,10 @@ class ReportIngestionService:
                     classification,
 
                 "report":
-                    None
+                    None,
+
+                "findings":
+                    []
             }
 
         created_report = (
@@ -109,6 +134,28 @@ class ReportIngestionService:
             )
         )
 
+        findings = (
+            self.finding_extraction_service
+            .extract_findings(
+                report_text=body,
+
+                report_id=str(
+                    created_report["id"]
+                ),
+
+                project_id=str(
+                    matched_project["id"]
+                )
+            )
+        )
+
+        print("\n=== FINDINGS ===")
+
+        for finding in findings:
+            print(
+                finding.model_dump()
+            )
+
         return {
             "status":
                 "SUCCESS",
@@ -123,5 +170,8 @@ class ReportIngestionService:
                 message,
 
             "report":
-                created_report
+                created_report,
+
+            "findings":
+                findings
         }

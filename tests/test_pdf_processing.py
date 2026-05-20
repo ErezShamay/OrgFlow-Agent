@@ -9,7 +9,7 @@ service = (
 
 text = (
     service.extract_text_from_pdf(
-        "tests/sampleReport.pdf"
+        "sample_reports/weekly_report.pdf"
     )
 )
 
