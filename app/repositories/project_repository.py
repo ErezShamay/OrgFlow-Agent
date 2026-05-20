@@ -4,7 +4,9 @@ from app.db.supabase_client import (
 
 
 class ProjectRepository:
+
     def __init__(self):
+
         self.client = (
             SupabaseClient
             .get_client()
@@ -16,6 +18,7 @@ class ProjectRepository:
         supervisor_name: str,
         supervisor_email: str = None
     ):
+
         existing = (
             self.client
             .table("projects")
@@ -52,7 +55,10 @@ class ProjectRepository:
 
         return response.data[0]
 
-    def get_all_projects(self):
+    def get_all_projects(
+        self
+    ):
+
         response = (
             self.client
             .table("projects")
@@ -66,9 +72,13 @@ class ProjectRepository:
         self,
         project_name: str
     ):
+
         normalized = (
             project_name
-            .replace("פרויקט", "")
+            .replace(
+                "פרויקט",
+                ""
+            )
             .strip()
         )
 
@@ -90,6 +100,7 @@ class ProjectRepository:
         self,
         project_name: str
     ):
+
         projects = (
             self.find_by_name(
                 project_name
@@ -97,10 +108,13 @@ class ProjectRepository:
         )
 
         if not projects:
+
             return {
                 "match_status":
                     "NOT_FOUND",
-                "projects": []
+
+                "projects":
+                    []
             }
 
         return {

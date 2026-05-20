@@ -4,7 +4,9 @@ from app.db.supabase_client import (
 
 
 class WeeklyReportRepository:
+
     def __init__(self):
+
         self.client = (
             SupabaseClient
             .get_client()
@@ -16,6 +18,7 @@ class WeeklyReportRepository:
         report_source,
         email_subject
     ):
+
         response = (
             self.client
             .table(
@@ -34,4 +37,4 @@ class WeeklyReportRepository:
             .execute()
         )
 
-        return response.data
+        return response.data[0]

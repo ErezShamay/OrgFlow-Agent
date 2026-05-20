@@ -6,8 +6,16 @@ from app.services.finding_extraction_service import (
     FindingExtractionService,
 )
 
+from app.services.ai_enrichment_service import (
+    AIEnrichmentService,
+)
+
 from app.repositories.finding_repository import (
     FindingRepository
+)
+
+from app.repositories.ai_interpretation_repository import (
+    AIInterpretationRepository
 )
 
 from app.repositories.weekly_report_repository import (
@@ -35,12 +43,20 @@ class ReportIngestionService:
             FindingRepository()
         )
 
+        self.ai_interpretation_repository = (
+            AIInterpretationRepository()
+        )
+
         self.classifier = (
             EmailClassifierService()
         )
 
         self.finding_extraction_service = (
             FindingExtractionService()
+        )
+
+        self.ai_enrichment_service = (
+            AIEnrichmentService()
         )
 
     def process_message(
@@ -100,34 +116,6 @@ class ReportIngestionService:
             .classify(message)
         )
 
-        # backward compatibility
-        if (
-            classification[
-                "classification"
-            ]
-            == "UNKNOWN"
-        ):
-
-            return {
-                "status":
-                    "SUCCESS",
-
-                "project":
-                    matched_project,
-
-                "message":
-                    message,
-
-                "classification":
-                    classification,
-
-                "report":
-                    None,
-
-                "findings":
-                    []
-            }
-
         created_report = (
             self.report_repository
             .create_report(
@@ -157,17 +145,55 @@ class ReportIngestionService:
             )
         )
 
-        created_findings = (
-            self.finding_repository
-            .create_findings(
-                findings
+        created_findings = []
+
+        for finding in findings:
+
+            created_finding = (
+                self.finding_repository
+                .create_finding(
+                    finding
+                )
             )
-        )
+
+            enrichment_data = (
+                self.ai_enrichment_service
+                .enrich_finding(
+                    finding
+                )
+            )
+
+            interpretation = (
+                self.ai_enrichment_service
+                .build_interpretation(
+                    finding_id=str(
+                        created_finding["id"]
+                    ),
+
+                    enrichment_data=
+                    enrichment_data
+                )
+            )
+
+            created_interpretation = (
+                self.ai_interpretation_repository
+                .create_interpretation(
+                    interpretation
+                )
+            )
+
+            created_findings.append({
+                "finding":
+                    created_finding,
+
+                "ai_interpretation":
+                    created_interpretation
+            })
 
         print("\n=== FINDINGS ===")
 
-        for finding in created_findings:
-            print(finding)
+        for item in created_findings:
+            print(item)
 
         return {
             "status":

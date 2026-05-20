@@ -1,8 +1,10 @@
 from app.db.supabase_client import (
-    get_supabase_client
+    SupabaseClient
 )
 
-from app.schemas.finding import Finding
+from app.schemas.finding import (
+    Finding
+)
 
 
 class FindingRepository:
@@ -10,7 +12,8 @@ class FindingRepository:
     def __init__(self):
 
         self.client = (
-            get_supabase_client()
+            SupabaseClient
+            .get_client()
         )
 
         self.table_name = (
@@ -37,23 +40,73 @@ class FindingRepository:
 
         return response.data[0]
 
-    def create_findings(
+    def get_findings_by_project(
         self,
-        findings: list[Finding]
+        project_id: str
     ):
 
-        created_findings = []
-
-        for finding in findings:
-
-            created_finding = (
-                self.create_finding(
-                    finding
-                )
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "project_id",
+                project_id
             )
+            .execute()
+        )
 
-            created_findings.append(
-                created_finding
+        return response.data
+
+    def get_findings_by_type(
+        self,
+        finding_type: str
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "finding_type",
+                finding_type
             )
+            .execute()
+        )
 
-        return created_findings
+        return response.data
+
+    def get_findings_by_severity(
+        self,
+        severity: str
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "severity",
+                severity
+            )
+            .execute()
+        )
+
+        return response.data
+
+    def get_open_findings(
+        self
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "status",
+                "detected"
+            )
+            .execute()
+        )
+
+        return response.data
