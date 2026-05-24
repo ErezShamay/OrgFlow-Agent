@@ -87,6 +87,7 @@ class AIInterpretationRepository:
                 "id",
                 interpretation_id
             )
+            .select("*")
             .execute()
         )
 
@@ -120,6 +121,7 @@ class AIInterpretationRepository:
                 "id",
                 interpretation_id
             )
+            .select("*")
             .execute()
         )
 

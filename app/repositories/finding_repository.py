@@ -40,6 +40,28 @@ class FindingRepository:
 
         return response.data[0]
 
+    def get_finding_by_id(
+        self,
+        finding_id: str
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "id",
+                finding_id
+            )
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+            return None
+
+        return response.data[0]
+
     def get_findings_by_project(
         self,
         project_id: str
