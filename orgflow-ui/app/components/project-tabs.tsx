@@ -4,33 +4,31 @@ import Link from "next/link";
 
 import { usePathname } from "next/navigation";
 
-type Props = {
-  projectId: string;
-};
-
 export default function ProjectTabs({
   projectId,
-}: Props) {
+}: {
+  projectId: string;
+}) {
 
   const pathname =
     usePathname();
 
   const tabs = [
     {
-      href: `/projects/${projectId}`,
       label: "סקירה",
+      href: `/projects/${projectId}`,
     },
     {
-      href: `/projects/${projectId}/reviews`,
       label: "ביקורות AI",
+      href: `/projects/${projectId}/reviews`,
     },
     {
-      href: `/projects/${projectId}/actions`,
-      label: "פעולות",
-    },
-    {
-      href: `/projects/${projectId}/escalations`,
       label: "הסלמות",
+      href: `/projects/${projectId}/escalations`,
+    },
+    {
+      label: "פעולות",
+      href: `/projects/${projectId}/actions`,
     },
   ];
 
@@ -39,8 +37,8 @@ export default function ProjectTabs({
       className="
         flex
         gap-3
-        mb-8
-        overflow-x-auto
+        mb-10
+        flex-wrap
       "
     >
 
@@ -50,7 +48,6 @@ export default function ProjectTabs({
           pathname === tab.href;
 
         return (
-
           <Link
             key={tab.href}
             href={tab.href}
@@ -58,9 +55,8 @@ export default function ProjectTabs({
               px-5
               py-3
               rounded-2xl
-              whitespace-nowrap
               font-medium
-              transition-colors
+              transition-all
 
               ${
                 isActive
@@ -68,7 +64,7 @@ export default function ProjectTabs({
                     bg-zinc-900
                     text-white
                     dark:bg-white
-                    dark:text-black
+                    dark:text-zinc-900
                   `
                   : `
                     bg-white
@@ -84,7 +80,6 @@ export default function ProjectTabs({
           >
             {tab.label}
           </Link>
-
         );
       })}
 

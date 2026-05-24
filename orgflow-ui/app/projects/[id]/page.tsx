@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useParams } from "next/navigation";
+
 import ProjectTabs from "@/app/components/project-tabs";
 
 type Project = {
@@ -28,13 +30,12 @@ type Summary = {
   reports_count: number;
 };
 
-export default function ProjectDetailsPage({
-  params,
-}: {
-  params: {
-    id: string;
-  };
-}) {
+export default function ProjectDetailsPage() {
+
+  const params = useParams();
+
+  const projectId =
+    params.id as string;
 
   const [project, setProject] =
     useState<Project | null>(null);
@@ -54,8 +55,14 @@ export default function ProjectDetailsPage({
     useState(true);
 
   useEffect(() => {
+
+    if (!projectId) {
+      return;
+    }
+
     loadProject();
-  }, []);
+
+  }, [projectId]);
 
   async function loadProject() {
 
@@ -66,7 +73,7 @@ export default function ProjectDetailsPage({
       // =========================
 
       const response = await fetch(
-        `http://127.0.0.1:8000/projects/${params.id}`
+        `http://127.0.0.1:8000/projects/${projectId}`
       );
 
       const data =
@@ -80,7 +87,7 @@ export default function ProjectDetailsPage({
 
       const reviewsResponse =
         await fetch(
-          `http://127.0.0.1:8000/projects/${params.id}/reviews`
+          `http://127.0.0.1:8000/projects/${projectId}/reviews`
         );
 
       const reviewsData =
@@ -94,7 +101,7 @@ export default function ProjectDetailsPage({
 
       const summaryResponse =
         await fetch(
-          `http://127.0.0.1:8000/projects/${params.id}/summary`
+          `http://127.0.0.1:8000/projects/${projectId}/summary`
         );
 
       const summaryData =
@@ -172,7 +179,7 @@ export default function ProjectDetailsPage({
       {/* PROJECT TABS */}
 
       <ProjectTabs
-        projectId={params.id}
+        projectId={projectId}
       />
 
       {/* PROJECT DETAILS */}
