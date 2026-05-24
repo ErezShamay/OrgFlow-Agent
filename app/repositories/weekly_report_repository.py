@@ -38,3 +38,21 @@ class WeeklyReportRepository:
         )
 
         return response.data[0]
+    
+    def get_reports_by_project(
+        self,
+        project_id: str
+    ):
+
+    response = (
+        self.client
+        .table("weekly_reports")
+        .select("*")
+        .eq(
+            "project_id",
+            project_id
+        )
+        .execute()
+    )
+
+    return response.data

@@ -7,36 +7,40 @@ import { useEffect, useState } from "react";
 type Project = {
   id: string;
   project_name: string;
-  supervisor_name: string;
-  supervisor_email: string;
   status: string;
-  created_at: string;
+};
+
+type Organization = {
+  id: string;
+  organization_name: string;
+  contact_email: string;
+  projects: Project[];
 };
 
 export default function HomePage() {
 
-  const [projects, setProjects] =
-    useState<Project[]>([]);
+  const [organizations, setOrganizations] =
+    useState<Organization[]>([]);
 
   const [loading, setLoading] =
     useState(true);
 
   useEffect(() => {
-    loadProjects();
+    loadOrganizations();
   }, []);
 
-  async function loadProjects() {
+  async function loadOrganizations() {
 
     try {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/projects"
+        "http://127.0.0.1:8000/organizations"
       );
 
       const data =
         await response.json();
 
-      setProjects(data);
+      setOrganizations(data);
 
     } catch (error) {
 
@@ -49,98 +53,114 @@ export default function HomePage() {
     }
   }
 
-  function getStatusLabel(
-    status: string
-  ) {
+  const totalProjects =
+    organizations.reduce(
+      (acc, org) =>
+        acc + org.projects.length,
+      0
+    );
 
-    switch (status) {
-
-      case "ACTIVE":
-        return "פעיל";
-
-      case "COMPLETED":
-        return "הושלם";
-
-      default:
-        return status;
-    }
-  }
+  const totalOrganizations =
+    organizations.length;
 
   return (
     <main
       className="
-        p-10
+        min-h-screen
+        bg-zinc-100
+        dark:bg-zinc-950
         text-zinc-900
         dark:text-zinc-100
       "
     >
 
-      {/* HEADER */}
+      {/* HERO */}
 
-      <div
+      <section
         className="
-          flex
-          justify-between
-          items-center
-          mb-10
+          px-10
+          pt-24
+          pb-16
         "
       >
 
-        <div>
+        <div className="max-w-7xl mx-auto">
 
-          <h1
+          <div
             className="
-              text-5xl
-              font-bold
+              max-w-4xl
             "
           >
-            פרויקטים
-          </h1>
 
-          <p
-            className="
-              mt-3
-              text-lg
-              text-zinc-600
-              dark:text-zinc-400
-            "
-          >
-            סביבת ניהול ותפעול פרויקטים
-          </p>
+            <div
+              className="
+                inline-flex
+                items-center
+                gap-2
+                bg-white
+                dark:bg-zinc-900
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-full
+                px-4
+                py-2
+                mb-8
+                text-sm
+                font-medium
+              "
+            >
+              מערכת תפעול הנדסי מבוססת AI
+            </div>
+
+            <h1
+              className="
+                text-6xl
+                font-black
+                leading-tight
+                tracking-tight
+              "
+            >
+              OrgFlow
+            </h1>
+
+            <p
+              className="
+                mt-8
+                text-2xl
+                leading-relaxed
+                text-zinc-600
+                dark:text-zinc-400
+                max-w-3xl
+              "
+            >
+              פלטפורמת AI לניהול תפעולי,
+              פיקוח הנדסי, בקרת פרויקטים,
+              ניתוח חריגות והסלמות
+              בפרויקטי התחדשות עירונית ובנייה.
+            </p>
+
+          </div>
 
         </div>
 
-        <button
+      </section>
+
+      {/* KPI SECTION */}
+
+      <section className="px-10 pb-16">
+
+        <div
           className="
-            bg-zinc-900
-            text-white
-            dark:bg-white
-            dark:text-black
-            px-6
-            py-4
-            rounded-2xl
-            font-semibold
-            hover:opacity-90
-            transition-opacity
+            max-w-7xl
+            mx-auto
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            xl:grid-cols-4
+            gap-6
           "
         >
-          פרויקט חדש
-        </button>
-
-      </div>
-
-      {/* LOADING */}
-
-      {loading && (
-        <div>
-          טוען פרויקטים...
-        </div>
-      )}
-
-      {/* EMPTY */}
-
-      {!loading &&
-        projects.length === 0 && (
 
           <div
             className="
@@ -150,31 +170,31 @@ export default function HomePage() {
               border-zinc-200
               dark:border-zinc-800
               rounded-3xl
-              p-10
+              p-8
             "
           >
-            אין פרויקטים במערכת
+
+            <p
+              className="
+                text-zinc-500
+                mb-3
+              "
+            >
+              חברות פעילות
+            </p>
+
+            <h2
+              className="
+                text-5xl
+                font-black
+              "
+            >
+              {totalOrganizations}
+            </h2>
+
           </div>
 
-      )}
-
-      {/* PROJECTS GRID */}
-
-      <div
-        className="
-          grid
-          grid-cols-1
-          lg:grid-cols-2
-          xl:grid-cols-3
-          gap-6
-        "
-      >
-
-        {projects.map((project) => (
-
-          <Link
-            key={project.id}
-            href={`/projects/${project.id}`}
+          <div
             className="
               bg-white
               dark:bg-zinc-900
@@ -183,134 +203,266 @@ export default function HomePage() {
               dark:border-zinc-800
               rounded-3xl
               p-8
-              shadow-sm
-              hover:shadow-lg
-              transition-all
-              hover:-translate-y-1
             "
           >
 
-            <div
+            <p
               className="
-                flex
-                justify-between
-                items-start
-                mb-6
+                text-zinc-500
+                mb-3
               "
             >
+              פרויקטים פעילים
+            </p>
 
-              <div>
+            <h2
+              className="
+                text-5xl
+                font-black
+              "
+            >
+              {totalProjects}
+            </h2>
 
-                <h2
-                  className="
-                    text-2xl
-                    font-bold
-                  "
-                >
-                  {project.project_name}
-                </h2>
+          </div>
 
-                <p
-                  className="
-                    mt-2
-                    text-zinc-500
-                  "
-                >
-                  {project.supervisor_name}
-                </p>
+          <div
+            className="
+              bg-white
+              dark:bg-zinc-900
+              border
+              border-zinc-200
+              dark:border-zinc-800
+              rounded-3xl
+              p-8
+            "
+          >
 
-              </div>
+            <p
+              className="
+                text-zinc-500
+                mb-3
+              "
+            >
+              מנוע AI פעיל
+            </p>
+
+            <h2
+              className="
+                text-2xl
+                font-bold
+              "
+            >
+              Operational AI
+            </h2>
+
+          </div>
+
+          <div
+            className="
+              bg-white
+              dark:bg-zinc-900
+              border
+              border-zinc-200
+              dark:border-zinc-800
+              rounded-3xl
+              p-8
+            "
+          >
+
+            <p
+              className="
+                text-zinc-500
+                mb-3
+              "
+            >
+              סטטוס מערכת
+            </p>
+
+            <h2
+              className="
+                text-2xl
+                font-bold
+              "
+            >
+              Online
+            </h2>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* ORGANIZATIONS */}
+
+      <section className="px-10 pb-24">
+
+        <div className="max-w-7xl mx-auto">
+
+          <div className="mb-10">
+
+            <h2
+              className="
+                text-4xl
+                font-black
+              "
+            >
+              חברות ופרויקטים
+            </h2>
+
+            <p
+              className="
+                mt-3
+                text-lg
+                text-zinc-600
+                dark:text-zinc-400
+              "
+            >
+              גישה לפרויקטים הפעילים במערכת
+            </p>
+
+          </div>
+
+          {loading && (
+            <div>
+              טוען נתונים...
+            </div>
+          )}
+
+          <div className="space-y-10">
+
+            {organizations.map((organization) => (
 
               <div
+                key={organization.id}
                 className="
-                  bg-green-100
-                  text-green-700
-                  dark:bg-green-900/40
-                  dark:text-green-300
-                  px-4
-                  py-2
-                  rounded-full
-                  text-sm
-                  font-semibold
+                  bg-white
+                  dark:bg-zinc-900
+                  border
+                  border-zinc-200
+                  dark:border-zinc-800
+                  rounded-[2rem]
+                  p-10
                 "
               >
-                {getStatusLabel(
-                  project.status
-                )}
-              </div>
 
-            </div>
+                {/* ORGANIZATION HEADER */}
 
-            <div className="space-y-4">
+                <div className="mb-8">
 
-              <div>
+                  <h3
+                    className="
+                      text-3xl
+                      font-bold
+                    "
+                  >
+                    {organization.organization_name}
+                  </h3>
 
-                <h3
+                  <p
+                    className="
+                      mt-2
+                      text-zinc-500
+                    "
+                  >
+                    {organization.contact_email}
+                  </p>
+
+                </div>
+
+                {/* PROJECTS */}
+
+                <div
                   className="
-                    text-sm
-                    font-semibold
-                    text-zinc-500
-                    mb-1
+                    grid
+                    grid-cols-1
+                    lg:grid-cols-2
+                    xl:grid-cols-3
+                    gap-6
                   "
                 >
-                  מפקח אחראי
-                </h3>
 
-                <p>
-                  {project.supervisor_name}
-                </p>
+                  {organization.projects.map(
+                    (project) => (
+
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      className="
+                        bg-zinc-50
+                        dark:bg-zinc-800/50
+                        rounded-3xl
+                        p-8
+                        border
+                        border-zinc-200
+                        dark:border-zinc-800
+                        hover:shadow-lg
+                        transition-all
+                        hover:-translate-y-1
+                      "
+                    >
+
+                      <div
+                        className="
+                          flex
+                          justify-between
+                          items-start
+                          mb-5
+                        "
+                      >
+
+                        <h4
+                          className="
+                            text-2xl
+                            font-bold
+                          "
+                        >
+                          {project.project_name}
+                        </h4>
+
+                        <div
+                          className="
+                            bg-green-100
+                            text-green-700
+                            dark:bg-green-900/40
+                            dark:text-green-300
+                            px-3
+                            py-1
+                            rounded-full
+                            text-sm
+                            font-semibold
+                          "
+                        >
+                          פעיל
+                        </div>
+
+                      </div>
+
+                      <p
+                        className="
+                          text-zinc-500
+                        "
+                      >
+                        כניסה לסביבת העבודה
+                        התפעולית של הפרויקט
+                      </p>
+
+                    </Link>
+
+                  ))}
+
+                </div>
 
               </div>
 
-              <div>
+            ))}
 
-                <h3
-                  className="
-                    text-sm
-                    font-semibold
-                    text-zinc-500
-                    mb-1
-                  "
-                >
-                  אימייל
-                </h3>
+          </div>
 
-                <p className="break-all">
-                  {project.supervisor_email}
-                </p>
+        </div>
 
-              </div>
-
-              <div>
-
-                <h3
-                  className="
-                    text-sm
-                    font-semibold
-                    text-zinc-500
-                    mb-1
-                  "
-                >
-                  תאריך יצירה
-                </h3>
-
-                <p>
-                  {new Date(
-                    project.created_at
-                  ).toLocaleDateString(
-                    "he-IL"
-                  )}
-                </p>
-
-              </div>
-
-            </div>
-
-          </Link>
-
-        ))}
-
-      </div>
+      </section>
 
     </main>
   );

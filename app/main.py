@@ -30,7 +30,27 @@ from app.repositories.project_repository import (
     ProjectRepository
 )
 
+from app.repositories.organization_repository import (
+    OrganizationRepository
+)
+
+from app.repositories.ai_interpretation_repository import (
+    AIInterpretationRepository
+)
+
+from app.repositories.operational_action_repository import (
+    OperationalActionRepository
+)
+
+from app.repositories.weekly_report_repository import (
+    WeeklyReportRepository
+)
+
 app = FastAPI()
+
+DEMO_ORGANIZATION_ID = (
+    "bb2c760b-81cb-4e49-b057-4426406d5e71"
+)
 
 # ==========================================
 # CORS
@@ -76,6 +96,22 @@ operational_action_service = (
 
 project_repository = (
     ProjectRepository()
+)
+
+organization_repository = (
+    OrganizationRepository()
+)
+
+ai_interpretation_repository = (
+    AIInterpretationRepository()
+)
+
+operational_action_repository = (
+    OperationalActionRepository()
+)
+
+weekly_report_repository = (
+    WeeklyReportRepository()
 )
 
 
@@ -233,7 +269,9 @@ def get_projects():
 
     return (
         project_repository
-        .get_all_projects()
+        .get_projects_by_organization(
+            DEMO_ORGANIZATION_ID
+        )
     )
 
 @app.get("/projects/{project_id}")
@@ -260,4 +298,63 @@ def get_project_reviews(
         .get_reviews_by_project(
             project_id
         )
+    )
+
+@app.get(
+    "/projects/{project_id}/summary"
+)
+def get_project_summary(
+    project_id: str
+):
+
+    reviews = (
+        ai_interpretation_repository
+        .get_reviews_by_project(
+            project_id
+        )
+    )
+
+    actions = (
+        operational_action_repository
+        .get_open_actions()
+    )
+
+    escalations = [
+        action
+        for action in actions
+        if action["action_type"]
+        == "ESCALATION"
+    ]
+
+    reports = (
+        weekly_report_repository
+        .get_reports_by_project(
+            project_id
+        )
+    )
+
+    return {
+        "reviews_count":
+            len(reviews),
+
+        "actions_count":
+            len(actions),
+
+        "escalations_count":
+            len(escalations),
+
+        "reports_count":
+            len(reports),
+    }
+
+# ==========================================
+# Organizations APIs
+# ==========================================
+
+@app.get("/organizations")
+def get_organizations():
+
+    return (
+        organization_repository
+        .get_all_organizations()
     )

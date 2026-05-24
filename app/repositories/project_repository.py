@@ -55,9 +55,23 @@ class ProjectRepository:
 
         return response.data[0]
 
-    def get_all_projects(
-        self
+    def get_projects_by_organization(
+        self,
+        organization_id: str
     ):
+
+        response = (
+            self.client
+            .table("projects")
+            .select("*")
+            .eq(
+                "organization_id",
+                organization_id
+            )
+            .execute()
+        )
+
+    return response.data
 
         response = (
             self.client

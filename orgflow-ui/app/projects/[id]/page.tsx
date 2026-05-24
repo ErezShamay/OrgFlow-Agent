@@ -21,6 +21,13 @@ type Review = {
   review_status: string;
 };
 
+type Summary = {
+  reviews_count: number;
+  actions_count: number;
+  escalations_count: number;
+  reports_count: number;
+};
+
 export default function ProjectDetailsPage({
   params,
 }: {
@@ -34,6 +41,14 @@ export default function ProjectDetailsPage({
 
   const [reviews, setReviews] =
     useState<Review[]>([]);
+
+  const [summary, setSummary] =
+    useState<Summary>({
+      reviews_count: 0,
+      actions_count: 0,
+      escalations_count: 0,
+      reports_count: 0,
+    });
 
   const [loading, setLoading] =
     useState(true);
@@ -72,6 +87,20 @@ export default function ProjectDetailsPage({
         await reviewsResponse.json();
 
       setReviews(reviewsData);
+
+      // =========================
+      // PROJECT SUMMARY
+      // =========================
+
+      const summaryResponse =
+        await fetch(
+          `http://127.0.0.1:8000/projects/${params.id}/summary`
+        );
+
+      const summaryData =
+        await summaryResponse.json();
+
+      setSummary(summaryData);
 
     } catch (error) {
 
@@ -140,13 +169,13 @@ export default function ProjectDetailsPage({
       "
     >
 
+      {/* PROJECT TABS */}
+
       <ProjectTabs
         projectId={params.id}
       />
 
-      {/* ========================= */}
       {/* PROJECT DETAILS */}
-      {/* ========================= */}
 
       <div
         className="
@@ -302,9 +331,151 @@ export default function ProjectDetailsPage({
 
       </div>
 
-      {/* ========================= */}
+      {/* KPI CARDS */}
+
+      <div
+        className="
+          grid
+          grid-cols-1
+          md:grid-cols-2
+          xl:grid-cols-4
+          gap-6
+          mt-10
+        "
+      >
+
+        <div
+          className="
+            bg-white
+            dark:bg-zinc-900
+            border
+            border-zinc-200
+            dark:border-zinc-800
+            rounded-3xl
+            p-8
+          "
+        >
+
+          <p
+            className="
+              text-zinc-500
+              mb-3
+            "
+          >
+            ביקורות AI
+          </p>
+
+          <h2
+            className="
+              text-5xl
+              font-black
+            "
+          >
+            {summary.reviews_count}
+          </h2>
+
+        </div>
+
+        <div
+          className="
+            bg-white
+            dark:bg-zinc-900
+            border
+            border-zinc-200
+            dark:border-zinc-800
+            rounded-3xl
+            p-8
+          "
+        >
+
+          <p
+            className="
+              text-zinc-500
+              mb-3
+            "
+          >
+            פעולות פתוחות
+          </p>
+
+          <h2
+            className="
+              text-5xl
+              font-black
+            "
+          >
+            {summary.actions_count}
+          </h2>
+
+        </div>
+
+        <div
+          className="
+            bg-white
+            dark:bg-zinc-900
+            border
+            border-red-200
+            dark:border-red-900
+            rounded-3xl
+            p-8
+          "
+        >
+
+          <p
+            className="
+              text-red-500
+              mb-3
+            "
+          >
+            הסלמות
+          </p>
+
+          <h2
+            className="
+              text-5xl
+              font-black
+              text-red-600
+            "
+          >
+            {summary.escalations_count}
+          </h2>
+
+        </div>
+
+        <div
+          className="
+            bg-white
+            dark:bg-zinc-900
+            border
+            border-zinc-200
+            dark:border-zinc-800
+            rounded-3xl
+            p-8
+          "
+        >
+
+          <p
+            className="
+              text-zinc-500
+              mb-3
+            "
+          >
+            דוחות שהתקבלו
+          </p>
+
+          <h2
+            className="
+              text-5xl
+              font-black
+            "
+          >
+            {summary.reports_count}
+          </h2>
+
+        </div>
+
+      </div>
+
       {/* PROJECT REVIEWS */}
-      {/* ========================= */}
 
       <div className="mt-10">
 
