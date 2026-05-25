@@ -251,6 +251,19 @@ def get_open_actions():
         .get_open_actions()
     )
 
+@app.get(
+    "/projects/{project_id}/actions"
+)
+def get_project_actions(
+    project_id: str
+):
+
+    return (
+        operational_action_repository
+        .get_open_actions_by_project(
+            project_id
+        )
+    )
 
 @app.get("/actions/escalations")
 def get_escalations():
@@ -258,6 +271,21 @@ def get_escalations():
     return (
         operational_action_service
         .get_escalations()
+    )
+
+@app.post(
+    "/actions/{action_id}/close"
+)
+
+def close_action(
+    action_id: str
+):
+
+    return (
+        operational_action_repository
+        .close_action(
+            action_id
+        )
     )
 
 # ==========================================
@@ -316,15 +344,17 @@ def get_project_summary(
 
     actions = (
         operational_action_repository
-        .get_open_actions()
+        .get_open_actions_by_project(
+            project_id
     )
+)
 
-    escalations = [
-        action
-        for action in actions
-        if action["action_type"]
-        == "ESCALATION"
-    ]
+    escalations = (
+        operational_action_repository
+        .get_exceptions_by_project(
+            project_id
+    )
+)
 
     reports = (
         weekly_report_repository
@@ -346,6 +376,21 @@ def get_project_summary(
         "reports_count":
             len(reports),
     }
+
+@app.get(
+    "/projects/{project_id}/exceptions"
+)
+
+def get_project_exceptions(
+        project_id: str
+):
+
+        return (
+            operational_action_repository
+            .get_exceptions_by_project(
+                project_id
+            )
+        )
 
 # ==========================================
 # Organizations APIs

@@ -26,7 +26,7 @@ export default function ProjectsPage() {
   async function loadProjects() {
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/projects"
+        `${process.env.NEXT_PUBLIC_API_URL}/projects`
       );
 
       const data = await response.json();

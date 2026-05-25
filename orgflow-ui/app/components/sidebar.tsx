@@ -1,29 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+} from "next/navigation";
 
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const links = [
-    {
-      href: "/reviews",
-      label: "ביקורות AI",
-    },
-    {
-      href: "/actions",
-      label: "פעולות תפעוליות",
-    },
-    {
-      href: "/escalations",
-      label: "נקודות סיכון",
-    },
-    {
-      href: "/projects",
-      label: "פרויקטים",
-    },
-  ];
+const projectMatch =
+  pathname.match(
+    /\/projects\/([^/]+)/
+  );
+
+const projectId =
+  projectMatch?.[1];
+
+const links = [
+
+  {
+    href:
+      `/projects/${projectId}`,
+
+    label:
+      "סקירת הפרויקט",
+  },
+
+  {
+    href:
+      `/projects/${projectId}/reviews`,
+
+    label:
+      "ביקורות AI",
+  },
+
+  {
+    href:
+      `/projects/${projectId}/actions`,
+
+    label:
+      "פעולות תפעוליות",
+  },
+
+  {
+    href:
+      `/projects/${projectId}/exceptions`,
+
+    label:
+      "נקודות סיכון/חריגות",
+  },
+
+  {
+    href: "/",
+
+    label:
+      "חזרה לעמוד הבית",
+  },
+];
 
   return (
     <aside

@@ -12,6 +12,32 @@ class AIInterpretationRepository:
             .get_client()
         )
 
+    # =====================================
+    # PENDING REVIEWS
+    # =====================================
+
+    def get_pending_reviews(self):
+
+        response = (
+            self.client
+            .table("ai_interpretations")
+            .select("*")
+            .eq(
+                "review_status",
+                "PENDING"
+            )
+            .execute()
+        )
+
+        return (
+            response.data
+            or []
+        )
+
+    # =====================================
+    # PROJECT REVIEWS
+    # =====================================
+
     def get_reviews_by_project(
         self,
         project_id: str
@@ -46,17 +72,13 @@ class AIInterpretationRepository:
             return []
 
         # =========================
-        # GET FINDING IDS
+        # GET FINDINGS
         # =========================
 
         findings_response = (
             self.client
             .table("findings")
-            .select("id")
-            .in_(
-                "report_id",
-                report_ids
-            )
+            .select("id, report_id")
             .execute()
         )
 
@@ -65,30 +87,42 @@ class AIInterpretationRepository:
             or []
         )
 
+        filtered_findings = [
+            finding
+            for finding in findings
+            if finding["report_id"]
+            in report_ids
+        ]
+
         finding_ids = [
             finding["id"]
-            for finding in findings
+            for finding in filtered_findings
         ]
 
         if not finding_ids:
             return []
 
         # =========================
-        # GET AI REVIEWS
+        # GET REVIEWS
         # =========================
 
         reviews_response = (
             self.client
             .table("ai_interpretations")
             .select("*")
-            .in_(
-                "finding_id",
-                finding_ids
-            )
             .execute()
         )
 
-        return (
+        reviews = (
             reviews_response.data
             or []
         )
+
+        filtered_reviews = [
+            review
+            for review in reviews
+            if review["finding_id"]
+            in finding_ids
+        ]
+
+        return filtered_reviews

@@ -1,99 +1,143 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  use,
+  useEffect,
+  useState,
+} from "react";
 
-type Escalation = {
+type Action = {
   id: string;
+  action_type: string;
   title: string;
   description: string;
   status: string;
-  created_at: string;
 };
 
-export default function EscalationsPage() {
-  const [escalations, setEscalations] =
-    useState<Escalation[]>([]);
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export default function ProjectExceptionsPage({
+  params,
+}: Props) {
+
+  const resolvedParams =
+    use(params);
+
+  const [exceptions, setExceptions] =
+    useState<Action[]>([]);
 
   const [loading, setLoading] =
     useState(true);
 
   useEffect(() => {
-    loadEscalations();
+    loadExceptions();
   }, []);
 
-  async function loadEscalations() {
+  async function loadExceptions() {
+
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/actions/escalations`
-      );
 
-      const data = await response.json();
+      const response =
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/projects/${resolvedParams.id}/exceptions`
+        );
 
-      setEscalations(data);
+      const data =
+        await response.json();
+
+      setExceptions(data);
+
     } catch (error) {
+
       console.error(error);
+
     } finally {
+
       setLoading(false);
+
     }
   }
 
   return (
     <main
       className="
-        p-10
+        bg-zinc-100
+        dark:bg-zinc-950
         text-zinc-900
         dark:text-zinc-100
+        min-h-screen
       "
     >
-      <div className="mb-10">
 
-        <h1 className="text-5xl font-bold">
-          נקודות סיכון
-        </h1>
+      <div className="max-w-6xl mx-auto px-6 py-10">
 
-        <p
-          className="
-            mt-3
-            text-lg
-            text-zinc-600
-            dark:text-zinc-400
-          "
-        >
-          אירועים הדורשים טיפול מיידי
-        </p>
+        {/* HEADER */}
 
-      </div>
+        <div className="mb-10">
 
-      {loading && (
-        <div>
-          טוען נקודות סיכון...
+          <h1
+            className="
+              text-5xl
+              font-bold
+            "
+          >
+            חריגות
+          </h1>
+
+          <p
+            className="
+              text-zinc-600
+              dark:text-zinc-400
+              mt-3
+              text-lg
+            "
+          >
+            נקודות סיכון וחריגות בפרויקט
+          </p>
+
         </div>
-      )}
 
-      {!loading &&
-        escalations.length === 0 && (
+        {/* LOADING */}
+
+        {loading && (
+          <div>
+            טוען חריגות...
+          </div>
+        )}
+
+        {/* EMPTY */}
+
+        {!loading &&
+          exceptions.length === 0 && (
+
           <div
             className="
               bg-white
               dark:bg-zinc-900
+              rounded-3xl
+              p-8
               border
               border-zinc-200
               dark:border-zinc-800
-              rounded-3xl
-              p-8
             "
           >
-            אין נקודות סיכון פתוחות
+            אין נקודות סיכון/חריגות פתוחות
           </div>
+
         )}
 
-      <div className="grid gap-6">
+        {/* EXCEPTIONS */}
 
-        {escalations.map(
-          (escalation) => (
+        <div className="grid gap-6">
+
+          {exceptions.map((item) => (
 
             <div
-              key={escalation.id}
+              key={item.id}
               className="
                 bg-white
                 dark:bg-zinc-900
@@ -102,15 +146,14 @@ export default function EscalationsPage() {
                 dark:border-red-900
                 rounded-3xl
                 p-8
-                shadow-sm
               "
             >
 
               <div
                 className="
                   flex
-                  items-start
                   justify-between
+                  items-start
                   mb-6
                 "
               >
@@ -123,7 +166,7 @@ export default function EscalationsPage() {
                       font-semibold
                     "
                   >
-                    {escalation.title}
+                    {item.title}
                   </h2>
 
                   <p
@@ -131,13 +174,10 @@ export default function EscalationsPage() {
                       text-sm
                       text-zinc-500
                       mt-2
+                      break-all
                     "
                   >
-                    {new Date(
-                      escalation.created_at
-                    ).toLocaleString(
-                      "he-IL"
-                    )}
+                    {item.id}
                   </p>
 
                 </div>
@@ -155,7 +195,7 @@ export default function EscalationsPage() {
                     font-semibold
                   "
                 >
-                  דחוף
+                  חריגה פתוחה
                 </div>
 
               </div>
@@ -165,10 +205,10 @@ export default function EscalationsPage() {
                 <h3
                   className="
                     font-semibold
-                    mb-3
+                    mb-2
                   "
                 >
-                  תיאור האירוע
+                  תיאור
                 </h3>
 
                 <p
@@ -178,15 +218,16 @@ export default function EscalationsPage() {
                     leading-relaxed
                   "
                 >
-                  {escalation.description}
+                  {item.description}
                 </p>
 
               </div>
 
             </div>
 
-          )
-        )}
+          ))}
+
+        </div>
 
       </div>
 

@@ -56,3 +56,72 @@ class OperationalActionRepository:
         )
 
         return response.data
+
+    def get_open_actions_by_project(
+        self,
+        project_id: str
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "status",
+                "OPEN"
+            )
+            .eq(
+                "project_id",
+                project_id
+            )
+            .execute()
+        )
+
+        return response.data
+    
+    def get_exceptions_by_project(
+        self,
+        project_id: str
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "status",
+                "OPEN"
+            )
+            .eq(
+                "action_type",
+                "ESCALATION"
+            )
+            .eq(
+                "project_id",
+                project_id
+            )
+            .execute()
+        )
+
+        return response.data
+
+def close_action(
+    self,
+    action_id: str
+):
+
+    response = (
+        self.client
+        .table(self.table_name)
+        .update({
+            "status":
+                "CLOSED"
+        })
+        .eq(
+            "id",
+            action_id
+        )
+        .execute()
+    )
+
+    return response.data[0]

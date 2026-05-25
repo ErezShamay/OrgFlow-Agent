@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  use,
+  useEffect,
+  useState,
+} from "react";
 
 type Action = {
   id: string;
@@ -12,34 +16,91 @@ type Action = {
   due_date: string | null;
 };
 
-export default function ActionsPage() {
-  const [actions, setActions] = useState<Action[]>([]);
-  const [loading, setLoading] = useState(true);
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export default function ProjectActionsPage({
+  params,
+}: Props) {
+
+  const resolvedParams =
+    use(params);
+
+  const projectId =
+    resolvedParams.id;
+
+  const [actions, setActions] =
+    useState<Action[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     loadActions();
   }, []);
 
   async function loadActions() {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/actions/open`
-      );
 
-      const data = await response.json();
+    try {
+
+      const response =
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/actions`
+        );
+
+      const data =
+        await response.json();
 
       setActions(data);
+
     } catch (error) {
+
       console.error(error);
+
     } finally {
+
       setLoading(false);
+
+    }
+  }
+
+  async function closeAction(
+    actionId: string
+  ) {
+
+    try {
+
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/close`,
+        {
+          method: "POST",
+        }
+      );
+
+      setActions(
+        current =>
+          current.filter(
+            action =>
+              action.id !== actionId
+          )
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
     }
   }
 
   function getActionTypeLabel(
     type: string
   ) {
+
     switch (type) {
+
       case "ESCALATION":
         return "נקודת סיכון";
 
@@ -51,7 +112,9 @@ export default function ActionsPage() {
   function getStatusLabel(
     status: string
   ) {
+
     switch (status) {
+
       case "OPEN":
         return "פתוח";
 
@@ -65,19 +128,27 @@ export default function ActionsPage() {
 
   return (
     <main
-      dir="rtl"
       className="
         bg-zinc-100
         dark:bg-zinc-950
         text-zinc-900
         dark:text-zinc-100
+        min-h-screen
       "
     >
+
       <div className="max-w-6xl mx-auto px-6 py-10">
+
+        {/* HEADER */}
 
         <div className="mb-10">
 
-          <h1 className="text-5xl font-bold">
+          <h1
+            className="
+              text-5xl
+              font-bold
+            "
+          >
             פעולות תפעוליות
           </h1>
 
@@ -89,18 +160,26 @@ export default function ActionsPage() {
               text-lg
             "
           >
-            ניהול פעולות שנוצרו על ידי מערכת AI
+            פעולות פתוחות עבור הפרויקט
           </p>
 
         </div>
 
+        {/* LOADING */}
+
         {loading && (
+
           <div>
             טוען פעולות...
           </div>
+
         )}
 
-        {!loading && actions.length === 0 && (
+        {/* EMPTY */}
+
+        {!loading &&
+          actions.length === 0 && (
+
           <div
             className="
               bg-white
@@ -114,7 +193,10 @@ export default function ActionsPage() {
           >
             אין פעולות פתוחות
           </div>
+
         )}
+
+        {/* ACTIONS */}
 
         <div className="grid gap-6">
 
@@ -145,7 +227,12 @@ export default function ActionsPage() {
 
                 <div>
 
-                  <h2 className="text-2xl font-semibold">
+                  <h2
+                    className="
+                      text-2xl
+                      font-semibold
+                    "
+                  >
                     {action.title}
                   </h2>
 
@@ -186,7 +273,12 @@ export default function ActionsPage() {
 
                 <div>
 
-                  <h3 className="font-semibold mb-2">
+                  <h3
+                    className="
+                      font-semibold
+                      mb-2
+                    "
+                  >
                     סוג פעולה
                   </h3>
 
@@ -200,7 +292,12 @@ export default function ActionsPage() {
 
                 <div>
 
-                  <h3 className="font-semibold mb-2">
+                  <h3
+                    className="
+                      font-semibold
+                      mb-2
+                    "
+                  >
                     תיאור
                   </h3>
 
@@ -217,7 +314,12 @@ export default function ActionsPage() {
 
                 <div>
 
-                  <h3 className="font-semibold mb-2">
+                  <h3
+                    className="
+                      font-semibold
+                      mb-2
+                    "
+                  >
                     אחראי
                   </h3>
 
@@ -230,6 +332,34 @@ export default function ActionsPage() {
 
               </div>
 
+              {/* ACTION BUTTONS */}
+
+              <div className="mt-8">
+
+                <button
+                  onClick={() =>
+                    closeAction(
+                      action.id
+                    )
+                  }
+                  className="
+                    bg-zinc-900
+                    text-white
+                    dark:bg-white
+                    dark:text-black
+                    px-6
+                    py-3
+                    rounded-2xl
+                    font-semibold
+                    hover:opacity-90
+                    transition
+                  "
+                >
+                  סגירת פעולה
+                </button>
+
+              </div>
+
             </div>
 
           ))}
@@ -237,6 +367,7 @@ export default function ActionsPage() {
         </div>
 
       </div>
+
     </main>
   );
 }
