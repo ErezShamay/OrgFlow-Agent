@@ -20,58 +20,12 @@ export default function ReviewsPage({
     resolvedParams.id;
 
   const {
-  reviews,
-  loading,
-  setReviews,
-  reloadWorkspace,
-} = useProjectWorkspace(
-  projectId
-);
-
-
-
-  async function approveReview(
-    reviewId: string
-  ) {
-
-    try {
-
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reviews/${reviewId}/approve`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            reviewed_by:
-              "ארז שמאי",
-
-            review_notes:
-              "אושר דרך מערכת התפעול",
-          }),
-        }
-      );
-
-      setReviews(
-        current =>
-          current.filter(
-            review =>
-              review.id !== reviewId
-          )
-      );
-
-      await reloadWorkspace();
-
-    } catch (error) {
-
-      console.error(error);
-
-    }
-  }
+    reviews,
+    loading,
+    approveReview,
+  } = useProjectWorkspace(
+    projectId
+  );
 
   return (
     <main

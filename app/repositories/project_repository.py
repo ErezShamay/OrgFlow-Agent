@@ -1,5 +1,5 @@
 from app.db.supabase_client import (
-    SupabaseClient
+    supabase
 )
 
 
@@ -8,8 +8,7 @@ class ProjectRepository:
     def __init__(self):
 
         self.client = (
-            SupabaseClient
-            .get_client()
+            supabase
         )
 
     def create_project(

@@ -1,5 +1,5 @@
 from app.db.supabase_client import (
-    SupabaseClient
+    supabase
 )
 
 from app.schemas.operational_action import (
@@ -12,8 +12,7 @@ class OperationalActionRepository:
     def __init__(self):
 
         self.client = (
-            SupabaseClient
-            .get_client()
+            supabase
         )
 
         self.table_name = (

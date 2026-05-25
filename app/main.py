@@ -46,6 +46,10 @@ from app.repositories.weekly_report_repository import (
     WeeklyReportRepository
 )
 
+from app.repositories.workspace_activity_repository import (
+    WorkspaceActivityRepository,
+)
+
 app = FastAPI()
 
 DEMO_ORGANIZATION_ID = (
@@ -391,6 +395,22 @@ def get_project_exceptions(
                 project_id
             )
         )
+
+@app.get(
+    "/projects/{project_id}/activity"
+)
+def get_project_activity(
+        project_id: str
+):
+
+    activity = (
+        WorkspaceActivityRepository
+        .get_project_activity(
+            project_id
+        )
+    )
+
+    return activity
 
 # ==========================================
 # Organizations APIs

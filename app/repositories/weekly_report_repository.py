@@ -1,16 +1,12 @@
 from app.db.supabase_client import (
-    SupabaseClient
+    supabase
 )
 
 
 class WeeklyReportRepository:
 
     def __init__(self):
-
-        self.client = (
-            SupabaseClient
-            .get_client()
-        )
+        self.client = supabase
 
     def create_report(
         self,

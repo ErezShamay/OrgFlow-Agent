@@ -1,9 +1,9 @@
-from app.db.supabase_client import SupabaseClient
+from app.db.supabase_client import supabase
 
 
 class ApprovalRepository:
     def __init__(self):
-        self.client = SupabaseClient.get_client()
+        self.client = supabase
 
     def create_approval_request(
         self,

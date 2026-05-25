@@ -1,5 +1,5 @@
 from app.db.supabase_client import (
-    SupabaseClient
+    supabase
 )
 
 
@@ -7,10 +7,7 @@ class OrganizationRepository:
 
     def __init__(self):
 
-        self.client = (
-            SupabaseClient
-            .get_client()
-        )
+        self.client = supabase
 
     def get_all_organizations(self):
 
@@ -25,8 +22,6 @@ class OrganizationRepository:
             organizations_response.data
         )
 
-        result = []
-
         for organization in organizations:
 
             projects_response = (
@@ -40,22 +35,8 @@ class OrganizationRepository:
                 .execute()
             )
 
-            result.append({
-                "id":
-                    organization["id"],
+            organization["projects"] = (
+                projects_response.data
+            )
 
-                "organization_name":
-                    organization[
-                        "organization_name"
-                    ],
-
-                "contact_email":
-                    organization[
-                        "contact_email"
-                    ],
-
-                "projects":
-                    projects_response.data
-            })
-
-        return result
+        return organizations

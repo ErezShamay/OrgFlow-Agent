@@ -1,24 +1,20 @@
 import os
 
-from dotenv import load_dotenv
 from supabase import create_client
+from dotenv import load_dotenv
 
 
 load_dotenv()
 
+SUPABASE_URL = os.getenv(
+    "SUPABASE_URL"
+)
 
-class SupabaseClient:
+SUPABASE_KEY = os.getenv(
+    "SUPABASE_KEY"
+)
 
-    _client = None
-
-    @classmethod
-    def get_client(cls):
-
-        if cls._client is None:
-
-            cls._client = create_client(
-                os.getenv("SUPABASE_URL"),
-                os.getenv("SUPABASE_KEY")
-            )
-
-        return cls._client
+supabase = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+)

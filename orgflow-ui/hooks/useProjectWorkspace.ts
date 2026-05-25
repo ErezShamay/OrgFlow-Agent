@@ -6,6 +6,8 @@ import {
   useState,
 } from "react";
 
+import { toast } from "sonner";
+
 type Project = {
   id: string;
   project_name: string;
@@ -39,9 +41,21 @@ type Summary = {
   reports_count: number;
 };
 
+type Activity = {
+  id: string;
+  activity_type: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+};
+
 export function useProjectWorkspace(
   projectId: string
 ) {
+
+  // =========================
+  // STATE
+  // =========================
 
   const [project, setProject] =
     useState<Project | null>(null);
@@ -55,6 +69,9 @@ export function useProjectWorkspace(
   const [exceptions, setExceptions] =
     useState<Action[]>([]);
 
+  const [activities, setActivities] =
+    useState<Activity[]>([]);
+
   const [summary, setSummary] =
     useState<Summary>({
       reviews_count: 0,
@@ -65,6 +82,10 @@ export function useProjectWorkspace(
 
   const [loading, setLoading] =
     useState(true);
+
+  // =========================
+  // LOAD WORKSPACE
+  // =========================
 
   const loadWorkspace =
     useCallback(async () => {
@@ -83,7 +104,9 @@ export function useProjectWorkspace(
           actionsResponse,
           exceptionsResponse,
           summaryResponse,
+          activityResponse,
         ] = await Promise.all([
+
           fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
           ),
@@ -103,6 +126,10 @@ export function useProjectWorkspace(
           fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/summary`
           ),
+
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/activity`
+          ),
         ]);
 
         const projectData =
@@ -120,6 +147,9 @@ export function useProjectWorkspace(
         const summaryData =
           await summaryResponse.json();
 
+        const activityData =
+          await activityResponse.json();
+
         setProject(projectData);
 
         setReviews(reviewsData);
@@ -130,9 +160,18 @@ export function useProjectWorkspace(
 
         setSummary(summaryData);
 
+        setActivities(activityData);
+
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          "Failed loading workspace:",
+          error
+        );
+
+        toast.error(
+          "שגיאה בטעינת סביבת העבודה"
+        );
 
       } finally {
 
@@ -142,20 +181,198 @@ export function useProjectWorkspace(
 
     }, [projectId]);
 
+  // =========================
+  // INITIAL LOAD
+  // =========================
+
   useEffect(() => {
+
     loadWorkspace();
+
   }, [loadWorkspace]);
+
+  // =========================
+  // AUTO REFRESH
+  // =========================
+
+  useEffect(() => {
+
+    const pollingInterval =
+      Number(
+        process.env.NEXT_PUBLIC_POLLING_INTERVAL
+      ) || 30000;
+
+    const interval =
+      setInterval(() => {
+
+        loadWorkspace();
+
+      }, pollingInterval);
+
+    return () => {
+
+      clearInterval(interval);
+
+    };
+
+  }, [loadWorkspace]);
+
+  // =========================
+  // APPROVE REVIEW
+  // =========================
+
+  async function approveReview(
+    reviewId: string
+  ) {
+
+    const existingReview =
+      reviews.find(
+        review => review.id === reviewId
+      );
+
+    if (!existingReview) {
+      return;
+    }
+
+    // =========================
+    // OPTIMISTIC UPDATE
+    // =========================
+
+    setReviews(current =>
+      current.filter(
+        review => review.id !== reviewId
+      )
+    );
+
+    setSummary(current => ({
+      ...current,
+
+      reviews_count:
+        Math.max(
+          current.reviews_count - 1,
+          0
+        ),
+
+      actions_count:
+        current.actions_count + 1,
+    }));
+
+    try {
+
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/reviews/${reviewId}/approve`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            reviewed_by:
+              "ארז שמאי",
+
+            review_notes:
+              "Approved from workspace",
+          }),
+        }
+      );
+
+      await loadWorkspace();
+
+      toast.success(
+        "הביקורת אושרה בהצלחה"
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Failed approving review:",
+        error
+      );
+
+      toast.error(
+        "שגיאה באישור הביקורת"
+      );
+
+      // rollback from server truth
+      await loadWorkspace();
+    }
+  }
+
+  // =========================
+  // CLOSE ACTION
+  // =========================
+
+  async function closeAction(
+    actionId: string
+  ) {
+
+    // =========================
+    // OPTIMISTIC UPDATE
+    // =========================
+
+    setActions(current =>
+      current.filter(
+        action => action.id !== actionId
+      )
+    );
+
+    setSummary(current => ({
+      ...current,
+
+      actions_count:
+        Math.max(
+          current.actions_count - 1,
+          0
+        ),
+    }));
+
+    try {
+
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/close`,
+        {
+          method: "POST",
+        }
+      );
+
+      await loadWorkspace();
+
+      toast.success(
+        "הפעולה נסגרה בהצלחה"
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Failed closing action:",
+        error
+      );
+
+      toast.error(
+        "שגיאה בסגירת הפעולה"
+      );
+
+      // rollback from server truth
+      await loadWorkspace();
+    }
+  }
 
   return {
     project,
     reviews,
     actions,
     exceptions,
+    activities,
     summary,
     loading,
+
     reloadWorkspace:
       loadWorkspace,
-    setReviews,
-    setActions,
+
+    approveReview,
+    closeAction,
   };
 }

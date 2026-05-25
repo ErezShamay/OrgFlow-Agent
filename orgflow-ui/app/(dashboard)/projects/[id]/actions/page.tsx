@@ -22,41 +22,10 @@ export default function ProjectActionsPage({
     const {
   actions,
   loading,
-  setActions,
-  reloadWorkspace,
+  closeAction,
 } = useProjectWorkspace(
   projectId
 );
-
-  async function closeAction(
-    actionId: string
-  ) {
-
-    try {
-
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/close`,
-        {
-          method: "POST",
-        }
-      );
-
-      setActions(
-        current =>
-          current.filter(
-            action =>
-              action.id !== actionId
-          )
-      );
-
-      await reloadWorkspace();
-
-    } catch (error) {
-
-      console.error(error);
-
-    }
-  }
 
   function getActionTypeLabel(
     type: string
