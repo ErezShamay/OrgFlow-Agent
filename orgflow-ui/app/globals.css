@@ -5,6 +5,8 @@
   --foreground: #171717;
 }
 
+/* Define theme variables for light and dark modes */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
