@@ -4,6 +4,8 @@ import { useParams } from "next/navigation";
 
 import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
 
+import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline";
+
 export default function ProjectDetailsPage() {
 
   const params = useParams();

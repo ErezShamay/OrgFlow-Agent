@@ -132,6 +132,28 @@ export function useProjectWorkspace(
           ),
         ]);
 
+        // =========================
+        // VALIDATE RESPONSES
+        // =========================
+
+        if (
+          !projectResponse.ok ||
+          !reviewsResponse.ok ||
+          !actionsResponse.ok ||
+          !exceptionsResponse.ok ||
+          !summaryResponse.ok ||
+          !activityResponse.ok
+        ) {
+
+          throw new Error(
+            "Failed loading workspace data"
+          );
+        }
+
+        // =========================
+        // PARSE RESPONSES
+        // =========================
+
         const projectData =
           await projectResponse.json();
 
@@ -150,6 +172,10 @@ export function useProjectWorkspace(
         const activityData =
           await activityResponse.json();
 
+        // =========================
+        // UPDATE STATE
+        // =========================
+
         setProject(projectData);
 
         setReviews(reviewsData);
@@ -167,10 +193,6 @@ export function useProjectWorkspace(
         console.error(
           "Failed loading workspace:",
           error
-        );
-
-        toast.error(
-          "שגיאה בטעינת סביבת העבודה"
         );
 
       } finally {
@@ -199,7 +221,8 @@ export function useProjectWorkspace(
 
     const pollingInterval =
       Number(
-        process.env.NEXT_PUBLIC_POLLING_INTERVAL
+        process.env
+          .NEXT_PUBLIC_POLLING_INTERVAL
       ) || 30000;
 
     const interval =
@@ -259,25 +282,33 @@ export function useProjectWorkspace(
 
     try {
 
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reviews/${reviewId}/approve`,
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/reviews/${reviewId}/approve`,
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-          body: JSON.stringify({
-            reviewed_by:
-              "ארז שמאי",
+            body: JSON.stringify({
+              reviewed_by:
+                "ארז שמאי",
 
-            review_notes:
-              "Approved from workspace",
-          }),
-        }
-      );
+              review_notes:
+                "Approved from workspace",
+            }),
+          }
+        );
+
+      if (!response.ok) {
+
+        throw new Error(
+          "Failed approving review"
+        );
+      }
 
       await loadWorkspace();
 
@@ -331,12 +362,20 @@ export function useProjectWorkspace(
 
     try {
 
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/close`,
-        {
-          method: "POST",
-        }
-      );
+      const response =
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/close`,
+          {
+            method: "POST",
+          }
+        );
+
+      if (!response.ok) {
+
+        throw new Error(
+          "Failed closing action"
+        );
+      }
 
       await loadWorkspace();
 
