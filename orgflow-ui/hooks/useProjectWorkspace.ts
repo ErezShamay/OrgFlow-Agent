@@ -49,6 +49,22 @@ type Activity = {
   created_at: string;
 };
 
+type Insight = {
+  type: string;
+  title: string;
+  description: string;
+};
+
+type WorkspaceResponse = {
+  project: Project;
+  reviews: Review[];
+  actions: Action[];
+  exceptions: Action[];
+  activities: Activity[];
+  insights: Insight[];
+  summary: Summary;
+};
+
 export function useProjectWorkspace(
   projectId: string
 ) {
@@ -71,6 +87,9 @@ export function useProjectWorkspace(
 
   const [activities, setActivities] =
     useState<Activity[]>([]);
+
+  const [insights, setInsights] =
+    useState<Insight[]>([]);
 
   const [summary, setSummary] =
     useState<Summary>({
@@ -98,95 +117,53 @@ export function useProjectWorkspace(
 
         setLoading(true);
 
-        const [
-          projectResponse,
-          reviewsResponse,
-          actionsResponse,
-          exceptionsResponse,
-          summaryResponse,
-          activityResponse,
-        ] = await Promise.all([
+        const response =
+          await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/workspace`
+          );
 
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
-          ),
-
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/reviews`
-          ),
-
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/actions`
-          ),
-
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/exceptions`
-          ),
-
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/summary`
-          ),
-
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/activity`
-          ),
-        ]);
-
-        // =========================
-        // VALIDATE RESPONSES
-        // =========================
-
-        if (
-          !projectResponse.ok ||
-          !reviewsResponse.ok ||
-          !actionsResponse.ok ||
-          !exceptionsResponse.ok ||
-          !summaryResponse.ok ||
-          !activityResponse.ok
-        ) {
+        if (!response.ok) {
 
           throw new Error(
-            "Failed loading workspace data"
+            "Failed loading workspace"
           );
         }
 
-        // =========================
-        // PARSE RESPONSES
-        // =========================
-
-        const projectData =
-          await projectResponse.json();
-
-        const reviewsData =
-          await reviewsResponse.json();
-
-        const actionsData =
-          await actionsResponse.json();
-
-        const exceptionsData =
-          await exceptionsResponse.json();
-
-        const summaryData =
-          await summaryResponse.json();
-
-        const activityData =
-          await activityResponse.json();
+        const workspace:
+          WorkspaceResponse =
+            await response.json();
 
         // =========================
         // UPDATE STATE
         // =========================
 
-        setProject(projectData);
+        setProject(
+          workspace.project
+        );
 
-        setReviews(reviewsData);
+        setReviews(
+          workspace.reviews
+        );
 
-        setActions(actionsData);
+        setActions(
+          workspace.actions
+        );
 
-        setExceptions(exceptionsData);
+        setExceptions(
+          workspace.exceptions
+        );
 
-        setSummary(summaryData);
+        setActivities(
+          workspace.activities
+        );
 
-        setActivities(activityData);
+        setInsights(
+          workspace.insights
+        );
+
+        setSummary(
+          workspace.summary
+        );
 
       } catch (error) {
 
@@ -327,7 +304,6 @@ export function useProjectWorkspace(
         "שגיאה באישור הביקורת"
       );
 
-      // rollback from server truth
       await loadWorkspace();
     }
   }
@@ -394,7 +370,6 @@ export function useProjectWorkspace(
         "שגיאה בסגירת הפעולה"
       );
 
-      // rollback from server truth
       await loadWorkspace();
     }
   }
@@ -405,6 +380,7 @@ export function useProjectWorkspace(
     actions,
     exceptions,
     activities,
+    insights,
     summary,
     loading,
 

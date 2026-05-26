@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+
 import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
 
 type Props = {
@@ -19,13 +20,18 @@ export default function ProjectActionsPage({
   const projectId =
     resolvedParams.id;
 
-    const {
-  actions,
-  loading,
-  closeAction,
-} = useProjectWorkspace(
-  projectId
-);
+  const {
+    actions,
+    loading,
+    closeAction,
+    reloadWorkspace,
+  } = useProjectWorkspace(
+    projectId
+  );
+
+  // =========================
+  // LABELS
+  // =========================
 
   function getActionTypeLabel(
     type: string
@@ -58,7 +64,52 @@ export default function ProjectActionsPage({
     }
   }
 
+  // =========================
+  // ASSIGN ACTION
+  // =========================
+
+  async function assignAction(
+    actionId: string,
+    assignedTo: string
+  ) {
+
+    try {
+
+      const response =
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/assign`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              assigned_to:
+                assignedTo,
+            }),
+          }
+        );
+
+      if (!response.ok) {
+
+        throw new Error(
+          "Failed assigning action"
+        );
+      }
+
+      await reloadWorkspace();
+
+    } catch (error) {
+
+      console.error(error);
+    }
+  }
+
   return (
+
     <main
       className="
         bg-zinc-100
@@ -69,7 +120,14 @@ export default function ProjectActionsPage({
       "
     >
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div
+        className="
+          max-w-6xl
+          mx-auto
+          px-6
+          py-10
+        "
+      >
 
         {/* HEADER */}
 
@@ -92,7 +150,7 @@ export default function ProjectActionsPage({
               text-lg
             "
           >
-            פעולות פתוחות עבור הפרויקט
+            ניהול משימות ופעולות בפרויקט
           </p>
 
         </div>
@@ -148,6 +206,8 @@ export default function ProjectActionsPage({
               "
             >
 
+              {/* HEADER */}
+
               <div
                 className="
                   flex
@@ -201,7 +261,9 @@ export default function ProjectActionsPage({
 
               </div>
 
-              <div className="space-y-4">
+              {/* CONTENT */}
+
+              <div className="space-y-6">
 
                 <div>
 
@@ -237,12 +299,15 @@ export default function ProjectActionsPage({
                     className="
                       text-zinc-700
                       dark:text-zinc-300
+                      leading-relaxed
                     "
                   >
                     {action.description}
                   </p>
 
                 </div>
+
+                {/* ASSIGNEE */}
 
                 <div>
 
@@ -255,10 +320,59 @@ export default function ProjectActionsPage({
                     אחראי
                   </h3>
 
-                  <p>
+                  <p
+                    className="
+                      mb-4
+                      text-zinc-600
+                      dark:text-zinc-400
+                    "
+                  >
                     {action.assigned_to
                       || "לא הוגדר"}
                   </p>
+
+                  <select
+                    defaultValue={
+                      action.assigned_to || ""
+                    }
+
+                    onChange={(event) =>
+                      assignAction(
+                        action.id,
+                        event.target.value
+                      )
+                    }
+
+                    className="
+                      w-full
+                      rounded-2xl
+                      border
+                      border-zinc-300
+                      dark:border-zinc-700
+                      bg-white
+                      dark:bg-zinc-900
+                      px-4
+                      py-3
+                    "
+                  >
+
+                    <option value="">
+                      ללא שיוך
+                    </option>
+
+                    <option value="ארז שמאי">
+                      ארז שמאי
+                    </option>
+
+                    <option value="מנהל אזור">
+                      מנהל אזור
+                    </option>
+
+                    <option value="מפקח שטח">
+                      מפקח שטח
+                    </option>
+
+                  </select>
 
                 </div>
 

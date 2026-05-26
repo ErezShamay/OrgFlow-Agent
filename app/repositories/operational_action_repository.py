@@ -124,3 +124,20 @@ def close_action(
     )
 
     return response.data[0]
+def assign_action(
+    self,
+    action_id: str,
+    assigned_to: str,
+):
+
+    response = (
+        self.client
+        .table("operational_actions")
+        .update({
+            "assigned_to": assigned_to
+        })
+        .eq("id", action_id)
+        .execute()
+    )
+
+    return response.data

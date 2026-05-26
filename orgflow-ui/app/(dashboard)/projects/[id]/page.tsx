@@ -6,6 +6,8 @@ import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
 
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline";
 
+import ProjectInsightsPanel from "@/components/projects/ProjectInsightsPanel";
+
 export default function ProjectDetailsPage() {
 
   const params = useParams();
@@ -14,13 +16,15 @@ export default function ProjectDetailsPage() {
     params.id as string;
 
   const {
-  project,
-  reviews,
-  summary,
-  loading,
-} = useProjectWorkspace(
-  projectId
-);
+    project,
+    reviews,
+    activities,
+    insights,
+    summary,
+    loading,
+  } = useProjectWorkspace(
+    projectId
+  );
 
   function getStatusLabel(
     status: string
@@ -70,6 +74,7 @@ export default function ProjectDetailsPage() {
   }
 
   return (
+
     <main
       className="
         p-10
@@ -78,7 +83,7 @@ export default function ProjectDetailsPage() {
       "
     >
 
-      {/* PROJECT DETAILS */}
+      {/* PROJECT HEADER */}
 
       <div
         className="
@@ -247,138 +252,30 @@ export default function ProjectDetailsPage() {
         "
       >
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-8
-          "
-        >
+        <KpiCard
+          title="ביקורות AI"
+          value={summary.reviews_count}
+        />
 
-          <p
-            className="
-              text-zinc-500
-              mb-3
-            "
-          >
-            ביקורות AI
-          </p>
+        <KpiCard
+          title="פעולות פתוחות"
+          value={summary.actions_count}
+        />
 
-          <h2
-            className="
-              text-5xl
-              font-black
-            "
-          >
-            {summary.reviews_count}
-          </h2>
+        <KpiCard
+          title="נקודות סיכון"
+          value={summary.escalations_count}
+          danger
+        />
 
-        </div>
-
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-8
-          "
-        >
-
-          <p
-            className="
-              text-zinc-500
-              mb-3
-            "
-          >
-            פעולות פתוחות
-          </p>
-
-          <h2
-            className="
-              text-5xl
-              font-black
-            "
-          >
-            {summary.actions_count}
-          </h2>
-
-        </div>
-
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-red-200
-            dark:border-red-900
-            rounded-3xl
-            p-8
-          "
-        >
-
-          <p
-            className="
-              text-red-500
-              mb-3
-            "
-          >
-            נקודות סיכון
-          </p>
-
-          <h2
-            className="
-              text-5xl
-              font-black
-              text-red-600
-            "
-          >
-            {summary.escalations_count}
-          </h2>
-
-        </div>
-
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-8
-          "
-        >
-
-          <p
-            className="
-              text-zinc-500
-              mb-3
-            "
-          >
-            דוחות שהתקבלו
-          </p>
-
-          <h2
-            className="
-              text-5xl
-              font-black
-            "
-          >
-            {summary.reports_count}
-          </h2>
-
-        </div>
+        <KpiCard
+          title="דוחות שהתקבלו"
+          value={summary.reports_count}
+        />
 
       </div>
 
-      {/* PROJECT HEALTH */}
+      {/* HEALTH */}
 
       <div
         className="
@@ -393,84 +290,53 @@ export default function ProjectDetailsPage() {
         "
       >
 
-        <div
-          className="
-            flex
-            justify-between
-            items-center
-          "
-        >
-
-          <div>
-
-            <p
-              className="
-                text-zinc-500
-                mb-3
-              "
-            >
-              מצב הפרויקט
-            </p>
-
-            <h2
-              className="
-                text-4xl
-                font-black
-              "
-            >
-              {summary.escalations_count > 3
-                ? "קריטי"
-
-                : summary.escalations_count > 0
-                ? "דורש טיפול"
-
-                : "יציב"}
-            </h2>
-
-          </div>
-
-          <div
-            className={`
-              w-5
-              h-5
-              rounded-full
-
-              ${
-                summary.escalations_count > 3
-                  ? "bg-red-500"
-
-                  : summary.escalations_count > 0
-                  ? "bg-yellow-500"
-
-                  : "bg-green-500"
-              }
-            `}
-          />
-
-        </div>
-
         <p
           className="
-            mt-6
-            text-zinc-600
-            dark:text-zinc-400
-            leading-relaxed
+            text-zinc-500
+            mb-3
           "
         >
+          מצב הפרויקט
+        </p>
 
+        <h2
+          className="
+            text-4xl
+            font-black
+          "
+        >
           {summary.escalations_count > 3
-            ? "המערכת זיהתה מספר חריגות משמעותיות הדורשות טיפול מיידי."
+            ? "קריטי"
 
             : summary.escalations_count > 0
-            ? "קיימות נקודות סיכון/חריגות פתוחות בפרויקט."
+            ? "דורש טיפול"
 
-            : "לא זוהו חריגות משמעותיות בפרויקט."}
-
-        </p>
+            : "יציב"}
+        </h2>
 
       </div>
 
-      {/* PROJECT REVIEWS */}
+      {/* INSIGHTS */}
+
+      <div className="mt-10">
+
+        <ProjectInsightsPanel
+          insights={insights}
+        />
+
+      </div>
+
+      {/* TIMELINE */}
+
+      <div className="mt-10">
+
+        <ProjectActivityTimeline
+          activities={activities}
+        />
+
+      </div>
+
+      {/* REVIEWS */}
 
       <div className="mt-10">
 
@@ -584,378 +450,74 @@ export default function ProjectDetailsPage() {
 
     </main>
   );
+}
 
-  {/* QUICK ACTIONS */}
+type KpiCardProps = {
+  title: string;
+  value: number;
+  danger?: boolean;
+};
 
-<div
-  className="
-    mt-10
-    bg-white
-    dark:bg-zinc-900
-    border
-    border-zinc-200
-    dark:border-zinc-800
-    rounded-3xl
-    p-10
-  "
->
+function KpiCard({
+  title,
+  value,
+  danger,
+}: KpiCardProps) {
 
-  <div className="mb-8">
-
-    <h2
-      className="
-        text-3xl
-        font-bold
-      "
-    >
-      פעולות מהירות
-    </h2>
-
-    <p
-      className="
-        mt-3
-        text-zinc-500
-      "
-    >
-      גישה מהירה לפעולות מרכזיות בפרויקט
-    </p>
-
-  </div>
-
-  <div
-    className="
-      grid
-      grid-cols-1
-      md:grid-cols-2
-      gap-5
-    "
-  >
-
-    <a
-      href={`/projects/${projectId}/reviews`}
-      className="
-        bg-zinc-50
-        dark:bg-zinc-800/50
-        border
-        border-zinc-200
-        dark:border-zinc-700
-        rounded-2xl
-        p-6
-        hover:bg-zinc-100
-        dark:hover:bg-zinc-800
-        transition
-      "
-    >
-
-      <h3
-        className="
-          text-xl
-          font-semibold
-          mb-2
-        "
-      >
-        ביקורות AI
-      </h3>
-
-      <p
-        className="
-          text-zinc-500
-        "
-      >
-        צפייה ואישור ביקורות AI
-      </p>
-
-    </a>
-
-    <a
-      href={`/projects/${projectId}/actions`}
-      className="
-        bg-zinc-50
-        dark:bg-zinc-800/50
-        border
-        border-zinc-200
-        dark:border-zinc-700
-        rounded-2xl
-        p-6
-        hover:bg-zinc-100
-        dark:hover:bg-zinc-800
-        transition
-      "
-    >
-
-      <h3
-        className="
-          text-xl
-          font-semibold
-          mb-2
-        "
-      >
-        פעולות תפעוליות
-      </h3>
-
-      <p
-        className="
-          text-zinc-500
-        "
-      >
-        צפייה בפעולות פתוחות
-      </p>
-
-    </a>
-
-    <a
-      href={`/projects/${projectId}/exceptions`}
-      className="
-        bg-zinc-50
-        dark:bg-zinc-800/50
-        border
-        border-zinc-200
-        dark:border-zinc-700
-        rounded-2xl
-        p-6
-        hover:bg-zinc-100
-        dark:hover:bg-zinc-800
-        transition
-      "
-    >
-
-      <h3
-        className="
-          text-xl
-          font-semibold
-          mb-2
-        "
-      >
-        חריגות
-      </h3>
-
-      <p
-        className="
-          text-zinc-500
-        "
-      >
-        צפייה בנקודות סיכון בפרויקט
-      </p>
-
-    </a>
+  return (
 
     <div
-      className="
-        bg-zinc-50
-        dark:bg-zinc-800/50
+      className={`
+        bg-white
+        dark:bg-zinc-900
         border
-        border-dashed
-        border-zinc-300
-        dark:border-zinc-700
-        rounded-2xl
-        p-6
-      "
+        rounded-3xl
+        p-8
+
+        ${
+          danger
+            ? `
+              border-red-200
+              dark:border-red-900
+            `
+            : `
+              border-zinc-200
+              dark:border-zinc-800
+            `
+        }
+      `}
     >
 
-      <h3
-        className="
-          text-xl
-          font-semibold
-          mb-2
-        "
-      >
-        העלאת דוח
-      </h3>
-
       <p
-        className="
-          text-zinc-500
-        "
+        className={`
+          mb-3
+
+          ${
+            danger
+              ? "text-red-500"
+              : "text-zinc-500"
+          }
+        `}
       >
-        בקרוב תהיה אפשרות להעלות דוחות ידנית
+        {title}
       </p>
+
+      <h2
+        className={`
+          text-5xl
+          font-black
+
+          ${
+            danger
+              ? "text-red-600"
+              : ""
+          }
+        `}
+      >
+        {value}
+      </h2>
 
     </div>
 
-  </div>
-
-</div>
-
-  {/* RECENT ACTIVITY */}
-
-<div
-  className="
-    mt-10
-    bg-white
-    dark:bg-zinc-900
-    border
-    border-zinc-200
-    dark:border-zinc-800
-    rounded-3xl
-    p-10
-  "
->
-
-  <div className="mb-8">
-
-    <h2
-      className="
-        text-3xl
-        font-bold
-      "
-    >
-      פעילות אחרונה
-    </h2>
-
-    <p
-      className="
-        mt-3
-        text-zinc-500
-      "
-    >
-      אירועים אחרונים בפרויקט
-    </p>
-
-  </div>
-
-  <div className="space-y-5">
-
-    {summary.reviews_count > 0 && (
-
-      <div
-        className="
-          flex
-          items-center
-          gap-4
-          p-5
-          rounded-2xl
-          bg-zinc-50
-          dark:bg-zinc-800/50
-        "
-      >
-
-        <div
-          className="
-            w-3
-            h-3
-            rounded-full
-            bg-blue-500
-          "
-        />
-
-        <p>
-          התקבלו
-          {" "}
-          {summary.reviews_count}
-          {" "}
-          ביקורות AI בפרויקט
-        </p>
-
-      </div>
-
-    )}
-
-    {summary.actions_count > 0 && (
-
-      <div
-        className="
-          flex
-          items-center
-          gap-4
-          p-5
-          rounded-2xl
-          bg-zinc-50
-          dark:bg-zinc-800/50
-        "
-      >
-
-        <div
-          className="
-            w-3
-            h-3
-            rounded-full
-            bg-yellow-500
-          "
-        />
-
-        <p>
-          קיימות
-          {" "}
-          {summary.actions_count}
-          {" "}
-          פעולות פתוחות לטיפול
-        </p>
-
-      </div>
-
-    )}
-
-    {summary.escalations_count > 0 && (
-
-      <div
-        className="
-          flex
-          items-center
-          gap-4
-          p-5
-          rounded-2xl
-          bg-red-50
-          dark:bg-red-900/20
-        "
-      >
-
-        <div
-          className="
-            w-3
-            h-3
-            rounded-full
-            bg-red-500
-          "
-        />
-
-        <p>
-          זוהו
-          {" "}
-          {summary.escalations_count}
-          {" "}
-          נקודות סיכון בפרויקט
-        </p>
-
-      </div>
-
-    )}
-
-    {summary.reports_count > 0 && (
-
-      <div
-        className="
-          flex
-          items-center
-          gap-4
-          p-5
-          rounded-2xl
-          bg-zinc-50
-          dark:bg-zinc-800/50
-        "
-      >
-
-        <div
-          className="
-            w-3
-            h-3
-            rounded-full
-            bg-green-500
-          "
-        />
-
-        <p>
-          התקבלו
-          {" "}
-          {summary.reports_count}
-          {" "}
-          דוחות בפרויקט
-        </p>
-
-      </div>
-
-    )}
-
-  </div>
-
-</div>
+  );
 }

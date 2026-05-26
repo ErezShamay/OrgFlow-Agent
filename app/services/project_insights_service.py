@@ -2,8 +2,8 @@ from app.repositories.operational_action_repository import (
     OperationalActionRepository,
 )
 
-from app.repositories.review_repository import (
-    ReviewRepository,
+from app.repositories.ai_interpretation_repository import (
+    AIInterpretationRepository,
 )
 
 
@@ -17,7 +17,7 @@ class ProjectInsightsService:
         insights = []
 
         reviews = (
-            ReviewRepository()
+            AIInterpretationRepository()
             .get_reviews_by_project(
                 project_id
             )
@@ -41,9 +41,11 @@ class ProjectInsightsService:
             for review in reviews
 
             if (
-                review.get(
-                    "tenant_risk",
-                    ""
+                str(
+                    review.get(
+                        "tenant_risk",
+                        ""
+                    )
                 )
                 .lower()
                 .find("high") >= 0

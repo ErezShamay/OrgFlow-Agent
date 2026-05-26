@@ -1,4 +1,16 @@
-from fastapi import FastAPI
+import os
+import shutil
+
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    Form,
+)
 
 from fastapi.middleware.cors import (
     CORSMiddleware
@@ -26,6 +38,10 @@ from app.services.operational_action_service import (
     OperationalActionService
 )
 
+from app.services.project_insights_service import (
+    ProjectInsightsService,
+)
+
 from app.repositories.project_repository import (
     ProjectRepository
 )
@@ -50,6 +66,25 @@ from app.repositories.workspace_activity_repository import (
     WorkspaceActivityRepository,
 )
 
+from app.services.report_processing_service import (
+    ReportProcessingService,
+)
+
+# ==========================================
+# ENV
+# ==========================================
+
+load_dotenv()
+
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:3000"
+)
+
+# ==========================================
+# APP
+# ==========================================
+
 app = FastAPI()
 
 DEMO_ORGANIZATION_ID = (
@@ -64,7 +99,7 @@ app.add_middleware(
     CORSMiddleware,
 
     allow_origins=[
-        "http://localhost:3000"
+        FRONTEND_URL
     ],
 
     allow_credentials=True,
@@ -118,6 +153,9 @@ weekly_report_repository = (
     WeeklyReportRepository()
 )
 
+# ==========================================
+# REQUEST MODELS
+# ==========================================
 
 class AgentRequest(
     BaseModel
@@ -135,6 +173,16 @@ class ReviewDecisionRequest(
     review_notes: str | None = None
 
 
+class AssignActionRequest(
+    BaseModel
+):
+
+    assigned_to: str
+
+# ==========================================
+# ROOT
+# ==========================================
+
 @app.get("/")
 def root():
 
@@ -143,6 +191,9 @@ def root():
             "OrgFlow AI Agent is running"
     }
 
+# ==========================================
+# AGENT APIs
+# ==========================================
 
 @app.post("/agent/run")
 def run_agent(
@@ -159,6 +210,9 @@ def get_workflow_runs():
 
     return workflow_history.get_runs()
 
+# ==========================================
+# APPROVAL APIs
+# ==========================================
 
 @app.post(
     "/approval/{approval_id}/approve"
@@ -182,7 +236,6 @@ def get_approval_request(
     return approval_service.get_request(
         approval_id
     )
-
 
 # ==========================================
 # AI REVIEW APIs
@@ -242,7 +295,6 @@ def reject_review(
         )
     )
 
-
 # ==========================================
 # OPERATIONAL ACTION APIs
 # ==========================================
@@ -254,6 +306,7 @@ def get_open_actions():
         operational_action_service
         .get_open_actions()
     )
+
 
 @app.get(
     "/projects/{project_id}/actions"
@@ -269,6 +322,7 @@ def get_project_actions(
         )
     )
 
+
 @app.get("/actions/escalations")
 def get_escalations():
 
@@ -277,10 +331,10 @@ def get_escalations():
         .get_escalations()
     )
 
+
 @app.post(
     "/actions/{action_id}/close"
 )
-
 def close_action(
     action_id: str
 ):
@@ -291,6 +345,76 @@ def close_action(
             action_id
         )
     )
+
+
+@app.post(
+    "/actions/{action_id}/assign"
+)
+def assign_action(
+    action_id: str,
+    payload: AssignActionRequest
+):
+
+    result = (
+        operational_action_repository
+        .assign_action(
+            action_id=action_id,
+            assigned_to=payload.assigned_to,
+        )
+    )
+
+    return result
+
+# ==========================================
+# REPORT UPLOAD API
+# ==========================================
+
+@app.post("/reports/upload")
+async def upload_report(
+    project_id: str = Form(...),
+    file: UploadFile = File(...),
+):
+
+    uploads_dir = Path(
+        "uploads"
+    )
+
+    uploads_dir.mkdir(
+        exist_ok=True
+    )
+
+    file_path = (
+        uploads_dir / file.filename
+    )
+
+    with open(
+        file_path,
+        "wb"
+    ) as buffer:
+
+        shutil.copyfileobj(
+            file.file,
+            buffer
+        )
+
+    ReportProcessingService.process_uploaded_report(
+    project_id=project_id,
+    filename=file.filename,
+    file_path=str(file_path),
+)
+
+    return {
+        "success": True,
+
+        "project_id":
+            project_id,
+
+        "filename":
+            file.filename,
+
+        "path":
+            str(file_path),
+    }
 
 # ==========================================
 # PROJECT APIs
@@ -306,6 +430,7 @@ def get_projects():
         )
     )
 
+
 @app.get("/projects/{project_id}")
 def get_project(
     project_id: str
@@ -318,29 +443,23 @@ def get_project(
         )
     )
 
+
 @app.get(
-    "/projects/{project_id}/reviews"
+    "/projects/{project_id}/workspace"
 )
-def get_project_reviews(
+def get_project_workspace(
     project_id: str
 ):
 
-    return (
-        ai_review_service
-        .get_reviews_by_project(
+    project = (
+        project_repository
+        .get_project_by_id(
             project_id
         )
     )
 
-@app.get(
-    "/projects/{project_id}/summary"
-)
-def get_project_summary(
-    project_id: str
-):
-
     reviews = (
-        ai_interpretation_repository
+        ai_review_service
         .get_reviews_by_project(
             project_id
         )
@@ -350,15 +469,29 @@ def get_project_summary(
         operational_action_repository
         .get_open_actions_by_project(
             project_id
+        )
     )
-)
 
-    escalations = (
+    exceptions = (
         operational_action_repository
         .get_exceptions_by_project(
             project_id
+        )
     )
-)
+
+    activities = (
+        WorkspaceActivityRepository
+        .get_project_activity(
+            project_id
+        )
+    )
+
+    insights = (
+        ProjectInsightsService
+        .generate_project_insights(
+            project_id
+        )
+    )
 
     reports = (
         weekly_report_repository
@@ -367,7 +500,8 @@ def get_project_summary(
         )
     )
 
-    return {
+    summary = {
+
         "reviews_count":
             len(reviews),
 
@@ -375,45 +509,24 @@ def get_project_summary(
             len(actions),
 
         "escalations_count":
-            len(escalations),
+            len(exceptions),
 
         "reports_count":
             len(reports),
     }
 
-@app.get(
-    "/projects/{project_id}/exceptions"
-)
-
-def get_project_exceptions(
-        project_id: str
-):
-
-        return (
-            operational_action_repository
-            .get_exceptions_by_project(
-                project_id
-            )
-        )
-
-@app.get(
-    "/projects/{project_id}/activity"
-)
-def get_project_activity(
-        project_id: str
-):
-
-    activity = (
-        WorkspaceActivityRepository
-        .get_project_activity(
-            project_id
-        )
-    )
-
-    return activity
+    return {
+        "project": project,
+        "reviews": reviews,
+        "actions": actions,
+        "exceptions": exceptions,
+        "activities": activities,
+        "insights": insights,
+        "summary": summary,
+    }
 
 # ==========================================
-# Organizations APIs
+# ORGANIZATION APIs
 # ==========================================
 
 @app.get("/organizations")

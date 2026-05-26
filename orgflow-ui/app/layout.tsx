@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { Toaster } from "sonner";
 
 import "./globals.css";
@@ -6,7 +7,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Supervisor AI",
   description:
-    "שליטה ובקרה לפרויקטים",
+    "AI Operations Platform for Construction Management",
 };
 
 export default function RootLayout({
@@ -16,14 +17,31 @@ export default function RootLayout({
 }>) {
 
   return (
+
     <html
       lang="he"
       dir="rtl"
+      suppressHydrationWarning
     >
 
-      <body>
+      <body
+        className="
+          bg-zinc-100
+          dark:bg-zinc-950
+          text-zinc-900
+          dark:text-zinc-100
+          antialiased
+        "
+      >
+
         {children}
-        <Toaster richColors position="top-left" />
+
+        <Toaster
+          richColors
+          position="top-left"
+          closeButton
+        />
+
       </body>
 
     </html>
