@@ -1,59 +1,46 @@
-import requests
+import ollama
 
-from app.ai.settings import (
-    OLLAMA_MODEL
+from app.config.ai_config import (
+    DEFAULT_AI_MODEL
+)
+
+from app.ai.providers.base_provider import (
+    BaseProvider
 )
 
 
-class OllamaProvider:
+class OllamaProvider(
+    BaseProvider
+):
 
-    OLLAMA_URL = (
-        "http://localhost:11434/api/generate"
-    )
-
-    @staticmethod
-    def analyze_report(
-        report_text: str
+    def __init__(
+        self,
+        model_name: str | None = None
     ):
 
-        prompt = f"""
-You are an AI construction operations analyst.
-
-Analyze the following weekly construction report.
-
-Identify:
-- operational risks
-- delays
-- tenant risks
-- safety issues
-- recommended actions
-
-Return concise operational insights.
-
-REPORT:
-
-{report_text}
-"""
-
-        response = requests.post(
-
-            OllamaProvider.OLLAMA_URL,
-
-            json={
-                "model":
-                    OLLAMA_MODEL,
-
-                "prompt":
-                    prompt,
-
-                "stream":
-                    False,
-            }
+        self.model_name = (
+            model_name
+            or DEFAULT_AI_MODEL
         )
 
-        data = response.json()
+    def generate(
+        self,
+        prompt: str,
+    ) -> str:
 
-        return data.get(
-            "response",
-            ""
+        response = ollama.chat(
+
+            model=self.model_name,
+
+            messages=[
+                {
+                    "role": "user",
+
+                    "content": prompt,
+                }
+            ]
+        )
+
+        return (
+            response["message"]["content"]
         )

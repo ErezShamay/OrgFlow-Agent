@@ -1,9 +1,13 @@
-import json
-
-import ollama
+from app.ai.ai_client import (
+    AIClient
+)
 
 from app.config.ai_config import (
     DEFAULT_AI_MODEL
+)
+
+from app.prompts.prompt_loader import (
+    PromptLoader
 )
 
 from app.schemas.ai_interpretation import (
@@ -26,66 +30,33 @@ class AIEnrichmentService:
     def enrich_finding(
         self,
         finding
-    ) -> dict:
+    ) -> AIInterpretation:
 
-        prompt = f"""
-אתה עוזר AI מקצועי בתחום הפיקוח ההנדסי,
-התחדשות עירונית, תמ״א 38, פינוי בינוי
-וניהול פרויקטי בנייה.
+        prompt = (
+            PromptLoader
+            .load_prompt(
 
-המטרה שלך היא לנתח ממצאים תפעוליים והנדסיים
-ולהחזיר הערכה מקצועית בעברית בלבד.
+                "finding_enrichment",
 
-יש לנסח תשובות:
-- קצרות
-- מקצועיות
-- תפעוליות
-- ברורות למנהלי פרויקטים ומפקחים
+                finding_type=
+                    finding.finding_type,
 
-נתח את הממצא הבא:
-
-סוג ממצא:
-{finding.finding_type}
-
-תיאור ממצא:
-{finding.summary}
-
-החזר JSON תקין בלבד.
-
-פורמט תשובה:
-
-{{
-  "business_impact": "תיאור קצר בלבד",
-  "tenant_risk": "תיאור קצר בלבד",
-  "recommended_action": "תיאור קצר בלבד"
-}}
-
-חשוב:
-- אין להוסיף כותרות
-- אין להוסיף הסברים
-- אין להחזיר טקסט באנגלית
-- אין להחזיר markdown
-- יש להחזיר JSON בלבד
-"""
+                summary=
+                    finding.summary,
+            )
+        )
 
         print(
             f"\nUSING MODEL: {self.model_name}\n"
         )
 
-        response = ollama.chat(
-            model=self.model_name,
-
-            messages=[
-                {
-                    "role": "user",
-
-                    "content": prompt,
-                }
-            ]
-        )
-
         content = (
-            response["message"]["content"]
+            AIClient()
+            .generate(
+                prompt,
+                prompt_name=
+                "finding_enrichment",
+            )
         )
 
         print(
@@ -96,118 +67,17 @@ class AIEnrichmentService:
 
         print()
 
-        cleaned_content = (
-            self._extract_json(
-                content
-            )
-        )
+        return (
+            AIInterpretation
+            .from_ai_response(
 
-        try:
+                finding_id=
+                    finding.id,
 
-            parsed = json.loads(
-                cleaned_content
-            )
-
-            return {
-                "model_name":
+                model_name=
                     self.model_name,
 
-                "business_impact":
-                    parsed[
-                        "business_impact"
-                    ],
-
-                "tenant_risk":
-                    parsed[
-                        "tenant_risk"
-                    ],
-
-                "recommended_action":
-                    parsed[
-                        "recommended_action"
-                    ],
-
-                "raw_response":
+                raw_response=
                     content,
-            }
-
-        except Exception as e:
-
-            print(
-                "\nJSON PARSE ERROR:\n"
             )
-
-            print(str(e))
-
-            return {
-                "model_name":
-                    self.model_name,
-
-                "business_impact":
-                    "נדרשת בדיקה ידנית",
-
-                "tenant_risk":
-                    "לא זוהה",
-
-                "recommended_action":
-                    "יש לבצע בדיקה ידנית של הממצא",
-
-                "raw_response":
-                    content,
-            }
-
-    def build_interpretation(
-        self,
-        finding_id: str,
-        enrichment_data: dict
-    ) -> AIInterpretation:
-
-        return AIInterpretation(
-            finding_id=
-                finding_id,
-
-            model_name=
-                enrichment_data[
-                    "model_name"
-                ],
-
-            business_impact=
-                enrichment_data[
-                    "business_impact"
-                ],
-
-            tenant_risk=
-                enrichment_data[
-                    "tenant_risk"
-                ],
-
-            recommended_action=
-                enrichment_data[
-                    "recommended_action"
-                ],
-
-            raw_response=
-                enrichment_data[
-                    "raw_response"
-                ],
         )
-
-    def _extract_json(
-        self,
-        text: str
-    ) -> str:
-
-        start = text.find("{")
-
-        end = text.rfind("}")
-
-        if (
-            start == -1
-            or end == -1
-        ):
-
-            return text
-
-        return text[
-            start:end + 1
-        ]
