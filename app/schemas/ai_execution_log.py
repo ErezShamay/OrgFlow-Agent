@@ -35,8 +35,6 @@ class AIExecutionLog(
 
     recovery_locked: bool = False
 
-    recovery_locked_at: datetime | None = None
-
     failure_type: str | None = None
 
     severity: str | None = None

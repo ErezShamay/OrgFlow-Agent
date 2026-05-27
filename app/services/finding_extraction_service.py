@@ -55,6 +55,14 @@ class FindingExtractionService:
         },
     }
 
+    FINDING_PRIORITY = [
+        "safety_issue",
+        "quality_issue",
+        "schedule_delay",
+        "approval_delay",
+        "documentation_gap",
+    ]
+
     PREFIXES = [
         "ב",
         "ל",
@@ -239,8 +247,12 @@ class FindingExtractionService:
 
         best_match = max(
             scores.items(),
-            key=lambda item:
-            item[1]["score"]
+            key=lambda item: (
+                item[1]["score"],
+                -self.FINDING_PRIORITY.index(
+                    item[0]
+                ),
+            )
         )
 
         finding_type = (

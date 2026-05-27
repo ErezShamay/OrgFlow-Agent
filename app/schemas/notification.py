@@ -15,8 +15,6 @@ class Notification(
 
     notification_type: str
 
-    is_read:
-        bool = False
+    is_read: bool = False
 
-    created_at:
-        datetime | None = None
+    created_at: datetime | None = None

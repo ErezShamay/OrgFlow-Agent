@@ -37,7 +37,10 @@ class AIExecutionLogRepository:
             self.client
             .table(self.table_name)
             .insert(
-                log.model_dump()
+                log.model_dump(
+                    mode="json",
+                    exclude_none=True
+                )
             )
             .execute()
         )
@@ -205,11 +208,6 @@ class AIExecutionLogRepository:
 
                 "recovery_locked":
                     True,
-
-                "recovery_locked_at":
-                    datetime.now(
-                        timezone.utc
-                    ).isoformat(),
             }) \
             .eq(
                 "id",
@@ -232,9 +230,6 @@ class AIExecutionLogRepository:
 
                 "recovery_locked":
                     False,
-
-                "recovery_locked_at":
-                    None,
             }) \
             .eq(
                 "id",

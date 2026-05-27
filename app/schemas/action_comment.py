@@ -13,5 +13,4 @@ class ActionComment(
 
     created_by: str
 
-    created_at:
-        datetime | None = None
+    created_at: datetime | None = None

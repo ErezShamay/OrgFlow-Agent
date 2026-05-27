@@ -111,6 +111,19 @@ class ReportIngestionService:
                     "NO_PROJECT_MATCH"
             }
 
+        if not matched_project.get("id"):
+
+            return {
+                "status":
+                    "SUCCESS",
+
+                "project":
+                    matched_project,
+
+                "message":
+                    message,
+            }
+
         classification = (
             self.classifier
             .classify(message)

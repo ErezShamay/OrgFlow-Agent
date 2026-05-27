@@ -29,6 +29,7 @@ class AutomationRunRepository:
             .table(self.table_name)
             .insert(
                 run.model_dump(
+                    mode="json",
                     exclude_none=True
                 )
             )

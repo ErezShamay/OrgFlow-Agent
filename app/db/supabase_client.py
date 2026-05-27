@@ -18,3 +18,11 @@ supabase = create_client(
     SUPABASE_URL,
     SUPABASE_KEY,
 )
+
+
+class SupabaseClient:
+
+    @staticmethod
+    def get_client():
+
+        return supabase

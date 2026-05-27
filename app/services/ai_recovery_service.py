@@ -6,6 +6,14 @@ from app.services.ai_retry_strategy_service import (
     AIRetryStrategyService
 )
 
+from app.repositories.project_repository import (
+    ProjectRepository
+)
+
+from app.services.ai_automation_service import (
+    AIAutomationService
+)
+
 
 class AIRecoveryService:
 
@@ -17,6 +25,14 @@ class AIRecoveryService:
 
         self.retry_strategy_service = (
             AIRetryStrategyService()
+        )
+
+        self.project_repository = (
+            ProjectRepository()
+        )
+
+        self.ai_automation_service = (
+            AIAutomationService()
         )
 
         # ======================================
@@ -240,34 +256,54 @@ class AIRecoveryService:
             # EXECUTION TYPE ROUTING
             # ==================================
 
-            if execution_type == "AI_ACTION_CREATED":
+            recovered = False
 
-                self.replay_ai_action(
-                    log
+            if execution_type == "PROJECT_PROCESSING":
+
+                recovered = (
+                    self.replay_project_processing(
+                        log
+                    )
+                )
+
+            elif execution_type == "AI_ACTION_CREATED":
+
+                recovered = (
+                    self.replay_ai_action(
+                        log
+                    )
                 )
 
             elif execution_type == "RISK_EVALUATION":
 
-                self.replay_risk_evaluation(
-                    log
+                recovered = (
+                    self.replay_risk_evaluation(
+                        log
+                    )
                 )
 
             elif execution_type == "AUTO_EXECUTION_SKIPPED":
 
-                self.replay_auto_execution_skip(
-                    log
+                recovered = (
+                    self.replay_auto_execution_skip(
+                        log
+                    )
                 )
 
             elif execution_type == "FINGERPRINT_BLOCKED":
 
-                self.replay_fingerprint_block(
-                    log
+                recovered = (
+                    self.replay_fingerprint_block(
+                        log
+                    )
                 )
 
             elif execution_type == "DUPLICATE_ACTION_BLOCKED":
 
-                self.replay_duplicate_block(
-                    log
+                recovered = (
+                    self.replay_duplicate_block(
+                        log
+                    )
                 )
 
             else:
@@ -296,6 +332,22 @@ class AIRecoveryService:
                     next_retry_at,
             )
 
+            if recovered:
+
+                self.repository.mark_recovered(
+                    log["id"]
+                )
+
+                print(
+
+                    "[AI_RECOVERY] "
+
+                    f"Execution recovered: "
+                    f"{log['id']}"
+                )
+
+                return
+
             print(
 
                 "[AI_RECOVERY] "
@@ -315,6 +367,60 @@ class AIRecoveryService:
             )
 
     # ==========================================
+    # REPLAY PROJECT PROCESSING
+    # ==========================================
+
+    def replay_project_processing(
+        self,
+        log: dict,
+    ):
+
+        project_id = (
+            log.get(
+                "project_id"
+            )
+        )
+
+        if not project_id:
+
+            print(
+                "[AI_RECOVERY] "
+                "Cannot replay project processing "
+                "without project_id"
+            )
+
+            return False
+
+        project = (
+            self.project_repository
+            .get_project_by_id(
+                project_id
+            )
+        )
+
+        if not project:
+
+            print(
+                "[AI_RECOVERY] "
+                "Project not found for replay:",
+                project_id,
+            )
+
+            return False
+
+        print(
+            "[AI_RECOVERY] "
+            "Replaying project processing:",
+            project_id,
+        )
+
+        self.ai_automation_service.process_project(
+            project
+        )
+
+        return True
+
+    # ==========================================
     # REPLAY AI ACTION
     # ==========================================
 
@@ -330,6 +436,8 @@ class AIRecoveryService:
 
         # Future orchestration replay logic
 
+        return False
+
     # ==========================================
     # REPLAY RISK EVALUATION
     # ==========================================
@@ -344,7 +452,9 @@ class AIRecoveryService:
             "Replaying risk evaluation"
         )
 
-        # Future risk replay logic
+        return self.replay_project_processing(
+            log
+        )
 
     # ==========================================
     # REPLAY AUTO EXECUTION SKIP
@@ -362,6 +472,8 @@ class AIRecoveryService:
 
         # Future governance replay logic
 
+        return False
+
     # ==========================================
     # REPLAY FINGERPRINT BLOCK
     # ==========================================
@@ -378,6 +490,8 @@ class AIRecoveryService:
 
         # Future fingerprint replay logic
 
+        return False
+
     # ==========================================
     # REPLAY DUPLICATE BLOCK
     # ==========================================
@@ -393,3 +507,5 @@ class AIRecoveryService:
         )
 
         # Future duplicate resolution logic
+
+        return False

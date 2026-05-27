@@ -42,117 +42,117 @@ class SLAMonitoringService:
 
         self.automation_run_repository = (
             AutomationRunRepository()
-)
+        )
 
     # ==========================================
     # MAIN LOOP
     # ==========================================
 
     def run_monitoring_cycle(
-    self,
-):
+        self,
+    ):
 
-    print(
-        "[AUTOMATION] Starting SLA monitoring cycle"
-    )
-
-    run_id = str(uuid4())
-
-    started_at = (
-        datetime.now(
-            timezone.utc
+        print(
+            "[AUTOMATION] Starting SLA monitoring cycle"
         )
-    )
 
-    processed_count = 0
+        run_id = str(uuid4())
 
-    error_count = 0
-
-    automation_run = AutomationRun(
-
-        id=run_id,
-
-        job_name=
-            "sla_monitoring",
-
-        started_at=
-            started_at,
-
-        status=
-            "RUNNING",
-
-        processed_count=0,
-
-        error_count=0,
-
-        metadata={
-            "job_type":
-                "SLA_MONITORING"
-        },
-    )
-
-    self.automation_run_repository.create_run(
-        automation_run
-    )
-
-    actions = (
-        self.repository
-        .get_open_actions()
-    )
-
-    for action in actions:
-
-        try:
-
-            self.process_action(
-                action
+        started_at = (
+            datetime.now(
+                timezone.utc
             )
-
-            processed_count += 1
-
-        except Exception as error:
-
-            error_count += 1
-
-            print(
-                "[AUTOMATION] Failed processing action:",
-                action.get("id"),
-                str(error),
-            )
-
-    completed_at = (
-        datetime.now(
-            timezone.utc
         )
-    )
 
-    self.automation_run_repository.update_run(
+        processed_count = 0
 
-        run_id,
+        error_count = 0
 
-        {
+        automation_run = AutomationRun(
 
-            "completed_at":
-                completed_at.isoformat(),
+            id=run_id,
 
-            "status":
-                (
-                    "COMPLETED"
-                    if error_count == 0
-                    else "COMPLETED_WITH_ERRORS"
-                ),
+            job_name=
+                "sla_monitoring",
 
-            "processed_count":
-                processed_count,
+            started_at=
+                started_at,
 
-            "error_count":
-                error_count,
-        }
-    )
+            status=
+                "RUNNING",
 
-    print(
-        "[AUTOMATION] SLA monitoring cycle completed"
-    )
+            processed_count=0,
+
+            error_count=0,
+
+            metadata={
+                "job_type":
+                    "SLA_MONITORING"
+            },
+        )
+
+        self.automation_run_repository.create_run(
+            automation_run
+        )
+
+        actions = (
+            self.repository
+            .get_open_actions()
+        )
+
+        for action in actions:
+
+            try:
+
+                self.process_action(
+                    action
+                )
+
+                processed_count += 1
+
+            except Exception as error:
+
+                error_count += 1
+
+                print(
+                    "[AUTOMATION] Failed processing action:",
+                    action.get("id"),
+                    str(error),
+                )
+
+        completed_at = (
+            datetime.now(
+                timezone.utc
+            )
+        )
+
+        self.automation_run_repository.update_run(
+
+            run_id,
+
+            {
+
+                "completed_at":
+                    completed_at.isoformat(),
+
+                "status":
+                    (
+                        "COMPLETED"
+                        if error_count == 0
+                        else "COMPLETED_WITH_ERRORS"
+                    ),
+
+                "processed_count":
+                    processed_count,
+
+                "error_count":
+                    error_count,
+            }
+        )
+
+        print(
+            "[AUTOMATION] SLA monitoring cycle completed"
+        )
 
     # ==========================================
     # PROCESS SINGLE ACTION

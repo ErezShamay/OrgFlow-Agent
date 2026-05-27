@@ -129,8 +129,8 @@ class AIClient:
                 })
 
         raise last_error
-    
-        def generate_structured(
+
+    def generate_structured(
         self,
         prompt: str,
         schema,

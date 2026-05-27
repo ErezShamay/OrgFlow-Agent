@@ -11,10 +11,8 @@ class Profile(
 
     email: str
 
-    full_name:
-        str | None = None
+    full_name: str | None = None
 
     role: str
 
-    created_at:
-        datetime | None = None
+    created_at: datetime | None = None

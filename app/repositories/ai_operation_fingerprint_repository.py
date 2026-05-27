@@ -63,7 +63,9 @@ class AIOperationFingerprintRepository:
             self.client
             .table(self.table_name)
             .insert(
-                fingerprint.model_dump()
+                fingerprint.model_dump(
+                    mode="json"
+                )
             )
             .execute()
         )

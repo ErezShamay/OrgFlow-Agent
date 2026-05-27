@@ -63,7 +63,9 @@ class AutomationLockRepository:
             self.client
             .table(self.table_name)
             .insert(
-                lock.model_dump()
+                lock.model_dump(
+                    mode="json"
+                )
             )
             .execute()
         )

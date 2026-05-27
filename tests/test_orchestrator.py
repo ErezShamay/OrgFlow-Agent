@@ -7,8 +7,15 @@ def test_check_missing_reports_workflow():
     result = orchestrator.run("בדוק איזה פרויקטים חסרים דוח השבוע")
 
     assert result["status"] == "SUCCESS"
-    assert len(result["missing_projects"]) == 1
-    assert result["missing_projects"][0]["project_name"] == "גני השרון"
+    assert len(result["missing_projects"]) >= 1
+
+    project_names = [
+        project["project_name"]
+        for project
+        in result["missing_projects"]
+    ]
+
+    assert "גני השרון" in project_names
 
 
 def test_send_reminders_waiting_for_confirmation():

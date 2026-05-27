@@ -58,7 +58,10 @@ class CircuitBreakerRepository:
             self.client
             .table(self.table_name)
             .insert(
-                breaker.model_dump()
+                breaker.model_dump(
+                    mode="json",
+                    exclude_none=True
+                )
             )
             .execute()
         )

@@ -230,36 +230,36 @@ class OperationalActionService:
         )
     
     def assign_action(
-    self,
-    action_id: str,
-    assigned_to: str,
-):
+        self,
+        action_id: str,
+        assigned_to: str,
+    ):
 
-    action = (
-        self.repository
-        .assign_action(
+        action = (
+            self.repository
+            .assign_action(
 
-            action_id=
-                action_id,
+                action_id=
+                    action_id,
 
-            assigned_to=
-                assigned_to,
+                assigned_to=
+                    assigned_to,
+            )
         )
-    )
 
-    WorkspaceActivityRepository.create_activity(
+        WorkspaceActivityRepository.create_activity(
 
-        project_id=
-            action["project_id"],
+            project_id=
+                action["project_id"],
 
-        activity_type=
-            "ACTION_ASSIGNED",
+            activity_type=
+                "ACTION_ASSIGNED",
 
-        title=
-            "פעולה שויכה",
+            title=
+                "פעולה שויכה",
 
-        description=
-            f"{action['title']} → {assigned_to}",
-    )
+            description=
+                f"{action['title']} → {assigned_to}",
+        )
 
-    return action
+        return action

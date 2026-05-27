@@ -6,8 +6,8 @@ from app.repositories.operational_action_repository import (
     OperationalActionRepository
 )
 
-from app.repositories.review_repository import (
-    ReviewRepository
+from app.repositories.ai_interpretation_repository import (
+    AIInterpretationRepository
 )
 
 
@@ -20,7 +20,7 @@ class OperationalSummaryService:
         )
 
         self.review_repository = (
-            ReviewRepository()
+            AIInterpretationRepository()
         )
 
     def generate_project_summary(
