@@ -19,6 +19,10 @@ class OperationalActionRepository:
             "operational_actions"
         )
 
+    # ==========================================
+    # CREATE
+    # ==========================================
+
     def create_action(
         self,
         action: OperationalAction
@@ -36,6 +40,33 @@ class OperationalActionRepository:
             .insert(payload)
             .execute()
         )
+
+        return response.data[0]
+
+    # ==========================================
+    # GETTERS
+    # ==========================================
+
+    def get_action_by_id(
+        self,
+        action_id: str
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "id",
+                action_id
+            )
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+
+            return None
 
         return response.data[0]
 
@@ -77,7 +108,7 @@ class OperationalActionRepository:
         )
 
         return response.data
-    
+
     def get_exceptions_by_project(
         self,
         project_id: str
@@ -104,40 +135,74 @@ class OperationalActionRepository:
 
         return response.data
 
-def close_action(
-    self,
-    action_id: str
-):
+    # ==========================================
+    # STATUS MANAGEMENT
+    # ==========================================
 
-    response = (
-        self.client
-        .table(self.table_name)
-        .update({
-            "status":
-                "CLOSED"
-        })
-        .eq(
-            "id",
-            action_id
+    def update_action_status(
+        self,
+        action_id: str,
+        status: str,
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .update({
+                "status": status
+            })
+            .eq(
+                "id",
+                action_id
+            )
+            .execute()
         )
-        .execute()
-    )
 
-    return response.data[0]
-def assign_action(
-    self,
-    action_id: str,
-    assigned_to: str,
-):
+        return response.data[0]
 
-    response = (
-        self.client
-        .table("operational_actions")
-        .update({
-            "assigned_to": assigned_to
-        })
-        .eq("id", action_id)
-        .execute()
-    )
+    def close_action(
+        self,
+        action_id: str
+    ):
 
-    return response.data
+        response = (
+            self.client
+            .table(self.table_name)
+            .update({
+                "status":
+                    "CLOSED"
+            })
+            .eq(
+                "id",
+                action_id
+            )
+            .execute()
+        )
+
+        return response.data[0]
+
+    # ==========================================
+    # ASSIGNMENT
+    # ==========================================
+
+    def assign_action(
+        self,
+        action_id: str,
+        assigned_to: str,
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .update({
+                "assigned_to":
+                    assigned_to
+            })
+            .eq(
+                "id",
+                action_id
+            )
+            .execute()
+        )
+
+        return response.data[0]

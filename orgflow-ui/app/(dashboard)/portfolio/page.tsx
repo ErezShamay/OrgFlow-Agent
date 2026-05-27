@@ -5,6 +5,12 @@ import {
   useState,
 } from "react";
 
+type Prediction = {
+  prediction: string;
+  risk_score: number;
+  message: string;
+};
+
 type PortfolioProject = {
   project_id: string;
   project_name: string;
@@ -19,6 +25,8 @@ type PortfolioProject = {
     escalations_count: number;
     reviews_count: number;
   };
+
+  prediction: Prediction;
 };
 
 type PortfolioResponse = {
@@ -31,6 +39,8 @@ type PortfolioResponse = {
   total_actions: number;
 
   total_escalations: number;
+
+  average_health_score: number;
 };
 
 export default function PortfolioPage() {
@@ -143,7 +153,7 @@ export default function PortfolioPage() {
           grid
           grid-cols-1
           md:grid-cols-2
-          xl:grid-cols-4
+          xl:grid-cols-5
           gap-6
         "
       >
@@ -176,6 +186,13 @@ export default function PortfolioPage() {
             portfolio.total_escalations
           }
           danger
+        />
+
+        <PortfolioKpiCard
+          title="Health ממוצע"
+          value={
+            portfolio.average_health_score
+          }
         />
 
       </div>
@@ -218,13 +235,13 @@ export default function PortfolioPage() {
                   className="
                     flex
                     justify-between
-                    items-center
+                    items-start
                     flex-wrap
                     gap-6
                   "
                 >
 
-                  <div>
+                  <div className="flex-1">
 
                     <h3
                       className="
@@ -272,6 +289,70 @@ export default function PortfolioPage() {
                           .reviews_count
                         }
                       </Badge>
+
+                    </div>
+
+                    {/* PREDICTION */}
+
+                    <div
+                      className="
+                        mt-6
+                        p-5
+                        rounded-2xl
+                        border
+                        border-zinc-200
+                        dark:border-zinc-700
+                      "
+                    >
+
+                      <div
+                        className="
+                          flex
+                          items-center
+                          gap-3
+                          flex-wrap
+                          mb-3
+                        "
+                      >
+
+                        <PredictionBadge
+                          prediction={
+                            project
+                            .prediction
+                            .prediction
+                          }
+                        />
+
+                        <span
+                          className="
+                            text-sm
+                            text-zinc-500
+                          "
+                        >
+                          Risk Score:
+                          {" "}
+                          {
+                            project
+                            .prediction
+                            .risk_score
+                          }
+                        </span>
+
+                      </div>
+
+                      <p
+                        className="
+                          text-zinc-700
+                          dark:text-zinc-300
+                          leading-7
+                        "
+                      >
+                        {
+                          project
+                          .prediction
+                          .message
+                        }
+                      </p>
 
                     </div>
 
@@ -365,7 +446,7 @@ type PortfolioKpiCardProps = {
 function PortfolioKpiCard({
   title,
   value,
-  danger,
+ danger,
 }: PortfolioKpiCardProps) {
 
   return (
@@ -447,6 +528,70 @@ function Badge({
       "
     >
       {children}
+    </span>
+
+  );
+}
+
+function PredictionBadge({
+  prediction,
+}: {
+  prediction: string;
+}) {
+
+  if (prediction === "HIGH_RISK") {
+
+    return (
+
+      <span
+        className="
+          text-xs
+          px-3
+          py-1
+          rounded-full
+          bg-red-600
+          text-white
+        "
+      >
+        סיכון גבוה
+      </span>
+
+    );
+  }
+
+  if (prediction === "MEDIUM_RISK") {
+
+    return (
+
+      <span
+        className="
+          text-xs
+          px-3
+          py-1
+          rounded-full
+          bg-yellow-500
+          text-white
+        "
+      >
+        סיכון בינוני
+      </span>
+
+    );
+  }
+
+  return (
+
+    <span
+      className="
+        text-xs
+        px-3
+        py-1
+        rounded-full
+        bg-green-600
+        text-white
+      "
+    >
+      סיכון נמוך
     </span>
 
   );

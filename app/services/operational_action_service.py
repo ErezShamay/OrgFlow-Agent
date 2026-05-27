@@ -23,6 +23,10 @@ class OperationalActionService:
             OperationalActionRepository()
         )
 
+    # ==========================================
+    # GETTERS
+    # ==========================================
+
     def get_open_actions(
         self
     ):
@@ -31,6 +35,90 @@ class OperationalActionService:
             self.repository
             .get_open_actions()
         )
+
+    def get_action_details(
+        self,
+        action_id: str,
+    ):
+
+        action = (
+            self.repository
+            .get_action_by_id(
+                action_id
+            )
+        )
+
+        if not action:
+
+            return {
+                "success": False,
+                "message": "Action not found",
+            }
+
+        activities = (
+            WorkspaceActivityRepository
+            .get_project_activity(
+                action["project_id"]
+            )
+        )
+
+        related_activities = []
+
+        for activity in activities:
+
+            description = (
+                activity.get(
+                    "description"
+                )
+                or ""
+            )
+
+            if (
+                action["title"]
+                in description
+            ):
+
+                related_activities.append(
+                    activity
+                )
+
+        return {
+
+            "success": True,
+
+            "action":
+                action,
+
+            "timeline":
+                related_activities,
+
+            "sla": {
+
+                "due_date":
+                    action.get(
+                        "due_date"
+                    ),
+
+                "is_overdue":
+                    action.get(
+                        "status"
+                    )
+                    != COMPLETED
+                    and bool(
+                        action.get(
+                            "due_date"
+                        )
+                    ),
+            },
+
+            "assignment": {
+
+                "assigned_to":
+                    action.get(
+                        "assigned_to"
+                    ),
+            },
+        }
 
     def get_escalations(
         self
@@ -57,6 +145,10 @@ class OperationalActionService:
                 )
 
         return escalations
+
+    # ==========================================
+    # STATUS MANAGEMENT
+    # ==========================================
 
     def update_status(
         self,
