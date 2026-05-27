@@ -17,16 +17,16 @@ For each task:
 - Expose AI recovery monitoring.
 - Record every automation job in `automation_runs`.
 - Log AI automation decisions in `ai_execution_logs`.
+- Ensure every AI execution failure gets a failure classification.
 
 ## Current Track: Automation Hardening
 
 ### Next
 
-- Ensure every failure gets a failure classification.
+- Ensure every retry uses `next_retry_at`.
 
 ### Upcoming
 
-- Ensure every retry uses `next_retry_at`.
 - Ensure every dead-letter stays stored and does not return to execution.
 - Build full Automation Health Dashboard.
 - Build AI Execution Logs Dashboard.

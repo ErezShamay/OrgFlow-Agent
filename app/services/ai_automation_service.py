@@ -55,6 +55,10 @@ from app.services.ai_confidence_service import (
     AIConfidenceService
 )
 
+from app.services.ai_failure_classification_service import (
+    AIFailureClassificationService
+)
+
 
 class AIAutomationService:
 
@@ -86,6 +90,10 @@ class AIAutomationService:
 
         self.ai_confidence_service = (
             AIConfidenceService()
+        )
+
+        self.ai_failure_classification_service = (
+            AIFailureClassificationService()
         )
 
         self.fingerprint_repository = (
@@ -157,6 +165,9 @@ class AIAutomationService:
                     details={
                         "error": str(error),
                     },
+
+                    error=
+                        error,
                 )
 
         print(
@@ -956,7 +967,32 @@ class AIAutomationService:
         project_id: str | None = None,
         confidence: dict | None = None,
         details: dict | None = None,
+        error: Exception | None = None,
     ):
+
+        failure_classification = None
+
+        if status == "FAILED":
+
+            failure_error = (
+                error
+                or Exception(
+                    (
+                        details
+                        or {}
+                    ).get(
+                        "error",
+                        "Unknown AI execution failure"
+                    )
+                )
+            )
+
+            failure_classification = (
+                self.ai_failure_classification_service
+                .classify_failure(
+                    failure_error
+                )
+            )
 
         log = AIExecutionLog(
 
@@ -989,6 +1025,34 @@ class AIAutomationService:
 
             details=
                 details,
+
+            failure_type=
+                (
+                    failure_classification
+                    or {}
+                ).get(
+                    "failure_type"
+                ),
+
+            severity=
+                (
+                    failure_classification
+                    or {}
+                ).get(
+                    "severity"
+                ),
+
+            replayable=
+                (
+                    (
+                        failure_classification
+                        or {}
+                    ).get(
+                        "replayable"
+                    )
+                    if failure_classification
+                    else True
+                ),
         )
 
         self.execution_log_repository.create_log(
