@@ -662,3 +662,211 @@ class AutomationMonitoringService:
             "dead_letter_count":
                 len(dead_letters),
         }
+
+    # ==========================================
+    # GET AI EXECUTION LOGS DASHBOARD
+    # ==========================================
+
+    def get_ai_execution_logs_dashboard(
+        self,
+    ):
+
+        executions = (
+            self.ai_execution_log_repository
+            .get_recent_executions(
+                100
+            )
+        )
+
+        status_counts = (
+            self.count_by_key(
+                executions,
+                "status",
+            )
+        )
+
+        execution_type_counts = (
+            self.count_by_key(
+                executions,
+                "execution_type",
+            )
+        )
+
+        failure_type_counts = (
+            self.count_by_key(
+                [
+                    execution
+                    for execution
+                    in executions
+                    if execution.get(
+                        "failure_type"
+                    )
+                ],
+                "failure_type",
+            )
+        )
+
+        severity_counts = (
+            self.count_by_key(
+                [
+                    execution
+                    for execution
+                    in executions
+                    if execution.get(
+                        "severity"
+                    )
+                ],
+                "severity",
+            )
+        )
+
+        total = (
+            len(executions)
+        )
+
+        failed = (
+            status_counts.get(
+                "FAILED",
+                0
+            )
+        )
+
+        successful = (
+            status_counts.get(
+                "SUCCESS",
+                0
+            )
+        )
+
+        recovered = (
+            status_counts.get(
+                "RECOVERED",
+                0
+            )
+        )
+
+        skipped = (
+            status_counts.get(
+                "SKIPPED",
+                0
+            )
+            + status_counts.get(
+                "LOW_CONFIDENCE",
+                0
+            )
+            + status_counts.get(
+                "NO_ACTION_NEEDED",
+                0
+            )
+        )
+
+        classified_failures = len([
+
+            execution for execution in executions
+
+            if (
+                execution.get(
+                    "status"
+                ) == "FAILED"
+                and execution.get(
+                    "failure_type"
+                )
+            )
+        ])
+
+        classification_rate = (
+            round(
+                classified_failures
+                / failed
+                * 100,
+                1,
+            )
+            if failed
+            else 100
+        )
+
+        success_rate = (
+            round(
+                successful
+                / total
+                * 100,
+                1,
+            )
+            if total
+            else 100
+        )
+
+        return {
+
+            "summary": {
+
+                "total":
+                    total,
+
+                "successful":
+                    successful,
+
+                "failed":
+                    failed,
+
+                "recovered":
+                    recovered,
+
+                "skipped":
+                    skipped,
+
+                "dead_lettered":
+                    status_counts.get(
+                        "DEAD_LETTERED",
+                        0
+                    ),
+
+                "classification_rate":
+                    classification_rate,
+
+                "success_rate":
+                    success_rate,
+            },
+
+            "status_counts":
+                status_counts,
+
+            "execution_type_counts":
+                execution_type_counts,
+
+            "failure_type_counts":
+                failure_type_counts,
+
+            "severity_counts":
+                severity_counts,
+
+            "recent_executions":
+                executions[:25],
+        }
+
+    def count_by_key(
+        self,
+        items: list[dict],
+        key: str,
+    ):
+
+        counts = {}
+
+        for item in items:
+
+            value = (
+                item.get(
+                    key
+                )
+                or "UNKNOWN"
+            )
+
+            counts[value] = (
+                counts.get(
+                    value,
+                    0
+                )
+                + 1
+            )
+
+        return counts

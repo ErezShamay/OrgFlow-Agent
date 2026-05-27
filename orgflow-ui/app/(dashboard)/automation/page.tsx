@@ -59,6 +59,14 @@ type AIExecutionLog = {
 
   status: string;
 
+  confidence_score?: number | null;
+
+  confidence_level?: string | null;
+
+  failure_type?: string | null;
+
+  severity?: string | null;
+
   retry_count?: number;
 
   next_retry_at?: string | null;
@@ -83,6 +91,40 @@ type AIRecoveryMonitoring = {
   recovery_queue_count: number;
 
   dead_letter_count: number;
+};
+
+type AIExecutionLogsSummary = {
+
+  total: number;
+
+  successful: number;
+
+  failed: number;
+
+  recovered: number;
+
+  skipped: number;
+
+  dead_lettered: number;
+
+  classification_rate: number;
+
+  success_rate: number;
+};
+
+type AIExecutionLogsDashboard = {
+
+  summary: AIExecutionLogsSummary;
+
+  status_counts: Record<string, number>;
+
+  execution_type_counts: Record<string, number>;
+
+  failure_type_counts: Record<string, number>;
+
+  severity_counts: Record<string, number>;
+
+  recent_executions: AIExecutionLog[];
 };
 
 type AutomationHealthSummary = {
@@ -203,6 +245,13 @@ export default function AutomationPage() {
   >(null);
 
   const [
+    aiLogs,
+    setAiLogs
+  ] = useState<
+    AIExecutionLogsDashboard | null
+  >(null);
+
+  const [
     loading,
     setLoading
   ] = useState(true);
@@ -217,6 +266,7 @@ export default function AutomationPage() {
         runsResponse,
         breakersResponse,
         recoveryResponse,
+        aiLogsResponse,
       ] = await Promise.all([
 
         fetch(
@@ -238,6 +288,10 @@ export default function AutomationPage() {
         fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/automation/ai-recovery`
         ),
+
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/automation/ai-execution-logs`
+        ),
       ]);
 
       const healthData =
@@ -254,6 +308,9 @@ export default function AutomationPage() {
 
       const recoveryData =
         await recoveryResponse.json();
+
+      const aiLogsData =
+        await aiLogsResponse.json();
 
       setHealth(
         healthData
@@ -273,6 +330,10 @@ export default function AutomationPage() {
 
       setRecovery(
         recoveryData
+      );
+
+      setAiLogs(
+        aiLogsData
       );
 
     } catch (error) {
@@ -542,6 +603,124 @@ export default function AutomationPage() {
           <AlertList
             alerts={
               health?.alerts || []
+            }
+          />
+
+        </div>
+
+      </section>
+
+      {/* AI EXECUTION LOGS */}
+
+      <section className="mt-12">
+
+        <h2
+          className="
+            text-3xl
+            font-bold
+            mb-6
+          "
+        >
+          AI Execution Logs
+        </h2>
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            xl:grid-cols-4
+            gap-6
+          "
+        >
+
+          <MetricCard
+            title="AI Executions"
+            value={
+              String(
+                aiLogs?.summary.total || 0
+              )
+            }
+          />
+
+          <MetricCard
+            title="AI Success Rate"
+            value={
+              `${aiLogs?.summary.success_rate || 0}%`
+            }
+          />
+
+          <MetricCard
+            title="Failed AI Executions"
+            value={
+              String(
+                aiLogs?.summary.failed || 0
+              )
+            }
+          />
+
+          <MetricCard
+            title="Failure Classification"
+            value={
+              `${aiLogs?.summary.classification_rate || 0}%`
+            }
+          />
+
+        </div>
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            xl:grid-cols-[1fr_1fr_2fr]
+            gap-6
+            mt-6
+          "
+        >
+
+          <DistributionPanel
+            title="Status"
+            items={
+              aiLogs?.status_counts || {}
+            }
+          />
+
+          <DistributionPanel
+            title="Failure Types"
+            items={
+              aiLogs?.failure_type_counts || {}
+            }
+          />
+
+          <AIExecutionLogTable
+            executions={
+              aiLogs?.recent_executions || []
+            }
+          />
+
+        </div>
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            xl:grid-cols-2
+            gap-6
+            mt-6
+          "
+        >
+
+          <DistributionPanel
+            title="Execution Types"
+            items={
+              aiLogs?.execution_type_counts || {}
+            }
+          />
+
+          <DistributionPanel
+            title="Severity"
+            items={
+              aiLogs?.severity_counts || {}
             }
           />
 
@@ -1235,6 +1414,246 @@ function AlertList({
   );
 }
 
+function DistributionPanel({
+  title,
+  items,
+}: {
+  title: string;
+  items: Record<string, number>;
+}) {
+
+  const entries = Object.entries(
+    items
+  ).sort(
+    (first, second) => (
+      second[1] - first[1]
+    )
+  );
+
+  return (
+
+    <div
+      className="
+        bg-white
+        dark:bg-zinc-900
+        border
+        border-zinc-200
+        dark:border-zinc-800
+        rounded-3xl
+        p-7
+      "
+    >
+
+      <h3
+        className="
+          text-xl
+          font-black
+          mb-5
+        "
+      >
+        {title}
+      </h3>
+
+      <div className="grid gap-3">
+
+        {entries.map(
+          ([key, value]) => (
+
+            <div
+              key={key}
+              className="
+                flex
+                items-center
+                justify-between
+                gap-4
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-2xl
+                p-4
+              "
+            >
+
+              <span
+                className="
+                  font-bold
+                  truncate
+                "
+              >
+                {key}
+              </span>
+
+              <span
+                className="
+                  text-2xl
+                  font-black
+                "
+              >
+                {value}
+              </span>
+
+            </div>
+          )
+        )}
+
+        {entries.length === 0 && (
+
+          <p className="text-sm text-zinc-500">
+            No data recorded yet.
+          </p>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+function AIExecutionLogTable({
+  executions,
+}: {
+  executions: AIExecutionLog[];
+}) {
+
+  return (
+
+    <div
+      className="
+        bg-white
+        dark:bg-zinc-900
+        border
+        border-zinc-200
+        dark:border-zinc-800
+        rounded-3xl
+        p-7
+      "
+    >
+
+      <h3
+        className="
+          text-xl
+          font-black
+          mb-5
+        "
+      >
+        Recent Logs
+      </h3>
+
+      <div className="grid gap-4">
+
+        {executions.map(
+          (execution) => (
+
+            <div
+              key={execution.id}
+              className="
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-2xl
+                p-4
+              "
+            >
+
+              <div
+                className="
+                  flex
+                  items-start
+                  justify-between
+                  gap-4
+                "
+              >
+
+                <div className="min-w-0">
+
+                  <p
+                    className="
+                      font-black
+                      truncate
+                    "
+                  >
+                    {execution.execution_type}
+                  </p>
+
+                  <p
+                    className="
+                      text-xs
+                      text-zinc-500
+                      mt-1
+                      break-all
+                    "
+                  >
+                    {execution.id}
+                  </p>
+
+                </div>
+
+                <StatusBadge
+                  status={execution.status}
+                />
+
+              </div>
+
+              <div
+                className="
+                  grid
+                  grid-cols-2
+                  lg:grid-cols-4
+                  gap-4
+                  mt-5
+                "
+              >
+
+                <InfoCard
+                  title="Confidence"
+                  value={
+                    execution.confidence_score !== null
+                    && execution.confidence_score !== undefined
+                      ? `${execution.confidence_score}`
+                      : "-"
+                  }
+                />
+
+                <InfoCard
+                  title="Level"
+                  value={
+                    execution.confidence_level || "-"
+                  }
+                />
+
+                <InfoCard
+                  title="Failure"
+                  value={
+                    execution.failure_type || "-"
+                  }
+                />
+
+                <InfoCard
+                  title="Severity"
+                  value={
+                    execution.severity || "-"
+                  }
+                />
+
+              </div>
+
+            </div>
+          )
+        )}
+
+        {executions.length === 0 && (
+
+          <p className="text-sm text-zinc-500">
+            No AI execution logs recorded yet.
+          </p>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
 function HealthBadge({
   health,
 }: {
@@ -1493,6 +1912,12 @@ function StatusBadge({
     COMPLETED:
       "bg-green-100 text-green-700",
 
+    SUCCESS:
+      "bg-green-100 text-green-700",
+
+    RECOVERED:
+      "bg-green-100 text-green-700",
+
     COMPLETED_WITH_ERRORS:
       "bg-yellow-100 text-yellow-700",
 
@@ -1509,6 +1934,12 @@ function StatusBadge({
       "bg-yellow-100 text-yellow-700",
 
     SKIPPED:
+      "bg-zinc-100 text-zinc-700",
+
+    LOW_CONFIDENCE:
+      "bg-yellow-100 text-yellow-700",
+
+    NO_ACTION_NEEDED:
       "bg-zinc-100 text-zinc-700",
 
     DEAD_LETTERED:

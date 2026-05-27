@@ -21,16 +21,16 @@ For each task:
 - Ensure every retry uses `next_retry_at`.
 - Ensure every dead-letter stays stored and does not return to execution.
 - Build full Automation Health Dashboard.
+- Build AI Execution Logs Dashboard.
 
 ## Current Track: Automation Hardening
 
 ### Next
 
-- Build AI Execution Logs Dashboard.
+- Build Dead-Letter Dashboard.
 
 ### Upcoming
 
-- Build Dead-Letter Dashboard.
 - Build Circuit Breaker Dashboard.
 
 ## Definition Of Done

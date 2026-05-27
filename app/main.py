@@ -379,3 +379,14 @@ def get_automation_ai_recovery():
         automation_monitoring_service
         .get_ai_recovery_monitoring()
     )
+
+
+@app.get(
+    "/automation/ai-execution-logs"
+)
+def get_automation_ai_execution_logs():
+
+    return (
+        automation_monitoring_service
+        .get_ai_execution_logs_dashboard()
+    )
