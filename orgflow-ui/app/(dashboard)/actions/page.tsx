@@ -32,6 +32,8 @@ type Action = {
 
   due_date:
     string | null;
+
+  project_id: string;
 };
 
 export default function ActionsPage() {
@@ -49,6 +51,13 @@ export default function ActionsPage() {
     loading,
     setLoading
   ] = useState(true);
+
+  const [
+    assigningActionId,
+    setAssigningActionId
+  ] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
 
@@ -152,6 +161,58 @@ export default function ActionsPage() {
     } catch (error) {
 
       console.error(error);
+    }
+  }
+
+  async function assignAction(
+    actionId: string,
+  ) {
+
+    const assignedTo =
+      prompt(
+        "הכנס שם אחראי"
+      );
+
+    if (!assignedTo) {
+      return;
+    }
+
+    try {
+
+      setAssigningActionId(
+        actionId
+      );
+
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/assign`,
+        {
+
+          method: "PATCH",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+
+            assigned_to:
+              assignedTo,
+          }),
+        }
+      );
+
+      await loadActions();
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setAssigningActionId(
+        null
+      );
     }
   }
 
@@ -414,6 +475,53 @@ export default function ActionsPage() {
                   >
                     פתח Workspace
                   </Link>
+
+                  {
+                    canManageActions(
+                      profile?.role
+                    )
+                    && (
+
+                      <button
+                        onClick={() =>
+                          assignAction(
+                            action.id
+                          )
+                        }
+                        disabled={
+                          assigningActionId
+                          === action.id
+                        }
+                        className="
+                          px-5
+                          py-3
+                          rounded-2xl
+                          bg-indigo-600
+                          text-white
+                          hover:bg-indigo-700
+                          transition
+                        "
+                      >
+
+                        {
+                          assigningActionId
+                          === action.id
+
+                            ? "משייך..."
+
+                            : (
+                              action.assigned_to
+
+                                ? "שנה אחראי"
+
+                                : "שייך פעולה"
+                            )
+                        }
+
+                      </button>
+
+                    )
+                  }
 
                   {
                     canManageActions(

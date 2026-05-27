@@ -97,6 +97,10 @@ from app.services.profile_service import (
     ProfileService
 )
 
+from app.services.notification_service import (
+    NotificationService
+)
+
 # ==========================================
 # ENV
 # ==========================================
@@ -202,6 +206,10 @@ action_comment_service = (
 
 profile_service = (
     ProfileService()
+)
+
+notification_service = (
+    NotificationService()
 )
 
 # ==========================================
@@ -691,6 +699,28 @@ def create_action_comment(
         )
     )
 
+@app.patch(
+    "/actions/{action_id}/assign"
+)
+def assign_action(
+    action_id: str,
+    payload: dict,
+):
+
+    return (
+        operational_action_repository
+        .assign_action(
+
+            action_id=
+                action_id,
+
+            assigned_to=
+                payload[
+                    "assigned_to"
+                ],
+        )
+    )
+
 # ==========================================
 # PROFILE APIs
 # ==========================================
@@ -708,3 +738,52 @@ def get_profile(
             profile_id
         )
     )
+
+# ==========================================
+# NOTIFICATIONS APIs
+# ==========================================
+
+@app.get(
+    "/profiles/{profile_id}/notifications"
+)
+def get_notifications(
+    profile_id: str,
+):
+
+    return (
+        notification_service
+        .get_notifications(
+            profile_id
+        )
+    )
+
+
+@app.get(
+    "/profiles/{profile_id}/notifications/unread"
+)
+def get_unread_notifications(
+    profile_id: str,
+):
+
+    return (
+        notification_service
+        .get_unread_notifications(
+            profile_id
+        )
+    )
+
+
+@app.patch(
+    "/notifications/{notification_id}/read"
+)
+def mark_notification_as_read(
+    notification_id: str,
+):
+
+    return (
+        notification_service
+        .mark_as_read(
+            notification_id
+        )
+    )
+    

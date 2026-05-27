@@ -9,6 +9,10 @@ import {
   useParams,
 } from "next/navigation";
 
+import {
+  useRealtime,
+} from "@/hooks/useRealtime";
+
 type TimelineItem = {
   id: string;
 
@@ -111,6 +115,38 @@ export default function ActionDetailsPage() {
     loadComments();
 
   }, []);
+
+  // ==========================================
+  // REALTIME
+  // ==========================================
+
+  useRealtime({
+
+    channelName:
+      `comments-${actionId}`,
+
+    table:
+      "action_comments",
+
+    onChange: () => {
+
+      loadComments();
+    },
+  });
+
+  useRealtime({
+
+    channelName:
+      `timeline-${actionId}`,
+
+    table:
+      "workspace_activities",
+
+    onChange: () => {
+
+      loadAction();
+    },
+  });
 
   async function loadAction() {
 
