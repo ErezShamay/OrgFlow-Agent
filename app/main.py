@@ -349,6 +349,17 @@ def get_automation_stats():
 
 
 @app.get(
+    "/automation/health"
+)
+def get_automation_health():
+
+    return (
+        automation_monitoring_service
+        .get_automation_health_dashboard()
+    )
+
+
+@app.get(
     "/automation/circuit-breakers"
 )
 def get_automation_circuit_breakers():

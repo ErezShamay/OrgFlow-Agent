@@ -85,7 +85,94 @@ type AIRecoveryMonitoring = {
   dead_letter_count: number;
 };
 
+type AutomationHealthSummary = {
+
+  total_runs: number;
+
+  completed_runs: number;
+
+  completed_with_errors: number;
+
+  failed_runs: number;
+
+  skipped_runs: number;
+
+  running_runs: number;
+
+  processed_count: number;
+
+  error_count: number;
+
+  success_rate: number;
+
+  error_rate: number;
+};
+
+type JobHealth = AutomationHealthSummary & {
+
+  job_name: string;
+
+  health: string;
+
+  last_status: string | null;
+
+  last_started_at: string | null;
+
+  last_completed_at: string | null;
+};
+
+type CircuitBreakerSummary = {
+
+  total: number;
+
+  open: number;
+
+  half_open: number;
+
+  closed: number;
+};
+
+type AIRecoverySummary = {
+
+  recovery_queue_count: number;
+
+  dead_letter_count: number;
+};
+
+type AutomationHealthAlert = {
+
+  severity: string;
+
+  title: string;
+
+  description: string;
+};
+
+type AutomationHealthDashboard = {
+
+  health: string;
+
+  generated_at: string;
+
+  summary: AutomationHealthSummary;
+
+  job_health: JobHealth[];
+
+  circuit_breaker_summary: CircuitBreakerSummary;
+
+  ai_recovery_summary: AIRecoverySummary;
+
+  alerts: AutomationHealthAlert[];
+};
+
 export default function AutomationPage() {
+
+  const [
+    health,
+    setHealth
+  ] = useState<
+    AutomationHealthDashboard | null
+  >(null);
 
   const [
     stats,
@@ -125,11 +212,16 @@ export default function AutomationPage() {
     try {
 
       const [
+        healthResponse,
         statsResponse,
         runsResponse,
         breakersResponse,
         recoveryResponse,
       ] = await Promise.all([
+
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/automation/health`
+        ),
 
         fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/automation/stats`
@@ -148,6 +240,9 @@ export default function AutomationPage() {
         ),
       ]);
 
+      const healthData =
+        await healthResponse.json();
+
       const statsData =
         await statsResponse.json();
 
@@ -159,6 +254,10 @@ export default function AutomationPage() {
 
       const recoveryData =
         await recoveryResponse.json();
+
+      setHealth(
+        healthData
+      );
 
       setStats(
         statsData
@@ -248,6 +347,207 @@ export default function AutomationPage() {
         </p>
 
       </div>
+
+      {/* HEALTH DASHBOARD */}
+
+      <section className="mb-12">
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            xl:grid-cols-[1.2fr_2fr]
+            gap-6
+          "
+        >
+
+          <div
+            className="
+              bg-white
+              dark:bg-zinc-900
+              border
+              border-zinc-200
+              dark:border-zinc-800
+              rounded-3xl
+              p-7
+            "
+          >
+
+            <p
+              className="
+                text-sm
+                font-bold
+                text-zinc-500
+                mb-4
+              "
+            >
+              Overall Health
+            </p>
+
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                gap-4
+                flex-wrap
+              "
+            >
+
+              <h2
+                className="
+                  text-4xl
+                  font-black
+                "
+              >
+                {health?.health || "-"}
+              </h2>
+
+              <HealthBadge
+                health={
+                  health?.health || "UNKNOWN"
+                }
+              />
+
+            </div>
+
+            <div
+              className="
+                grid
+                grid-cols-2
+                gap-4
+                mt-8
+              "
+            >
+
+              <InfoCard
+                title="Success Rate"
+                value={
+                  `${health?.summary.success_rate || 0}%`
+                }
+              />
+
+              <InfoCard
+                title="Error Rate"
+                value={
+                  `${health?.summary.error_rate || 0}%`
+                }
+              />
+
+              <InfoCard
+                title="Running"
+                value={
+                  String(
+                    health?.summary.running_runs || 0
+                  )
+                }
+              />
+
+              <InfoCard
+                title="Skipped"
+                value={
+                  String(
+                    health?.summary.skipped_runs || 0
+                  )
+                }
+              />
+
+            </div>
+
+            <p
+              className="
+                mt-6
+                text-sm
+                text-zinc-500
+              "
+            >
+              Updated: {
+                health?.generated_at
+                  ? new Date(
+                      health.generated_at
+                    ).toLocaleString(
+                      "he-IL"
+                    )
+                  : "-"
+              }
+            </p>
+
+          </div>
+
+          <div
+            className="
+              grid
+              grid-cols-1
+              md:grid-cols-2
+              gap-6
+            "
+          >
+
+            <MetricCard
+              title="Completed With Errors"
+              value={
+                String(
+                  health?.summary.completed_with_errors || 0
+                )
+              }
+            />
+
+            <MetricCard
+              title="Failed Runs"
+              value={
+                String(
+                  health?.summary.failed_runs || 0
+                )
+              }
+            />
+
+            <MetricCard
+              title="Open Breakers"
+              value={
+                String(
+                  health?.circuit_breaker_summary.open || 0
+                )
+              }
+            />
+
+            <MetricCard
+              title="Recovery Queue"
+              value={
+                String(
+                  health?.ai_recovery_summary.recovery_queue_count || 0
+                )
+              }
+            />
+
+          </div>
+
+        </div>
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            xl:grid-cols-[2fr_1fr]
+            gap-6
+            mt-6
+          "
+        >
+
+          <JobHealthTable
+            jobs={
+              health?.job_health || []
+            }
+          />
+
+          <AlertList
+            alerts={
+              health?.alerts || []
+            }
+          />
+
+        </div>
+
+      </section>
 
       {/* HEALTH */}
 
@@ -733,6 +1033,252 @@ function InfoCard({
   );
 }
 
+function JobHealthTable({
+  jobs,
+}: {
+  jobs: JobHealth[];
+}) {
+
+  return (
+
+    <div
+      className="
+        bg-white
+        dark:bg-zinc-900
+        border
+        border-zinc-200
+        dark:border-zinc-800
+        rounded-3xl
+        p-7
+      "
+    >
+
+      <h2
+        className="
+          text-2xl
+          font-black
+          mb-6
+        "
+      >
+        Job Health
+      </h2>
+
+      <div className="grid gap-4">
+
+        {jobs.map(
+          (job) => (
+
+            <div
+              key={job.job_name}
+              className="
+                grid
+                grid-cols-1
+                lg:grid-cols-[1.2fr_1fr_1fr_1fr]
+                gap-4
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-2xl
+                p-4
+              "
+            >
+
+              <div className="min-w-0">
+
+                <p
+                  className="
+                    font-black
+                    truncate
+                  "
+                >
+                  {job.job_name}
+                </p>
+
+                <p
+                  className="
+                    text-sm
+                    text-zinc-500
+                    mt-1
+                  "
+                >
+                  Last: {job.last_status || "-"}
+                </p>
+
+              </div>
+
+              <HealthBadge
+                health={job.health}
+              />
+
+              <InfoCard
+                title="Success"
+                value={`${job.success_rate}%`}
+              />
+
+              <InfoCard
+                title="Errors"
+                value={
+                  String(
+                    job.error_count
+                  )
+                }
+              />
+
+            </div>
+
+          )
+        )}
+
+        {jobs.length === 0 && (
+
+          <p className="text-sm text-zinc-500">
+            No automation jobs recorded yet.
+          </p>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+function AlertList({
+  alerts,
+}: {
+  alerts: AutomationHealthAlert[];
+}) {
+
+  return (
+
+    <div
+      className="
+        bg-white
+        dark:bg-zinc-900
+        border
+        border-zinc-200
+        dark:border-zinc-800
+        rounded-3xl
+        p-7
+      "
+    >
+
+      <h2
+        className="
+          text-2xl
+          font-black
+          mb-6
+        "
+      >
+        Health Alerts
+      </h2>
+
+      <div className="grid gap-4">
+
+        {alerts.map(
+          (alert) => (
+
+            <div
+              key={`${alert.severity}-${alert.title}`}
+              className="
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-2xl
+                p-4
+              "
+            >
+
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  gap-3
+                "
+              >
+
+                <p className="font-bold">
+                  {alert.title}
+                </p>
+
+                <StatusBadge
+                  status={alert.severity}
+                />
+
+              </div>
+
+              <p
+                className="
+                  text-sm
+                  text-zinc-500
+                  mt-3
+                "
+              >
+                {alert.description}
+              </p>
+
+            </div>
+
+          )
+        )}
+
+        {alerts.length === 0 && (
+
+          <p className="text-sm text-zinc-500">
+            No active automation health alerts.
+          </p>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+function HealthBadge({
+  health,
+}: {
+  health: string;
+}) {
+
+  const styles = {
+
+    HEALTHY:
+      "bg-green-100 text-green-700",
+
+    DEGRADED:
+      "bg-yellow-100 text-yellow-700",
+
+    CRITICAL:
+      "bg-red-100 text-red-700",
+
+    UNKNOWN:
+      "bg-zinc-100 text-zinc-700",
+  };
+
+  return (
+
+    <span
+      className={`
+        px-4
+        py-2
+        rounded-full
+        font-semibold
+        text-sm
+
+        ${
+          styles[
+            health as keyof typeof styles
+          ]
+          || "bg-zinc-100 text-zinc-700"
+        }
+      `}
+    >
+      {health}
+    </span>
+  );
+}
+
 function ExecutionList({
   title,
   emptyText,
@@ -954,6 +1500,18 @@ function StatusBadge({
       "bg-blue-100 text-blue-700",
 
     FAILED:
+      "bg-red-100 text-red-700",
+
+    CRITICAL:
+      "bg-red-100 text-red-700",
+
+    WARNING:
+      "bg-yellow-100 text-yellow-700",
+
+    SKIPPED:
+      "bg-zinc-100 text-zinc-700",
+
+    DEAD_LETTERED:
       "bg-red-100 text-red-700",
   };
 
