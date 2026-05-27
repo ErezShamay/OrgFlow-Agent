@@ -228,11 +228,17 @@ class AIExecutionLogRepository:
             .table(self.table_name) \
             .update({
 
+                "status":
+                    "DEAD_LETTERED",
+
                 "dead_lettered":
                     True,
 
                 "recovery_locked":
                     False,
+
+                "next_retry_at":
+                    None,
             }) \
             .eq(
                 "id",

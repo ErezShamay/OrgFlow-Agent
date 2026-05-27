@@ -167,6 +167,19 @@ class AIRecoveryService:
         log: dict,
     ):
 
+        if log.get(
+            "dead_lettered",
+            False
+        ):
+
+            print(
+                "[AI_RECOVERY] "
+                "Skipping dead-lettered execution:",
+                log.get("id"),
+            )
+
+            return
+
         # ======================================
         # LOCK RECOVERY
         # ======================================
