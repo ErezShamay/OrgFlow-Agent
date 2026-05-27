@@ -113,6 +113,10 @@ class AIAutomationService:
             .get_all_projects()
         )
 
+        processed_count = 0
+
+        error_count = 0
+
         print(
             f"[AI_AUTOMATION] "
             f"Projects loaded: {len(projects)}"
@@ -126,7 +130,11 @@ class AIAutomationService:
                     project
                 )
 
+                processed_count += 1
+
             except Exception as error:
+
+                error_count += 1
 
                 print(
                     "[AI_AUTOMATION] "
@@ -154,6 +162,21 @@ class AIAutomationService:
         print(
             "[AI_AUTOMATION] Analysis cycle completed"
         )
+
+        return {
+
+            "processed_count":
+                processed_count,
+
+            "error_count":
+                error_count,
+
+            "metadata":
+                {
+                    "project_count":
+                        len(projects)
+                },
+        }
 
     # ==========================================
     # PROCESS PROJECT

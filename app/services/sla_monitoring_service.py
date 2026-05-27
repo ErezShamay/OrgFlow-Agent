@@ -1,5 +1,4 @@
 from datetime import datetime
-from uuid import uuid4
 
 from app.repositories.operational_action_repository import (
     OperationalActionRepository
@@ -17,16 +16,6 @@ from app.services.automation_notification_service import (
     AutomationNotificationService
 )
 
-from datetime import timezone
-
-from app.schemas.automation_run import (
-    AutomationRun
-)
-
-from app.repositories.automation_run_repository import (
-    AutomationRunRepository
-)
-
 
 class SLAMonitoringService:
 
@@ -38,10 +27,6 @@ class SLAMonitoringService:
 
         self.automation_notifications = (
             AutomationNotificationService()
-        )
-
-        self.automation_run_repository = (
-            AutomationRunRepository()
         )
 
     # ==========================================
@@ -56,44 +41,9 @@ class SLAMonitoringService:
             "[AUTOMATION] Starting SLA monitoring cycle"
         )
 
-        run_id = str(uuid4())
-
-        started_at = (
-            datetime.now(
-                timezone.utc
-            )
-        )
-
         processed_count = 0
 
         error_count = 0
-
-        automation_run = AutomationRun(
-
-            id=run_id,
-
-            job_name=
-                "sla_monitoring",
-
-            started_at=
-                started_at,
-
-            status=
-                "RUNNING",
-
-            processed_count=0,
-
-            error_count=0,
-
-            metadata={
-                "job_type":
-                    "SLA_MONITORING"
-            },
-        )
-
-        self.automation_run_repository.create_run(
-            automation_run
-        )
 
         actions = (
             self.repository
@@ -120,39 +70,18 @@ class SLAMonitoringService:
                     str(error),
                 )
 
-        completed_at = (
-            datetime.now(
-                timezone.utc
-            )
-        )
-
-        self.automation_run_repository.update_run(
-
-            run_id,
-
-            {
-
-                "completed_at":
-                    completed_at.isoformat(),
-
-                "status":
-                    (
-                        "COMPLETED"
-                        if error_count == 0
-                        else "COMPLETED_WITH_ERRORS"
-                    ),
-
-                "processed_count":
-                    processed_count,
-
-                "error_count":
-                    error_count,
-            }
-        )
-
         print(
             "[AUTOMATION] SLA monitoring cycle completed"
         )
+
+        return {
+
+            "processed_count":
+                processed_count,
+
+            "error_count":
+                error_count,
+        }
 
     # ==========================================
     # PROCESS SINGLE ACTION

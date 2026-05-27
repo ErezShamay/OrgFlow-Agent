@@ -95,11 +95,28 @@ class AIRecoveryService:
                 "No failed executions"
             )
 
-            return
+            return {
+
+                "processed_count":
+                    0,
+
+                "error_count":
+                    0,
+
+                "metadata":
+                    {
+                        "recovery_batch_size":
+                            0
+                    },
+            }
 
         # ======================================
         # PROCESS FAILED EXECUTIONS
         # ======================================
+
+        processed_count = 0
+
+        error_count = 0
 
         for log in failed_logs:
 
@@ -109,7 +126,11 @@ class AIRecoveryService:
                     log
                 )
 
+                processed_count += 1
+
             except Exception as error:
+
+                error_count += 1
 
                 print(
                     "[AI_RECOVERY] "
@@ -121,6 +142,21 @@ class AIRecoveryService:
             "[AI_RECOVERY] "
             "Recovery cycle completed"
         )
+
+        return {
+
+            "processed_count":
+                processed_count,
+
+            "error_count":
+                error_count,
+
+            "metadata":
+                {
+                    "recovery_batch_size":
+                        len(failed_logs)
+                },
+        }
 
     # ==========================================
     # RETRY EXECUTION
