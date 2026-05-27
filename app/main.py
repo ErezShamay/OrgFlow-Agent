@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from fastapi import (
     FastAPI,
+    HTTPException,
     UploadFile,
     File,
     Form,
@@ -82,6 +83,14 @@ from app.services.operational_summary_service import (
     OperationalSummaryService
 )
 
+from app.services.profile_service import (
+    ProfileService
+)
+
+from app.services.notification_service import (
+    NotificationService
+)
+
 from app.services.portfolio_insights_service import (
     PortfolioInsightsService
 )
@@ -121,6 +130,12 @@ FRONTEND_URL = os.getenv(
     "http://localhost:3000"
 )
 
+FRONTEND_URLS = [
+    FRONTEND_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 # ==========================================
 # APP
 # ==========================================
@@ -138,9 +153,7 @@ DEMO_ORGANIZATION_ID = (
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=[
-        FRONTEND_URL
-    ],
+    allow_origins=FRONTEND_URLS,
 
     allow_credentials=True,
 
@@ -207,6 +220,14 @@ portfolio_insights_service = (
 
 alert_engine_service = (
     AlertEngineService()
+)
+
+profile_service = (
+    ProfileService()
+)
+
+notification_service = (
+    NotificationService()
 )
 
 report_processing_service = (
@@ -320,6 +341,71 @@ def get_pending_reviews():
     return (
         ai_review_service
         .get_pending_reviews()
+    )
+
+@app.get("/organizations")
+def get_organizations():
+
+    return (
+        organization_repository
+        .get_all_organizations()
+    )
+
+@app.get("/profiles/{profile_id}")
+def get_profile(profile_id: str):
+
+    profile = (
+        profile_service
+        .get_profile(profile_id)
+    )
+
+    if not profile:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found"
+        )
+
+    return profile
+
+@app.get("/profiles/{profile_id}/notifications")
+def get_profile_notifications(profile_id: str):
+
+    return (
+        notification_service
+        .get_notifications(profile_id)
+    )
+
+@app.get("/projects/{project_id}/workspace")
+def get_project_workspace(project_id: str):
+
+    return (
+        project_workspace_service
+        .get_workspace(project_id)
+    )
+
+@app.get("/projects/{project_id}/exceptions")
+def get_project_exceptions(project_id: str):
+
+    return (
+        operational_action_repository
+        .get_exceptions_by_project(project_id)
+    )
+
+@app.get("/projects/{project_id}/operational-summary")
+def get_project_operational_summary(project_id: str):
+
+    return (
+        operational_summary_service
+        .generate_project_summary(project_id)
+    )
+
+@app.patch("/notifications/{notification_id}/read")
+def mark_notification_as_read(notification_id: str):
+
+    return (
+        notification_service
+        .mark_as_read(notification_id)
     )
 
 # ==========================================

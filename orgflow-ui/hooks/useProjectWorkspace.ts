@@ -149,17 +149,21 @@ export function useProjectWorkspace(
 
         setLoading(true);
 
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL ||
+          "http://localhost:8000";
+
         const [
           workspaceResponse,
           summaryResponse,
         ] = await Promise.all([
 
           fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/workspace`
+            `${apiUrl}/projects/${projectId}/workspace`
           ),
 
           fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}/operational-summary`
+            `${apiUrl}/projects/${projectId}/operational-summary`
           ),
         ]);
 

@@ -49,7 +49,14 @@ export default function ProjectExceptionsPage({
       const data =
         await response.json();
 
-      setExceptions(data);
+        if (response.ok && Array.isArray(data)) {
+          setExceptions(data);
+        } else if (response.ok && data && data.exceptions && Array.isArray(data.exceptions)) {
+          setExceptions(data.exceptions);
+        } else {
+          console.warn('Unexpected exceptions response', data);
+          setExceptions([]);
+        }
 
     } catch (error) {
 
