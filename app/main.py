@@ -357,3 +357,14 @@ def get_automation_circuit_breakers():
         automation_monitoring_service
         .get_circuit_breakers()
     )
+
+
+@app.get(
+    "/automation/ai-recovery"
+)
+def get_automation_ai_recovery():
+
+    return (
+        automation_monitoring_service
+        .get_ai_recovery_monitoring()
+    )

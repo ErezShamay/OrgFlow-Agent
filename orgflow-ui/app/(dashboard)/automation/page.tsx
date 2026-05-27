@@ -49,6 +49,42 @@ type CircuitBreaker = {
   cooldown_until: string | null;
 };
 
+type AIExecutionLog = {
+
+  id: string;
+
+  project_id?: string | null;
+
+  execution_type: string;
+
+  status: string;
+
+  retry_count?: number;
+
+  next_retry_at?: string | null;
+
+  dead_lettered?: boolean;
+
+  recovery_locked?: boolean;
+
+  created_at?: string | null;
+};
+
+type AIRecoveryMonitoring = {
+
+  recent_executions: AIExecutionLog[];
+
+  recovery_queue: AIExecutionLog[];
+
+  dead_letters: AIExecutionLog[];
+
+  recent_count: number;
+
+  recovery_queue_count: number;
+
+  dead_letter_count: number;
+};
+
 export default function AutomationPage() {
 
   const [
@@ -73,6 +109,13 @@ export default function AutomationPage() {
   >([]);
 
   const [
+    recovery,
+    setRecovery
+  ] = useState<
+    AIRecoveryMonitoring | null
+  >(null);
+
+  const [
     loading,
     setLoading
   ] = useState(true);
@@ -85,6 +128,7 @@ export default function AutomationPage() {
         statsResponse,
         runsResponse,
         breakersResponse,
+        recoveryResponse,
       ] = await Promise.all([
 
         fetch(
@@ -98,6 +142,10 @@ export default function AutomationPage() {
         fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/automation/circuit-breakers`
         ),
+
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/automation/ai-recovery`
+        ),
       ]);
 
       const statsData =
@@ -109,6 +157,9 @@ export default function AutomationPage() {
       const breakersData =
         await breakersResponse.json();
 
+      const recoveryData =
+        await recoveryResponse.json();
+
       setStats(
         statsData
       );
@@ -119,6 +170,10 @@ export default function AutomationPage() {
 
       setBreakers(
         breakersData
+      );
+
+      setRecovery(
+        recoveryData
       );
 
     } catch (error) {
@@ -248,6 +303,96 @@ export default function AutomationPage() {
             )
           }
         />
+
+      </div>
+
+      {/* AI RECOVERY */}
+
+      <div className="mt-12">
+
+        <h2
+          className="
+            text-3xl
+            font-bold
+            mb-6
+          "
+        >
+          AI Recovery
+        </h2>
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            md:grid-cols-3
+            gap-6
+          "
+        >
+
+          <MetricCard
+            title="Recent AI Executions"
+            value={
+              String(
+                recovery?.recent_count || 0
+              )
+            }
+          />
+
+          <MetricCard
+            title="Recovery Queue"
+            value={
+              String(
+                recovery?.recovery_queue_count || 0
+              )
+            }
+          />
+
+          <MetricCard
+            title="Dead Letters"
+            value={
+              String(
+                recovery?.dead_letter_count || 0
+              )
+            }
+          />
+
+        </div>
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            xl:grid-cols-3
+            gap-5
+            mt-6
+          "
+        >
+
+          <ExecutionList
+            title="Recovery Queue"
+            emptyText="No executions waiting for recovery."
+            executions={
+              recovery?.recovery_queue || []
+            }
+          />
+
+          <ExecutionList
+            title="Dead Letter Queue"
+            emptyText="No dead-lettered executions."
+            executions={
+              recovery?.dead_letters || []
+            }
+          />
+
+          <ExecutionList
+            title="Recent AI Executions"
+            emptyText="No AI executions recorded yet."
+            executions={
+              recovery?.recent_executions || []
+            }
+          />
+
+        </div>
 
       </div>
 
@@ -583,6 +728,168 @@ function InfoCard({
       >
         {value}
       </h3>
+
+    </div>
+  );
+}
+
+function ExecutionList({
+  title,
+  emptyText,
+  executions,
+}: {
+  title: string;
+  emptyText: string;
+  executions: AIExecutionLog[];
+}) {
+
+  return (
+
+    <div
+      className="
+        bg-white
+        dark:bg-zinc-900
+        border
+        border-zinc-200
+        dark:border-zinc-800
+        rounded-3xl
+        p-7
+        min-h-72
+      "
+    >
+
+      <h3
+        className="
+          text-xl
+          font-black
+          mb-5
+        "
+      >
+        {title}
+      </h3>
+
+      <div className="grid gap-4">
+
+        {executions.map(
+          (execution) => (
+
+            <div
+              key={execution.id}
+              className="
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-2xl
+                p-4
+              "
+            >
+
+              <div
+                className="
+                  flex
+                  items-start
+                  justify-between
+                  gap-3
+                "
+              >
+
+                <div className="min-w-0">
+
+                  <p
+                    className="
+                      font-bold
+                      truncate
+                    "
+                  >
+                    {execution.execution_type}
+                  </p>
+
+                  <p
+                    className="
+                      text-xs
+                      text-zinc-500
+                      mt-1
+                      break-all
+                    "
+                  >
+                    {execution.id}
+                  </p>
+
+                </div>
+
+                <StatusBadge
+                  status={execution.status}
+                />
+
+              </div>
+
+              <div
+                className="
+                  grid
+                  grid-cols-2
+                  gap-3
+                  mt-4
+                  text-sm
+                "
+              >
+
+                <InfoCard
+                  title="Retries"
+                  value={
+                    String(
+                      execution.retry_count || 0
+                    )
+                  }
+                />
+
+                <InfoCard
+                  title="Locked"
+                  value={
+                    execution.recovery_locked
+                      ? "Yes"
+                      : "No"
+                  }
+                />
+
+              </div>
+
+              <div className="mt-3">
+
+                <InfoCard
+                  title="Next Retry"
+                  value={
+                    execution.next_retry_at
+
+                      ? new Date(
+                          execution.next_retry_at
+                        ).toLocaleString(
+                          "he-IL"
+                        )
+
+                      : "-"
+                  }
+                />
+
+              </div>
+
+            </div>
+
+          )
+        )}
+
+        {executions.length === 0 && (
+
+          <p
+            className="
+              text-zinc-500
+              text-sm
+            "
+          >
+            {emptyText}
+          </p>
+        )}
+
+      </div>
 
     </div>
   );

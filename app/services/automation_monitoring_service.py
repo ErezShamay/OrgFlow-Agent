@@ -2,6 +2,10 @@ from app.db.supabase_client import (
     supabase
 )
 
+from app.repositories.ai_execution_log_repository import (
+    AIExecutionLogRepository
+)
+
 
 class AutomationMonitoringService:
 
@@ -9,6 +13,10 @@ class AutomationMonitoringService:
 
         self.client = (
             supabase
+        )
+
+        self.ai_execution_log_repository = (
+            AIExecutionLogRepository()
         )
 
     # ==========================================
@@ -133,3 +141,47 @@ class AutomationMonitoringService:
         )
 
         return response.data
+
+    # ==========================================
+    # GET AI RECOVERY MONITORING
+    # ==========================================
+
+    def get_ai_recovery_monitoring(
+        self,
+    ):
+
+        recent_executions = (
+            self.ai_execution_log_repository
+            .get_recent_executions()
+        )
+
+        recovery_queue = (
+            self.ai_execution_log_repository
+            .get_failed_executions()
+        )
+
+        dead_letters = (
+            self.ai_execution_log_repository
+            .get_dead_letters()
+        )
+
+        return {
+
+            "recent_executions":
+                recent_executions,
+
+            "recovery_queue":
+                recovery_queue,
+
+            "dead_letters":
+                dead_letters,
+
+            "recent_count":
+                len(recent_executions),
+
+            "recovery_queue_count":
+                len(recovery_queue),
+
+            "dead_letter_count":
+                len(dead_letters),
+        }

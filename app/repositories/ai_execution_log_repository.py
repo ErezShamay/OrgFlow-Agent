@@ -102,6 +102,56 @@ class AIExecutionLogRepository:
         return response.data
 
     # ==========================================
+    # GET RECENT EXECUTIONS
+    # ==========================================
+
+    def get_recent_executions(
+        self,
+        limit: int = 20,
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .order(
+                "created_at",
+                desc=True
+            )
+            .limit(limit)
+            .execute()
+        )
+
+        return response.data
+
+    # ==========================================
+    # GET DEAD LETTERS
+    # ==========================================
+
+    def get_dead_letters(
+        self,
+        limit: int = 20,
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "dead_lettered",
+                True
+            )
+            .order(
+                "created_at",
+                desc=True
+            )
+            .limit(limit)
+            .execute()
+        )
+
+        return response.data
+
+    # ==========================================
     # UPDATE RETRY
     # ==========================================
 
