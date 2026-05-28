@@ -18,6 +18,9 @@ class ProjectRepository:
         supervisor_name: str | None = None,
         supervisor_email: str | None = None,
         organization_id: str | None = None,
+        owner_id: str | None = None,
+        tags: list[str] | None = None,
+        lifecycle_phase: str | None = None,
         status: str = "ACTIVE",
     ):
 
@@ -48,6 +51,27 @@ class ProjectRepository:
                     project.organization_id
                     if project
                     else organization_id
+                ),
+
+            "owner_id":
+                (
+                    project.owner_id
+                    if project and hasattr(project, "owner_id")
+                    else owner_id
+                ),
+
+            "tags":
+                (
+                    project.tags
+                    if project and hasattr(project, "tags")
+                    else tags
+                ),
+
+            "lifecycle_phase":
+                (
+                    project.lifecycle_phase
+                    if project and hasattr(project, "lifecycle_phase")
+                    else lifecycle_phase
                 ),
 
             "status":
@@ -179,3 +203,83 @@ class ProjectRepository:
             return None
 
         return response.data[0]
+
+    def update_project(
+        self,
+        project_id: str,
+        updates: dict,
+    ):
+        payload = {
+            key: value
+            for key, value in updates.items()
+            if value is not None
+        }
+
+        if not payload:
+            return self.get_project_by_id(project_id)
+
+        response = (
+            self.client
+            .table("projects")
+            .update(payload)
+            .eq("id", project_id)
+            .execute()
+        )
+
+        if not response.data:
+            return None
+
+        return response.data[0]
+
+    def delete_project(
+        self,
+        project_id: str,
+    ) -> bool:
+        response = (
+            self.client
+            .table("projects")
+            .delete()
+            .eq("id", project_id)
+            .execute()
+        )
+        return bool(response.data)
+
+    def search_projects(
+        self,
+        query: str,
+    ):
+        response = (
+            self.client
+            .table("projects")
+            .select("*")
+            .ilike(
+                "project_name",
+                f"%{query}%"
+            )
+            .execute()
+        )
+        return response.data
+
+    def filter_projects(
+        self,
+        status: str | None = None,
+        owner_id: str | None = None,
+        tag: str | None = None,
+    ):
+        query = (
+            self.client
+            .table("projects")
+            .select("*")
+        )
+
+        if status:
+            query = query.eq("status", status)
+
+        if owner_id:
+            query = query.eq("owner_id", owner_id)
+
+        if tag:
+            query = query.contains("tags", [tag])
+
+        response = query.execute()
+        return response.data

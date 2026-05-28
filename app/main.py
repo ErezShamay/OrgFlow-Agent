@@ -18,7 +18,7 @@ from fastapi.middleware.cors import (
     CORSMiddleware
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.config.settings import settings
 from app.config import config_manager
@@ -52,6 +52,10 @@ from app.services.operational_action_service import (
 
 from app.services.project_insights_service import (
     ProjectInsightsService,
+)
+
+from app.services.project_service import (
+    ProjectService,
 )
 
 from app.repositories.project_repository import (
@@ -249,6 +253,10 @@ operational_action_service = (
     OperationalActionService()
 )
 
+project_service = (
+    ProjectService()
+)
+
 project_repository = (
     ProjectRepository()
 )
@@ -354,6 +362,71 @@ class AssignActionRequest(
 ):
 
     assigned_to: str
+
+
+class CreateProjectRequest(
+    BaseModel
+):
+    project_name: str
+    supervisor_name: str
+    supervisor_email: str | None = None
+    organization_id: str | None = None
+    owner_id: str | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
+class EditProjectRequest(
+    BaseModel
+):
+    project_name: str | None = None
+    supervisor_name: str | None = None
+    supervisor_email: str | None = None
+
+
+class ProjectTagsRequest(
+    BaseModel
+):
+    tags: list[str]
+
+
+class ProjectOwnerRequest(
+    BaseModel
+):
+    owner_id: str
+
+
+class ProjectLifecycleRequest(
+    BaseModel
+):
+    lifecycle_phase: str
+
+
+class ProjectAttachmentRequest(
+    BaseModel
+):
+    filename: str
+    uploaded_by: str
+
+
+class ProjectCommentRequest(
+    BaseModel
+):
+    comment: str
+    author: str
+
+
+class ReportAttachmentRequest(
+    BaseModel
+):
+    report_id: str
+    filename: str
+    uploaded_by: str
+
+
+class ReportTagsRequest(
+    BaseModel
+):
+    tags: list[str]
 
 
 # ==========================================
@@ -602,6 +675,317 @@ def get_profile_notifications(profile_id: str):
         notification_service
         .get_notifications(profile_id)
     )
+
+
+@app.post("/projects")
+def create_project(request: CreateProjectRequest):
+    return project_service.create_project(
+        project_name=request.project_name,
+        supervisor_name=request.supervisor_name,
+        supervisor_email=request.supervisor_email,
+        organization_id=request.organization_id,
+        owner_id=request.owner_id,
+        tags=request.tags,
+    )
+
+
+@app.patch("/projects/{project_id}")
+def edit_project(project_id: str, request: EditProjectRequest):
+    updated = project_service.edit_project(
+        project_id,
+        project_name=request.project_name,
+        supervisor_name=request.supervisor_name,
+        supervisor_email=request.supervisor_email,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return updated
+
+
+@app.post("/projects/{project_id}/archive")
+def archive_project(project_id: str):
+    archived = project_service.archive_project(project_id)
+    if not archived:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return archived
+
+
+@app.delete("/projects/{project_id}")
+def delete_project(project_id: str):
+    deleted = project_service.delete_project(project_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"deleted": True, "project_id": project_id}
+
+
+@app.get("/projects/search")
+def search_projects(query: str):
+    return project_service.search_projects(query)
+
+
+@app.get("/projects")
+def filter_projects(
+    status: str | None = None,
+    owner_id: str | None = None,
+    tag: str | None = None,
+):
+    return project_service.filter_projects(
+        status=status,
+        owner_id=owner_id,
+        tag=tag,
+    )
+
+
+@app.patch("/projects/{project_id}/tags")
+def update_project_tags(project_id: str, request: ProjectTagsRequest):
+    updated = project_service.update_project_tags(project_id, request.tags)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return updated
+
+
+@app.patch("/projects/{project_id}/owner")
+def set_project_owner(project_id: str, request: ProjectOwnerRequest):
+    updated = project_service.set_project_owner(project_id, request.owner_id)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return updated
+
+
+@app.patch("/projects/{project_id}/lifecycle")
+def set_project_lifecycle(project_id: str, request: ProjectLifecycleRequest):
+    updated = project_service.set_project_lifecycle_phase(
+        project_id,
+        request.lifecycle_phase,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return updated
+
+
+@app.get("/projects/{project_id}/dashboard-widgets")
+def get_project_dashboard_widgets(project_id: str):
+    widgets = project_service.get_dashboard_widgets(project_id)
+    if not widgets:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return widgets
+
+@app.get("/projects/{project_id}/links")
+def get_cross_project_links(project_id: str):
+    links = project_service.get_cross_project_links(project_id)
+    if not links:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return links
+
+
+@app.get("/projects/{project_id}/kpis")
+def get_project_kpis(project_id: str):
+    kpis = project_service.get_project_kpis(project_id)
+    if not kpis:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return kpis
+
+
+@app.get("/projects/{project_id}/analytics")
+def get_project_analytics(project_id: str):
+    analytics = project_service.get_project_analytics(project_id)
+    if not analytics:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return analytics
+
+
+@app.get("/projects/{project_id}/attachments")
+def get_project_attachments(project_id: str):
+    attachments = project_service.get_project_attachments(project_id)
+    if attachments is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"project_id": project_id, "attachments": attachments}
+
+
+@app.post("/projects/{project_id}/attachments")
+def add_project_attachment(project_id: str, request: ProjectAttachmentRequest):
+    attachment = project_service.add_project_attachment(
+        project_id=project_id,
+        filename=request.filename,
+        uploaded_by=request.uploaded_by,
+    )
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return attachment
+
+
+@app.get("/projects/{project_id}/comments")
+def get_project_comments(project_id: str):
+    comments = project_service.get_project_comments(project_id)
+    if comments is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"project_id": project_id, "comments": comments}
+
+
+@app.post("/projects/{project_id}/comments")
+def add_project_comment(project_id: str, request: ProjectCommentRequest):
+    comment = project_service.add_project_comment(
+        project_id=project_id,
+        comment=request.comment,
+        author=request.author,
+    )
+    if not comment:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return comment
+
+
+@app.post("/reports/upload")
+async def upload_report(
+    project_id: str = Form(...),
+    file: UploadFile = File(...),
+):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    upload_dir = Path("tmp_uploads")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S%f")
+    target_path = upload_dir / f"{timestamp}_{file.filename or 'report'}"
+
+    with target_path.open("wb") as target_file:
+        shutil.copyfileobj(file.file, target_file)
+
+    try:
+        result = report_processing_service.process_uploaded_report(
+            project_id=project_id,
+            filename=file.filename or target_path.name,
+            file_path=str(target_path),
+        )
+    finally:
+        if target_path.exists():
+            target_path.unlink()
+
+    if not result.get("success", False):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error_code": result.get("error_code", "REPORT_PROCESSING_FAILED"),
+                "message": result.get("error_message", "Report processing failed"),
+            },
+        )
+
+    return result
+
+
+@app.get("/projects/{project_id}/reports/timeline")
+def get_project_report_timeline(project_id: str):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return report_processing_service.get_project_report_timeline(project_id)
+
+
+@app.get("/projects/{project_id}/reports/ai-insights")
+def get_project_report_ai_insights(project_id: str, limit: int = 20):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return report_processing_service.get_project_report_ai_insights(project_id, limit=limit)
+
+
+@app.post("/projects/{project_id}/reports/attachments")
+def add_report_attachment(project_id: str, request: ReportAttachmentRequest):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    result = report_processing_service.add_report_attachment(
+        project_id=project_id,
+        report_id=request.report_id,
+        filename=request.filename,
+        uploaded_by=request.uploaded_by,
+    )
+    if result.get("success") is False:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error_code": result.get("error_code", "INVALID_ATTACHMENT"),
+                "message": result.get("error_message", "Attachment payload is invalid"),
+            },
+        )
+    return result
+
+
+@app.get("/projects/{project_id}/reports/{report_id}/attachments")
+def list_report_attachments(project_id: str, report_id: str):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    attachments = report_processing_service.list_report_attachments(report_id)
+    return {"project_id": project_id, "report_id": report_id, "attachments": attachments}
+
+
+@app.delete("/projects/{project_id}/reports/{report_id}/attachments/{attachment_id}")
+def delete_report_attachment(project_id: str, report_id: str, attachment_id: str):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    deleted = report_processing_service.delete_report_attachment(
+        project_id=project_id,
+        report_id=report_id,
+        attachment_id=attachment_id,
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    return {"deleted": True, "attachment_id": attachment_id}
+
+
+@app.patch("/projects/{project_id}/reports/{report_id}/tags")
+def update_report_tags(project_id: str, report_id: str, request: ReportTagsRequest):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return report_processing_service.update_report_tags(project_id, report_id, request.tags)
+
+
+@app.get("/projects/{project_id}/reports/{report_id}/tags")
+def list_report_tags(project_id: str, report_id: str):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"project_id": project_id, "report_id": report_id, "tags": report_processing_service.list_report_tags(report_id)}
+
+
+@app.get("/projects/{project_id}/reports/search")
+def search_reports_by_tag(project_id: str, tag: str):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return report_processing_service.search_reports_by_tag(project_id, tag)
+
+
+@app.get("/projects/{project_id}/reports/index")
+def list_project_report_index(project_id: str):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return report_processing_service.list_project_index_entries(project_id)
+
+
+@app.get("/projects/{project_id}/reports/{report_id}/index")
+def get_report_index_entry(project_id: str, report_id: str):
+    project = project_repository.get_project_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    entry = report_processing_service.get_report_index_entry(report_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Report index not found")
+    if entry.get("project_id") != project_id:
+        raise HTTPException(status_code=404, detail="Report index not found")
+    return entry
+
+
+@app.get("/projects/{project_id}/timeline")
+def get_project_timeline(project_id: str):
+    timeline = project_service.get_project_timeline(project_id)
+    if not timeline:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return timeline
 
 @app.get("/projects/{project_id}/workspace")
 def get_project_workspace(project_id: str):

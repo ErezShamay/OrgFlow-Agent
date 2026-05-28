@@ -46,37 +46,37 @@
 - [x] API authorization middleware
 
 ### Epic: Project Domain
-- [ ] Create project flow
-- [ ] Edit project flow
-- [ ] Archive project flow
-- [ ] Delete project flow
-- [ ] Project search
-- [ ] Project filtering
-- [ ] Project tags
-- [ ] Project ownership model
-- [ ] Project lifecycle management
-- [ ] Project dashboard widgets
-- [ ] Cross-project linking
-- [ ] Project KPIs
-- [ ] Project analytics
-- [ ] Project attachments
-- [ ] Project comments
-- [ ] Project timeline
+- [x] Create project flow
+- [x] Edit project flow
+- [x] Archive project flow
+- [x] Delete project flow
+- [x] Project search
+- [x] Project filtering
+- [x] Project tags
+- [x] Project ownership model
+- [x] Project lifecycle management
+- [x] Project dashboard widgets
+- [x] Cross-project linking
+- [x] Project KPIs
+- [x] Project analytics
+- [x] Project attachments
+- [x] Project comments
+- [x] Project timeline
 
 ### Epic: Reports Domain
-- [ ] OCR pipeline
-- [ ] PDF parser hardening
-- [ ] Report classifications
-- [ ] Report versioning
-- [ ] Duplicate report detection
-- [ ] Corrupted file handling
-- [ ] Report timeline
-- [ ] Report AI insights
-- [ ] Report attachments management
-- [ ] Report metadata extraction
-- [ ] Report validation
-- [ ] Report tagging
-- [ ] Report indexing
+- [x] OCR pipeline
+- [x] PDF parser hardening
+- [x] Report classifications
+- [x] Report versioning
+- [x] Duplicate report detection
+- [x] Corrupted file handling
+- [x] Report timeline
+- [x] Report AI insights
+- [x] Report attachments management
+- [x] Report metadata extraction
+- [x] Report validation
+- [x] Report tagging
+- [x] Report indexing
 - [ ] Report search engine
 - [ ] Bulk uploads
 - [ ] Upload progress tracking
