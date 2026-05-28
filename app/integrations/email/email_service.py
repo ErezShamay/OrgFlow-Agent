@@ -32,29 +32,21 @@ class EmailService:
 
     def send_email(
         self,
-        to,
-        subject,
-        body
-    ):
-        return (
-            self.provider
-            .send_email(
-                to=to,
-                subject=subject,
-                body=body
-            )
-        )
+        from app.config.settings import settings
 
-    def get_unread_messages(self):
-        return (
-            self.provider
-            .get_unread_messages()
-        )
 
-    def download_attachments(
-        self,
-        message_id
-    ):
+        class EmailService:
+            def __init__(self):
+                provider_name = settings.EMAIL_PROVIDER
+
+                if provider_name == "microsoft":
+                    self.provider = (
+                        MicrosoftProvider()
+                    )
+                else:
+                    self.provider = (
+                        GmailProvider()
+                    )
         return (
             self.provider
             .download_attachments(

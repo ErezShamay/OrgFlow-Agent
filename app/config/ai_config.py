@@ -1,22 +1,6 @@
-import os
+from app.config.settings import settings
 
-AI_PROVIDER = (
-    os.getenv(
-        "AI_PROVIDER",
-        "ollama"
-    )
-)
+AI_PROVIDER = settings.AI_PROVIDER
 
-DEFAULT_AI_MODEL = (
-    os.getenv(
-        "DEFAULT_AI_MODEL",
-        "mistral"
-    )
-)
-
-AI_MAX_RETRIES = int(
-    os.getenv(
-        "AI_MAX_RETRIES",
-        "2"
-    )
-)
+DEFAULT_AI_MODEL = settings.DEFAULT_AI_MODEL
+AI_MAX_RETRIES = settings.AI_MAX_RETRIES

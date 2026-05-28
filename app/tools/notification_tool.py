@@ -1,15 +1,8 @@
-import os
+from app.config.settings import settings
 
 import resend
 
-from dotenv import load_dotenv
-
-
-load_dotenv()
-
-resend.api_key = os.getenv(
-    "RESEND_API_KEY"
-)
+resend.api_key = settings.RESEND_API_KEY
 
 
 class NotificationTool:

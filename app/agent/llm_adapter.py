@@ -1,13 +1,13 @@
 import json
-import os
 
 from app.agent.intent_detector import IntentDetector
+from app.config.settings import settings
 
 
 class LLMAdapter:
     def __init__(self):
-        self.mode = os.getenv("ORG_FLOW_LLM_MODE", "mock")
-        self.model = os.getenv("OPENAI_MODEL", "gpt-5.5")
+        self.mode = settings.ORG_FLOW_LLM_MODE
+        self.model = settings.OPENAI_MODEL
 
     def classify_intent(self, user_request: str):
         if self._should_use_openai():
@@ -29,7 +29,7 @@ class LLMAdapter:
     def _should_use_openai(self) -> bool:
         return (
             self.mode == "openai"
-            and bool(os.getenv("OPENAI_API_KEY"))
+            and bool(settings.get_active_openai_api_key())
         )
 
     def _classify_intent_with_mock(self, user_request: str):
@@ -88,7 +88,7 @@ class LLMAdapter:
         try:
             from openai import OpenAI
 
-            client = OpenAI()
+            client = OpenAI(api_key=settings.get_active_openai_api_key())
 
             prompt = f"""
             Return only valid JSON.
@@ -129,7 +129,7 @@ class LLMAdapter:
         try:
             from openai import OpenAI
 
-            client = OpenAI()
+            client = OpenAI(api_key=settings.get_active_openai_api_key())
 
             prompt = f"""
             Return only valid JSON.

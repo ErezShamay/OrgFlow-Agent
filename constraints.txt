@@ -1,0 +1,2 @@
+# Temporary constraints to resolve dependency conflicts during CI runs
+cachetools==5.5.0
