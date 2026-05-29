@@ -27,11 +27,11 @@ For each task:
 
 ### Next
 
-- Build Dead-Letter Dashboard.
+- Build Circuit Breaker Dashboard.
 
 ### Upcoming
 
-- Build Circuit Breaker Dashboard.
+- Portfolio intelligence dashboards.
 
 ## Definition Of Done
 

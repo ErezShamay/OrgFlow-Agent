@@ -15,6 +15,8 @@ class CircuitBreaker(
 
     failure_count: int = 0
 
+    half_open_success_count: int = 0
+
     last_failure_at: datetime | None = None
 
     cooldown_until: datetime | None = None

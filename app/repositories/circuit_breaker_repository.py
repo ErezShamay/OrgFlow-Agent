@@ -23,6 +23,16 @@ class CircuitBreakerRepository:
     # GET BREAKER
     # ==========================================
 
+    def list_breakers(self) -> list[dict]:
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .order("breaker_key", desc=False)
+            .execute()
+        )
+        return response.data or []
+
     def get_breaker(
         self,
         breaker_key: str,

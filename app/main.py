@@ -156,6 +156,40 @@ from app.services.workflow_execution_log_service import (
 from app.services.dynamic_automation_builder_service import (
     DynamicAutomationBuilderService
 )
+from app.services.dead_letter_recovery_service import (
+    DeadLetterRecoveryService,
+)
+from app.services.recovery_dashboard_service import (
+    RecoveryDashboardService,
+)
+from app.services.recovery_orchestration_service import (
+    RecoveryOrchestrationService,
+)
+from app.services.auto_recovery_rules_service import (
+    AutoRecoveryRulesService,
+)
+from app.schemas.dead_letter_recovery import (
+    DeadLetterSearchRequest,
+    RecoveryActionRequest,
+    FailureCategorizationRequest,
+    RecoveryOrchestrationRequest,
+)
+from app.services.circuit_breaker_dashboard_service import (
+    CircuitBreakerDashboardService,
+)
+from app.services.circuit_breaker_threshold_service import (
+    CircuitBreakerThresholdService,
+)
+from app.services.circuit_breaker_reopen_service import (
+    CircuitBreakerReopenService,
+)
+from app.services.circuit_breaker_service import (
+    CircuitBreakerService,
+)
+from app.schemas.circuit_breaker_system import (
+    CircuitBreakerThresholdRequest,
+    CircuitBreakerReopenRequest,
+)
 
 # ==========================================
 # EXCEPTION HANDLING & LOGGING
@@ -223,6 +257,41 @@ workflow_execution_log_service = (
 )
 dynamic_automation_builder_service = (
     DynamicAutomationBuilderService()
+)
+dead_letter_recovery_service = (
+    DeadLetterRecoveryService()
+)
+recovery_dashboard_service = (
+    RecoveryDashboardService(
+        dead_letter_recovery_service=dead_letter_recovery_service,
+    )
+)
+recovery_orchestration_service = (
+    RecoveryOrchestrationService(
+        dead_letter_recovery_service=dead_letter_recovery_service,
+    )
+)
+auto_recovery_rules_service = (
+    AutoRecoveryRulesService()
+)
+circuit_breaker_service = (
+    CircuitBreakerService()
+)
+circuit_breaker_threshold_service = (
+    CircuitBreakerThresholdService()
+)
+circuit_breaker_reopen_service = (
+    CircuitBreakerReopenService(
+        circuit_breaker_service=circuit_breaker_service,
+        threshold_service=circuit_breaker_threshold_service,
+    )
+)
+circuit_breaker_dashboard_service = (
+    CircuitBreakerDashboardService(
+        circuit_breaker_service=circuit_breaker_service,
+        threshold_service=circuit_breaker_threshold_service,
+        reopen_service=circuit_breaker_reopen_service,
+    )
 )
 
 # ==========================================
@@ -2315,6 +2384,100 @@ def get_automation_circuit_breakers():
     )
 
 
+@app.get("/automation/circuit-breakers/dashboard")
+def get_circuit_breaker_dashboard():
+    return circuit_breaker_dashboard_service.get_dashboard()
+
+
+@app.get("/automation/circuit-breakers/metrics")
+def get_circuit_breaker_metrics():
+    breakers = circuit_breaker_service.list_breakers()
+    return circuit_breaker_dashboard_service.analytics_service.get_metrics(
+        breakers
+    )
+
+
+@app.get("/automation/circuit-breakers/analytics")
+def get_circuit_breaker_analytics():
+    breakers = circuit_breaker_service.list_breakers()
+    return circuit_breaker_dashboard_service.analytics_service.get_analytics(
+        breakers
+    )
+
+
+@app.get("/automation/circuit-breakers/thresholds")
+def list_circuit_breaker_thresholds():
+    return {
+        "thresholds": circuit_breaker_threshold_service.list_thresholds(),
+    }
+
+
+@app.post("/automation/circuit-breakers/thresholds")
+def set_circuit_breaker_threshold(request: CircuitBreakerThresholdRequest):
+    threshold = circuit_breaker_threshold_service.set_threshold(
+        breaker_key=request.breaker_key,
+        failure_threshold=request.failure_threshold,
+        cooldown_minutes=request.cooldown_minutes,
+        half_open_success_threshold=request.half_open_success_threshold,
+    )
+    return {
+        "breaker_key": request.breaker_key,
+        "threshold": threshold,
+    }
+
+
+@app.post("/automation/circuit-breakers/{breaker_key}/reopen")
+def reopen_circuit_breaker(
+    breaker_key: str,
+    request: CircuitBreakerReopenRequest,
+):
+    try:
+        return circuit_breaker_reopen_service.manual_reopen(
+            breaker_key=breaker_key,
+            initiated_by=request.initiated_by,
+            force_closed=request.force_closed,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@app.get("/automation/circuit-breakers/degradation")
+def get_service_degradation_mode():
+    breakers = circuit_breaker_service.list_breakers()
+    return circuit_breaker_dashboard_service.degradation_service.get_degradation_mode(
+        breakers
+    )
+
+
+@app.get("/automation/circuit-breakers/health-scores")
+def get_circuit_breaker_health_scores():
+    breakers = circuit_breaker_service.list_breakers()
+    return circuit_breaker_dashboard_service.health_scoring_service.get_overall_health_score(
+        breakers
+    )
+
+
+@app.get("/automation/circuit-breakers/outages")
+def get_circuit_breaker_outages():
+    breakers = circuit_breaker_service.list_breakers()
+    return circuit_breaker_dashboard_service.outage_service.get_outage_summary(
+        breakers
+    )
+
+
+@app.get("/automation/circuit-breakers/dependencies")
+def get_circuit_breaker_dependencies():
+    breakers = circuit_breaker_service.list_breakers()
+    return circuit_breaker_dashboard_service.dependency_service.get_dependency_summary(
+        breakers
+    )
+
+
+@app.get("/automation/circuit-breakers/ai-failover")
+def get_ai_provider_failover_status():
+    return circuit_breaker_dashboard_service.failover_service.get_status()
+
+
 @app.get(
     "/automation/ai-recovery"
 )
@@ -2323,6 +2486,152 @@ def get_automation_ai_recovery():
     return (
         automation_monitoring_service
         .get_ai_recovery_monitoring()
+    )
+
+
+@app.get("/automation/dead-letters/dashboard")
+def get_dead_letter_recovery_dashboard():
+    return recovery_dashboard_service.get_dashboard()
+
+
+@app.get("/automation/dead-letters")
+def search_dead_letters(
+    execution_type: str | None = None,
+    failure_type: str | None = None,
+    severity: str | None = None,
+    project_id: str | None = None,
+    query: str | None = None,
+    limit: int = 50,
+):
+    return {
+        "dead_letters": dead_letter_recovery_service.search_dead_letters(
+            execution_type=execution_type,
+            failure_type=failure_type,
+            severity=severity,
+            project_id=project_id,
+            query=query,
+            limit=limit,
+        ),
+    }
+
+
+@app.get("/automation/dead-letters/metrics")
+def get_dead_letter_recovery_metrics():
+    return dead_letter_recovery_service.get_metrics()
+
+
+@app.get("/automation/dead-letters/analytics")
+def get_dead_letter_analytics():
+    return dead_letter_recovery_service.get_analytics()
+
+
+@app.get("/automation/dead-letters/audit-logs")
+def get_recovery_audit_logs(
+    execution_log_id: str | None = None,
+    limit: int = 100,
+):
+    return {
+        "entries": dead_letter_recovery_service.list_audit_logs(
+            execution_log_id=execution_log_id,
+            limit=limit,
+        ),
+    }
+
+
+@app.get("/automation/dead-letters/replay-tracking")
+def get_recovery_replay_tracking(
+    execution_log_id: str | None = None,
+    limit: int = 100,
+):
+    return {
+        "replays": dead_letter_recovery_service.list_replay_tracking(
+            execution_log_id=execution_log_id,
+            limit=limit,
+        ),
+    }
+
+
+@app.get("/automation/dead-letters/auto-recovery-rules")
+def list_auto_recovery_rules():
+    return {
+        "rules": auto_recovery_rules_service.list_rules(),
+    }
+
+
+@app.post("/automation/dead-letters/search")
+def post_search_dead_letters(request: DeadLetterSearchRequest):
+    return {
+        "dead_letters": dead_letter_recovery_service.search_dead_letters(
+            execution_type=request.execution_type,
+            failure_type=request.failure_type,
+            severity=request.severity,
+            project_id=request.project_id,
+            query=request.query,
+            limit=request.limit,
+        ),
+    }
+
+
+@app.post("/automation/dead-letters/{log_id}/replay")
+def replay_dead_letter_execution(
+    log_id: str,
+    request: RecoveryActionRequest,
+):
+    try:
+        return dead_letter_recovery_service.replay_execution(
+            log_id=log_id,
+            initiated_by=request.initiated_by,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/automation/dead-letters/{log_id}/retry")
+def retry_dead_letter_execution(
+    log_id: str,
+    request: RecoveryActionRequest,
+):
+    try:
+        return dead_letter_recovery_service.retry_dead_letter(
+            log_id=log_id,
+            initiated_by=request.initiated_by,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/automation/dead-letters/{log_id}/manual-recover")
+def manual_recover_dead_letter(
+    log_id: str,
+    request: RecoveryActionRequest,
+):
+    try:
+        return dead_letter_recovery_service.manual_recover(
+            log_id=log_id,
+            initiated_by=request.initiated_by,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/automation/dead-letters/categorize-failure")
+def categorize_dead_letter_failure(request: FailureCategorizationRequest):
+    return dead_letter_recovery_service.categorize_failure(
+        error_message=request.error_message,
+    )
+
+
+@app.post("/automation/dead-letters/orchestrate")
+def orchestrate_dead_letter_recovery(request: RecoveryOrchestrationRequest):
+    return recovery_orchestration_service.orchestrate_recovery_cycle(
+        initiated_by=request.initiated_by,
+        limit=request.limit,
     )
 
 

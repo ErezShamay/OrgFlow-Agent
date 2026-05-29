@@ -14,18 +14,27 @@ from app.repositories.circuit_breaker_repository import (
     CircuitBreakerRepository
 )
 
+from app.services.circuit_breaker_threshold_service import (
+    CircuitBreakerThresholdService,
+)
+
 
 class CircuitBreakerService:
 
-    def __init__(self):
+    def __init__(
+        self,
+        repository: CircuitBreakerRepository | None = None,
+        threshold_service: CircuitBreakerThresholdService | None = None,
+    ):
 
-        self.repository = (
-            CircuitBreakerRepository()
+        self.repository = repository or CircuitBreakerRepository()
+
+        self.threshold_service = (
+            threshold_service or CircuitBreakerThresholdService()
         )
 
-        self.failure_threshold = 5
-
-        self.cooldown_minutes = 10
+    def list_breakers(self) -> list[dict]:
+        return self.repository.list_breakers()
 
     # ==========================================
     # ALLOW REQUEST
@@ -109,7 +118,8 @@ class CircuitBreakerService:
 
                 {
                     "state":
-                        "HALF_OPEN"
+                        "HALF_OPEN",
+                    "half_open_success_count": 0,
                 }
             )
 
@@ -126,6 +136,33 @@ class CircuitBreakerService:
         breaker_key: str,
     ):
 
+        breaker = self.repository.get_breaker(breaker_key)
+        if not breaker:
+            return
+
+        state = breaker.get("state", "CLOSED")
+        threshold = self.threshold_service.get_threshold(breaker_key)
+
+        if state == "HALF_OPEN":
+            success_count = breaker.get("half_open_success_count", 0) + 1
+            if success_count >= threshold["half_open_success_threshold"]:
+                self.repository.update_breaker(
+                    breaker_key,
+                    {
+                        "state": "CLOSED",
+                        "failure_count": 0,
+                        "half_open_success_count": 0,
+                        "cooldown_until": None,
+                    },
+                )
+                return
+
+            self.repository.update_breaker(
+                breaker_key,
+                {"half_open_success_count": success_count},
+            )
+            return
+
         self.repository.update_breaker(
 
             breaker_key,
@@ -136,6 +173,8 @@ class CircuitBreakerService:
 
                 "failure_count":
                     0,
+
+                "half_open_success_count": 0,
             }
         )
 
@@ -158,6 +197,10 @@ class CircuitBreakerService:
         if not breaker:
             return
 
+        threshold = self.threshold_service.get_threshold(breaker_key)
+        failure_threshold = threshold["failure_threshold"]
+        cooldown_minutes = threshold["cooldown_minutes"]
+
         failure_count = (
             breaker.get(
                 "failure_count",
@@ -176,11 +219,21 @@ class CircuitBreakerService:
                 ).isoformat(),
         }
 
+        if breaker.get("state") == "HALF_OPEN":
+            data["state"] = "OPEN"
+            data["half_open_success_count"] = 0
+            data["cooldown_until"] = (
+                datetime.now(timezone.utc)
+                + timedelta(minutes=cooldown_minutes)
+            ).isoformat()
+            self.repository.update_breaker(breaker_key, data)
+            return
+
         # ======================================
         # OPEN CIRCUIT
         # ======================================
 
-        if failure_count >= self.failure_threshold:
+        if failure_count >= failure_threshold:
 
             data["state"] = "OPEN"
 
@@ -191,16 +244,10 @@ class CircuitBreakerService:
                 )
 
                 + timedelta(
-                    minutes=self.cooldown_minutes
+                    minutes=cooldown_minutes
                 )
 
             ).isoformat()
-
-            print(
-                "[CIRCUIT_BREAKER] "
-                f"Opened breaker: "
-                f"{breaker_key}"
-            )
 
         self.repository.update_breaker(
 

@@ -152,6 +152,173 @@ class AIExecutionLogRepository:
         return response.data
 
     # ==========================================
+    # GET BY ID
+    # ==========================================
+
+    def get_by_id(
+        self,
+        log_id: str,
+    ):
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "id",
+                log_id,
+            )
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+            return None
+
+        return response.data[0]
+
+    # ==========================================
+    # SEARCH DEAD LETTERS
+    # ==========================================
+
+    def search_dead_letters(
+        self,
+        execution_type: str | None = None,
+        failure_type: str | None = None,
+        severity: str | None = None,
+        project_id: str | None = None,
+        query: str | None = None,
+        limit: int = 50,
+    ):
+
+        request = (
+            self.client
+            .table(self.table_name)
+            .select("*")
+            .eq(
+                "dead_lettered",
+                True,
+            )
+        )
+
+        if execution_type:
+            request = request.eq(
+                "execution_type",
+                execution_type,
+            )
+
+        if failure_type:
+            request = request.eq(
+                "failure_type",
+                failure_type,
+            )
+
+        if severity:
+            request = request.eq(
+                "severity",
+                severity,
+            )
+
+        if project_id:
+            request = request.eq(
+                "project_id",
+                project_id,
+            )
+
+        response = (
+            request
+            .order(
+                "created_at",
+                desc=True,
+            )
+            .limit(limit)
+            .execute()
+        )
+
+        results = response.data
+
+        if query:
+            needle = query.lower()
+            results = [
+                item
+                for item in results
+                if needle in str(item.get("id", "")).lower()
+                or needle in str(item.get("execution_type", "")).lower()
+                or needle in str(item.get("failure_type", "")).lower()
+                or needle in str(item.get("project_id", "")).lower()
+            ]
+
+        return results
+
+    # ==========================================
+    # REQUEUE FROM DEAD LETTER
+    # ==========================================
+
+    def requeue_from_dead_letter(
+        self,
+        log_id: str,
+    ):
+
+        payload = {
+            "status": "FAILED",
+            "dead_lettered": False,
+            "recovery_locked": False,
+            "retry_count": 0,
+            "next_retry_at": None,
+        }
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .update(payload)
+            .eq(
+                "id",
+                log_id,
+            )
+            .execute()
+        )
+
+        if not response.data:
+            raise LookupError(f"Execution log '{log_id}' not found")
+
+        return response.data[0]
+
+    # ==========================================
+    # MARK MANUAL RECOVERED
+    # ==========================================
+
+    def mark_manual_recovered(
+        self,
+        log_id: str,
+    ):
+
+        payload = {
+            "status": "RECOVERED",
+            "dead_lettered": False,
+            "recovery_locked": False,
+            "next_retry_at": None,
+            "last_retry_at": datetime.now(
+                timezone.utc
+            ).isoformat(),
+        }
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .update(payload)
+            .eq(
+                "id",
+                log_id,
+            )
+            .execute()
+        )
+
+        if not response.data:
+            raise LookupError(f"Execution log '{log_id}' not found")
+
+        return response.data[0]
+
+    # ==========================================
     # UPDATE RETRY
     # ==========================================
 
