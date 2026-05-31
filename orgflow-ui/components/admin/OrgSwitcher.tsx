@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useState,
 } from "react";
 
@@ -28,11 +27,8 @@ export default function OrgSwitcher() {
     loading,
   } = useAuth();
 
-  const [switching, setSwitching] = useState(false);
-
-  useEffect(() => {
-    setSwitching(false);
-  }, [currentOrgId]);
+  const [targetOrgId, setTargetOrgId] = useState<string | null>(null);
+  const switching = targetOrgId !== null && targetOrgId !== currentOrgId;
 
   if (loading || organizations.length <= 1) {
     return null;
@@ -59,9 +55,9 @@ export default function OrgSwitcher() {
             return;
           }
 
-          setSwitching(true);
+          setTargetOrgId(nextOrgId);
           void switchOrganization(nextOrgId).finally(() => {
-            setSwitching(false);
+            setTargetOrgId(null);
           });
         }}
         className="

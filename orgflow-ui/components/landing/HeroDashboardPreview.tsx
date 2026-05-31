@@ -67,7 +67,7 @@ export default function HeroDashboardPreview() {
               פרויקט פעיל
             </p>
             <p className="mt-1 text-lg font-bold">
-              מגדלי הים — שלב א'
+              מגדלי הים — שלב א&apos;
             </p>
           </div>
 

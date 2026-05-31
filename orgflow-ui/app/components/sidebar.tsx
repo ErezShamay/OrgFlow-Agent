@@ -44,10 +44,6 @@ export default function Sidebar() {
           href: `/projects/${projectId}/escalations`,
           label: "נקודות סיכון",
         },
-        {
-          href: `/projects/${projectId}/exceptions`,
-          label: "חריגות",
-        },
       ]
     : [];
 
