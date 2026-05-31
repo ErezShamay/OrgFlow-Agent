@@ -1,28 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
-
 import Button from "@/components/ui/Button";
 
-export default function GlobalError({
+export default function Error({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
-
   return (
-    <main className="of-container flex min-h-screen flex-col items-center justify-center py-20 text-center">
-      <h1 className="text-2xl font-bold">Something went wrong</h1>
-      <p className="mt-3 max-w-lg text-sm text-zinc-500">
+    <main className="of-dashboard-page of-container flex min-h-[50vh] flex-col items-center justify-center text-center">
+      <h1 className="of-page-title text-2xl">Something went wrong</h1>
+      <p className="of-page-desc mx-auto max-w-lg text-sm">
         {error.message}
       </p>
       <div className="mt-6">
-        <Button onClick={reset}>Try again</Button>
+        <Button variant="accent" onClick={reset}>
+          Try again
+        </Button>
       </div>
     </main>
   );

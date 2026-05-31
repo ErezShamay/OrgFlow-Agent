@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState, startTransition } from "react";
 
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api/client";
 import { showToast } from "@/lib/ui/toast";
@@ -125,34 +127,17 @@ export default function ReviewsPage() {
   }
 
   return (
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
       {/* HEADER */}
 
       <div className="mb-10">
 
-        <h1
-          className="
-            text-5xl
-            font-black
-          "
-        >
+        <h1 className="of-page-title">
           ביקורות AI
         </h1>
 
-        <p
-          className="
-            mt-4
-            text-zinc-500
-            text-lg
-          "
-        >
+        <p className="of-page-desc mt-4">
           ביקורות הממתינות לאישור
           במערכת התפעול
         </p>
@@ -171,17 +156,7 @@ export default function ReviewsPage() {
         "
       >
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-8
-          "
-        >
+        <div className="of-kpi-card">
 
           <p
             className="
@@ -203,17 +178,7 @@ export default function ReviewsPage() {
 
         </div>
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-orange-200
-            dark:border-orange-900
-            rounded-3xl
-            p-8
-          "
-        >
+        <div className="of-kpi-card border-orange-200 dark:border-orange-900">
 
           <p
             className="
@@ -235,17 +200,7 @@ export default function ReviewsPage() {
 
         </div>
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-8
-          "
-        >
+        <div className="of-kpi-card">
 
           <p
             className="
@@ -284,17 +239,7 @@ export default function ReviewsPage() {
       {!loading &&
         reviews.length === 0 && (
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-10
-          "
-        >
+        <div className="of-card of-card-p10 of-card-xl">
 
           אין ביקורות ממתינות
 
@@ -310,15 +255,7 @@ export default function ReviewsPage() {
 
           <div
             key={review.id}
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-[2rem]
-              p-10
-            "
+            className="of-card of-card-p10 of-card-xl"
           >
 
             {/* TOP */}
@@ -358,20 +295,9 @@ export default function ReviewsPage() {
 
               </div>
 
-              <div
-                className="
-                  bg-orange-100
-                  text-orange-700
-                  dark:bg-orange-900/40
-                  dark:text-orange-300
-                  px-4
-                  py-2
-                  rounded-full
-                  font-semibold
-                "
-              >
+              <Badge variant="warning">
                 ממתין לאישור
-              </div>
+              </Badge>
 
             </div>
 
@@ -460,25 +386,14 @@ export default function ReviewsPage() {
               "
             >
 
-              <button
+              <Button
+                variant="primary"
+                size="lg"
                 disabled={processingId === review.id}
                 onClick={() => approveReview(review.id)}
-                className="
-                  bg-zinc-900
-                  text-white
-                  dark:bg-white
-                  dark:text-black
-                  px-6
-                  py-3
-                  rounded-2xl
-                  font-semibold
-                  hover:opacity-90
-                  transition
-                  disabled:opacity-50
-                "
               >
                 אישור ביקורת
-              </button>
+              </Button>
 
               <button
                 disabled={processingId === review.id}

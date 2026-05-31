@@ -8,6 +8,7 @@ import {
   startTransition,
 } from "react";
 
+import Badge from "@/components/ui/Badge";
 import { apiFetch } from "@/lib/api/client";
 
 type Action = {
@@ -74,39 +75,19 @@ export default function ProjectExceptionsPage({
   }, [loadExceptions]);
 
   return (
-    <main
-      className="
-        bg-zinc-100
-        dark:bg-zinc-950
-        text-zinc-900
-        dark:text-zinc-100
-        min-h-screen
-      "
-    >
+    <main className="of-dashboard-page">
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="mx-auto max-w-6xl">
 
         {/* HEADER */}
 
         <div className="mb-10">
 
-          <h1
-            className="
-              text-5xl
-              font-bold
-            "
-          >
+          <h1 className="of-page-title">
             חריגות
           </h1>
 
-          <p
-            className="
-              text-zinc-600
-              dark:text-zinc-400
-              mt-3
-              text-lg
-            "
-          >
+          <p className="of-page-desc mt-3">
             נקודות סיכון וחריגות בפרויקט
           </p>
 
@@ -125,17 +106,7 @@ export default function ProjectExceptionsPage({
         {!loading &&
           exceptions.length === 0 && (
 
-          <div
-            className="
-              bg-white
-              dark:bg-zinc-900
-              rounded-3xl
-              p-8
-              border
-              border-zinc-200
-              dark:border-zinc-800
-            "
-          >
+          <div className="of-card of-card-p8">
             אין נקודות סיכון/חריגות פתוחות
           </div>
 
@@ -150,13 +121,10 @@ export default function ProjectExceptionsPage({
             <div
               key={item.id}
               className="
-                bg-white
-                dark:bg-zinc-900
-                border
+                of-card
+                of-card-p8
                 border-red-200
                 dark:border-red-900
-                rounded-3xl
-                p-8
               "
             >
 
@@ -193,21 +161,9 @@ export default function ProjectExceptionsPage({
 
                 </div>
 
-                <div
-                  className="
-                    bg-red-100
-                    text-red-700
-                    dark:bg-red-900/40
-                    dark:text-red-300
-                    px-4
-                    py-2
-                    rounded-full
-                    text-sm
-                    font-semibold
-                  "
-                >
+                <Badge variant="danger">
                   חריגה פתוחה
-                </div>
+                </Badge>
 
               </div>
 

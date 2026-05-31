@@ -6,7 +6,9 @@ import {
   usePathname,
 } from "next/navigation";
 
-import { GLOBAL_NAV_LINKS } from "@/lib/navigation";
+import BrandLogo from "@/components/ui/BrandLogo";
+import NavLinkItem from "@/components/ui/NavLinkItem";
+import { GLOBAL_NAV_LINKS, SETTINGS_ROUTE } from "@/lib/navigation";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -44,13 +46,10 @@ export default function Sidebar() {
   return (
     <aside
       className="
+        of-glass-sidebar
         w-full
         border-b
-        border-zinc-200
-        bg-white
         p-4
-        dark:border-zinc-800
-        dark:bg-zinc-900
         lg:w-72
         lg:min-h-screen
         lg:border-b-0
@@ -59,21 +58,7 @@ export default function Sidebar() {
       "
     >
       <div className="mb-10">
-        <Link href="/">
-          <h1 className="cursor-pointer text-3xl font-bold">
-            Supervisor AI
-          </h1>
-        </Link>
-
-        <p
-          className="
-            mt-2
-            text-zinc-500
-            dark:text-zinc-400
-          "
-        >
-          שליטה ובקרה לפרויקטים
-        </p>
+        <BrandLogo size="lg" />
       </div>
 
       <nav className="space-y-6">
@@ -92,9 +77,9 @@ export default function Sidebar() {
             ניווט ראשי
           </p>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             {GLOBAL_NAV_LINKS.map((link) => (
-              <NavLink
+              <NavLinkItem
                 key={link.href}
                 href={link.href}
                 label={link.label}
@@ -120,9 +105,9 @@ export default function Sidebar() {
               פרויקט נוכחי
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               {projectLinks.map((link) => (
-                <NavLink
+                <NavLinkItem
                   key={link.href}
                   href={link.href}
                   label={link.label}
@@ -132,46 +117,31 @@ export default function Sidebar() {
             </div>
           </div>
         ) : null}
+
+        <div>
+          <p
+            className="
+              mb-2
+              px-4
+              text-xs
+              font-semibold
+              uppercase
+              tracking-wide
+              text-zinc-400
+            "
+          >
+            מערכת
+          </p>
+
+          <div className="space-y-1">
+            <NavLinkItem
+              href={SETTINGS_ROUTE.href}
+              label={SETTINGS_ROUTE.label}
+              isActive={pathname === SETTINGS_ROUTE.href}
+            />
+          </div>
+        </div>
       </nav>
     </aside>
-  );
-}
-
-function NavLink({
-  href,
-  label,
-  isActive,
-}: {
-  href: string;
-  label: string;
-  isActive: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`
-        block
-        rounded-2xl
-        px-4
-        py-3
-        font-medium
-        transition-colors
-        ${
-          isActive
-            ? `
-              bg-zinc-900
-              text-white
-              dark:bg-white
-              dark:text-black
-            `
-            : `
-              hover:bg-zinc-100
-              dark:hover:bg-zinc-800
-            `
-        }
-      `}
-    >
-      {label}
-    </Link>
   );
 }

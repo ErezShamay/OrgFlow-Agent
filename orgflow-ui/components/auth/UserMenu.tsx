@@ -164,15 +164,18 @@ export default function UserMenu() {
             )
           }
           className="
+            of-focus-ring
             relative
-            p-3
             rounded-2xl
             border
-            border-zinc-200
-            dark:border-zinc-700
-            hover:bg-zinc-100
-            dark:hover:bg-zinc-800
+            border-zinc-200/80
+            bg-white/90
+            p-3
             transition
+            hover:bg-zinc-50
+            dark:border-zinc-700/80
+            dark:bg-zinc-900/85
+            dark:hover:bg-zinc-800
           "
         >
 
@@ -214,20 +217,16 @@ export default function UserMenu() {
 
             <div
               className="
+                of-card
                 absolute
                 left-0
                 top-14
-                w-[420px]
-                max-h-[500px]
-                overflow-auto
-                bg-white
-                dark:bg-zinc-900
-                border
-                border-zinc-200
-                dark:border-zinc-800
-                rounded-3xl
-                shadow-2xl
                 z-50
+                max-h-[500px]
+                w-[420px]
+                overflow-auto
+                p-0
+                shadow-2xl
               "
             >
 

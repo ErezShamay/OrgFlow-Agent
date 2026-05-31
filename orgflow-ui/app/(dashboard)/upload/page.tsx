@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 
+import Button from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api/client";
 import { showToast } from "@/lib/ui/toast";
 
@@ -142,46 +143,19 @@ export default function UploadPage() {
 
   return (
 
-    <main
-      className="
-        min-h-screen
-        bg-zinc-100
-        dark:bg-zinc-950
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
-      <div
-        className="
-          max-w-3xl
-          mx-auto
-          px-6
-          py-12
-        "
-      >
+      <div className="mx-auto max-w-3xl">
 
         {/* HEADER */}
 
         <div className="mb-10">
 
-          <h1
-            className="
-              text-5xl
-              font-black
-            "
-          >
+          <h1 className="of-page-title">
             העלאת דוח שבועי
           </h1>
 
-          <p
-            className="
-              mt-4
-              text-zinc-600
-              dark:text-zinc-400
-              text-lg
-            "
-          >
+          <p className="of-page-desc mt-4">
             העלאת דוחות לצורך ניתוח AI תפעולי
           </p>
 
@@ -189,18 +163,7 @@ export default function UploadPage() {
 
         {/* CARD */}
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-8
-            shadow-sm
-          "
-        >
+        <div className="of-card of-card-p8 shadow-sm">
 
           {/* PROJECT SELECT */}
 
@@ -321,35 +284,23 @@ export default function UploadPage() {
 
           {/* ACTION */}
 
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={uploadReport}
-
             disabled={
               uploading ||
               !selectedProject ||
               !selectedFile
             }
-
-            className="
-              w-full
-              bg-zinc-900
-              text-white
-              dark:bg-white
-              dark:text-black
-              rounded-2xl
-              py-4
-              font-semibold
-              text-lg
-              disabled:opacity-50
-              transition
-            "
+            className="w-full justify-center py-4 text-lg"
           >
 
             {uploading
               ? "מעלה דוח..."
               : "העלאת דוח ל-AI"}
 
-          </button>
+          </Button>
 
         </div>
 

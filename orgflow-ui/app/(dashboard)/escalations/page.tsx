@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, startTransition } from "react";
 
+import Badge from "@/components/ui/Badge";
 import { apiFetch } from "@/lib/api/client";
 
 type Escalation = {
@@ -40,27 +41,14 @@ export default function EscalationsPage() {
   }, [loadEscalations]);
 
   return (
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
       <div className="mb-10">
 
-        <h1 className="text-5xl font-bold">
+        <h1 className="of-page-title">
           נקודות סיכון
         </h1>
 
-        <p
-          className="
-            mt-3
-            text-lg
-            text-zinc-600
-            dark:text-zinc-400
-          "
-        >
+        <p className="of-page-desc mt-3">
           אירועים הדורשים טיפול מיידי
         </p>
 
@@ -74,17 +62,7 @@ export default function EscalationsPage() {
 
       {!loading &&
         escalations.length === 0 && (
-          <div
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-3xl
-              p-8
-            "
-          >
+          <div className="of-card of-card-p8">
             אין נקודות סיכון פתוחות
           </div>
         )}
@@ -97,13 +75,10 @@ export default function EscalationsPage() {
             <div
               key={escalation.id}
               className="
-                bg-white
-                dark:bg-zinc-900
-                border
+                of-card
+                of-card-p8
                 border-red-200
                 dark:border-red-900
-                rounded-3xl
-                p-8
                 shadow-sm
               "
             >
@@ -144,21 +119,9 @@ export default function EscalationsPage() {
 
                 </div>
 
-                <div
-                  className="
-                    bg-red-100
-                    text-red-700
-                    dark:bg-red-900/40
-                    dark:text-red-300
-                    px-4
-                    py-2
-                    rounded-full
-                    text-sm
-                    font-semibold
-                  "
-                >
+                <Badge variant="danger">
                   דחוף
-                </div>
+                </Badge>
 
               </div>
 

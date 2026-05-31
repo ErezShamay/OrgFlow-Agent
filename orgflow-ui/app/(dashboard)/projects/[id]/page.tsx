@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
 
+import Badge from "@/components/ui/Badge";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline";
 
 import ProjectInsightsPanel from "@/components/projects/ProjectInsightsPanel";
@@ -104,13 +105,7 @@ export default function ProjectDetailsPage() {
   if (loading) {
 
     return (
-      <main
-        className="
-          p-10
-          text-zinc-900
-          dark:text-zinc-100
-        "
-      >
+      <main className="of-dashboard-page">
         טוען פרויקט...
       </main>
     );
@@ -119,13 +114,7 @@ export default function ProjectDetailsPage() {
   if (!project) {
 
     return (
-      <main
-        className="
-          p-10
-          text-zinc-900
-          dark:text-zinc-100
-        "
-      >
+      <main className="of-dashboard-page">
         פרויקט לא נמצא
       </main>
     );
@@ -133,28 +122,11 @@ export default function ProjectDetailsPage() {
 
   return (
 
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
       {/* PROJECT HEADER */}
 
-      <div
-        className="
-          bg-white
-          dark:bg-zinc-900
-          border
-          border-zinc-200
-          dark:border-zinc-800
-          rounded-3xl
-          p-10
-          shadow-sm
-        "
-      >
+      <div className="of-card of-card-p10 of-card-xl shadow-sm">
 
         <div
           className="
@@ -167,44 +139,21 @@ export default function ProjectDetailsPage() {
 
           <div>
 
-            <h1
-              className="
-                text-5xl
-                font-bold
-              "
-            >
+            <h1 className="of-page-title">
               {project.project_name}
             </h1>
 
-            <p
-              className="
-                mt-4
-                text-zinc-600
-                dark:text-zinc-400
-                text-lg
-              "
-            >
+            <p className="of-page-desc mt-4">
               סביבת עבודה תפעולית לפרויקט
             </p>
 
           </div>
 
-          <div
-            className="
-              bg-green-100
-              text-green-700
-              dark:bg-green-900/40
-              dark:text-green-300
-              px-5
-              py-3
-              rounded-full
-              font-semibold
-            "
-          >
+          <Badge variant="success">
             {getStatusLabel(
               project.status
             )}
-          </div>
+          </Badge>
 
         </div>
 
@@ -280,18 +229,7 @@ export default function ProjectDetailsPage() {
 
       {/* HEALTH */}
 
-      <div
-        className="
-          mt-10
-          bg-white
-          dark:bg-zinc-900
-          border
-          border-zinc-200
-          dark:border-zinc-800
-          rounded-3xl
-          p-10
-        "
-      >
+      <div className="of-card of-card-p10 of-card-xl mt-10">
 
         <div
           className="
@@ -402,18 +340,7 @@ export default function ProjectDetailsPage() {
 
       {/* AI OPERATIONAL SUMMARY */}
 
-      <div
-        className="
-          mt-10
-          bg-white
-          dark:bg-zinc-900
-          border
-          border-zinc-200
-          dark:border-zinc-800
-          rounded-3xl
-          p-10
-        "
-      >
+      <div className="of-card of-card-p10 of-card-xl mt-10">
 
         <div
           className="
@@ -501,17 +428,7 @@ export default function ProjectDetailsPage() {
 
         {actions.length === 0 && (
 
-          <div
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-3xl
-              p-8
-            "
-          >
+          <div className="of-card of-card-p8">
             אין פעולות פתוחות
           </div>
 
@@ -523,15 +440,7 @@ export default function ProjectDetailsPage() {
 
             <div
               key={action.id}
-              className="
-                bg-white
-                dark:bg-zinc-900
-                border
-                border-zinc-200
-                dark:border-zinc-800
-                rounded-3xl
-                p-8
-              "
+              className="of-card of-card-p8"
             >
 
               <div
@@ -792,17 +701,7 @@ export default function ProjectDetailsPage() {
 
         {reviews.length === 0 && (
 
-          <div
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-3xl
-              p-8
-            "
-          >
+          <div className="of-card of-card-p8">
             אין ביקורות בפרויקט
           </div>
 
@@ -814,15 +713,7 @@ export default function ProjectDetailsPage() {
 
             <div
               key={review.id}
-              className="
-                bg-white
-                dark:bg-zinc-900
-                border
-                border-zinc-200
-                dark:border-zinc-800
-                rounded-3xl
-                p-8
-              "
+              className="of-card of-card-p8"
             >
 
               <div className="space-y-5">
@@ -908,22 +799,12 @@ function KpiCard({
 
     <div
       className={`
-        bg-white
-        dark:bg-zinc-900
-        border
-        rounded-3xl
-        p-8
+        of-kpi-card
 
         ${
           danger
-            ? `
-              border-red-200
-              dark:border-red-900
-            `
-            : `
-              border-zinc-200
-              dark:border-zinc-800
-            `
+            ? "border-red-200 dark:border-red-900"
+            : ""
         }
       `}
     >

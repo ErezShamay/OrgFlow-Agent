@@ -1,29 +1,31 @@
 "use client";
 
+import { useEffect } from "react";
+
 import Button from "@/components/ui/Button";
 
-export default function RootGlobalError({
+export default function GlobalError({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
   return (
-    <html lang="en">
-      <body className="bg-zinc-100 p-10 text-zinc-900">
-        <main className="mx-auto max-w-lg text-center">
-          <h1 className="text-2xl font-bold">
-            Application error
-          </h1>
-          <p className="mt-3 text-sm text-zinc-600">
-            {error.message}
-          </p>
-          <div className="mt-6">
-            <Button onClick={reset}>Reload</Button>
-          </div>
-        </main>
-      </body>
-    </html>
+    <main className="of-loading-screen of-container py-20 text-center">
+      <h1 className="of-page-title text-2xl">Something went wrong</h1>
+      <p className="of-page-desc mx-auto max-w-lg text-sm">
+        {error.message}
+      </p>
+      <div className="mt-6">
+        <Button variant="accent" onClick={reset}>
+          Try again
+        </Button>
+      </div>
+    </main>
   );
 }

@@ -4,29 +4,31 @@ export default function Card({
   children,
   className = "",
   padding = "lg",
+  interactive = false,
+  muted = false,
 }: {
   children: ReactNode;
   className?: string;
-  padding?: "sm" | "md" | "lg";
+  padding?: "sm" | "md" | "lg" | "xl";
+  interactive?: boolean;
+  muted?: boolean;
 }) {
   const paddingClass =
     padding === "sm"
-      ? "p-4"
+      ? "of-card-p6"
       : padding === "md"
-        ? "p-6"
-        : "p-8";
+        ? "of-card-p6"
+        : padding === "xl"
+          ? "of-card-p10 of-card-xl"
+          : "of-card-p8";
 
   return (
     <div
       className={`
-        rounded-3xl
-        border
-        border-zinc-200
-        bg-white
-        shadow-sm
-        dark:border-zinc-800
-        dark:bg-zinc-900
+        of-card
         ${paddingClass}
+        ${interactive ? "of-card-interactive" : ""}
+        ${muted ? "of-card-muted" : ""}
         ${className}
       `}
     >

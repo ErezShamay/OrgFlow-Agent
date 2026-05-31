@@ -102,7 +102,7 @@ export default function PortfolioPage() {
   if (loading) {
 
     return (
-      <main className="p-10">
+      <main className="of-dashboard-page">
         טוען Portfolio...
       </main>
     );
@@ -111,7 +111,7 @@ export default function PortfolioPage() {
   if (!portfolio) {
 
     return (
-      <main className="p-10">
+      <main className="of-dashboard-page">
         Portfolio לא זמין
       </main>
     );
@@ -119,13 +119,7 @@ export default function PortfolioPage() {
 
   return (
 
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
       {/* HEADER */}
 
@@ -140,12 +134,7 @@ export default function PortfolioPage() {
           Executive Operations
         </p>
 
-        <h1
-          className="
-            text-5xl
-            font-black
-          "
-        >
+        <h1 className="of-page-title">
           Portfolio Intelligence
         </h1>
 
@@ -225,15 +214,7 @@ export default function PortfolioPage() {
                 key={
                   project.project_id
                 }
-                className="
-                  bg-white
-                  dark:bg-zinc-900
-                  border
-                  border-zinc-200
-                  dark:border-zinc-800
-                  rounded-3xl
-                  p-8
-                "
+                className="of-card of-card-p8"
               >
 
                 <div
@@ -458,24 +439,12 @@ function PortfolioKpiCard({
 
     <div
       className={`
-        bg-white
-        dark:bg-zinc-900
-        border
-        rounded-3xl
-        p-8
+        of-kpi-card
 
         ${
           danger
-
-            ? `
-              border-red-200
-              dark:border-red-900
-            `
-
-            : `
-              border-zinc-200
-              dark:border-zinc-800
-            `
+            ? "border-red-200 dark:border-red-900"
+            : ""
         }
       `}
     >

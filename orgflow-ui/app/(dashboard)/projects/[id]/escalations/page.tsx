@@ -23,25 +23,13 @@ export default function ProjectEscalationsPage({
   } = useProjectWorkspace(projectId);
 
   return (
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
       <div className="mb-10">
-        <h1 className="text-5xl font-black">
+        <h1 className="of-page-title">
           נקודות סיכון
         </h1>
 
-        <p
-          className="
-            mt-4
-            text-lg
-            text-zinc-500
-          "
-        >
+        <p className="of-page-desc mt-4">
           אירועים הדורשים טיפול מיידי בפרויקט
         </p>
       </div>
@@ -51,17 +39,7 @@ export default function ProjectEscalationsPage({
       ) : null}
 
       {!loading && exceptions.length === 0 ? (
-        <div
-          className="
-            rounded-3xl
-            border
-            border-zinc-200
-            bg-white
-            p-10
-            dark:border-zinc-800
-            dark:bg-zinc-900
-          "
-        >
+        <div className="of-card of-card-p10 of-card-xl">
           אין נקודות סיכון פתוחות
         </div>
       ) : null}
@@ -71,13 +49,10 @@ export default function ProjectEscalationsPage({
           <div
             key={action.id}
             className="
-              rounded-3xl
-              border
+              of-card
+              of-card-p8
               border-orange-200
-              bg-white
-              p-8
               dark:border-orange-900
-              dark:bg-zinc-900
             "
           >
             <h2 className="text-2xl font-bold">

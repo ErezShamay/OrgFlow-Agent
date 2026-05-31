@@ -45,15 +45,7 @@ export function SkeletonText({
 export function SkeletonCard() {
   return (
     <div
-      className="
-        rounded-3xl
-        border
-        border-zinc-200
-        bg-white
-        p-8
-        dark:border-zinc-800
-        dark:bg-zinc-900
-      "
+      className="of-card of-card-p8"
       aria-busy="true"
       aria-label="Loading card"
     >

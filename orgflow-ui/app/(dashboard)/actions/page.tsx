@@ -7,6 +7,8 @@ import {
   useState,
 } from "react";
 
+import Badge from "@/components/ui/Badge";
+
 import {
   useAuth,
 } from "@/contexts/AuthContext";
@@ -206,46 +208,19 @@ export default function ActionsPage() {
 
   return (
 
-    <main
-      dir="rtl"
-      className="
-        bg-zinc-100
-        dark:bg-zinc-950
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main dir="rtl" className="of-dashboard-page">
 
-      <div
-        className="
-          max-w-6xl
-          mx-auto
-          px-6
-          py-10
-        "
-      >
+      <div className="mx-auto max-w-6xl">
 
         {/* HEADER */}
 
         <div className="mb-10">
 
-          <h1
-            className="
-              text-5xl
-              font-bold
-            "
-          >
+          <h1 className="of-page-title">
             פעולות תפעוליות
           </h1>
 
-          <p
-            className="
-              text-zinc-600
-              dark:text-zinc-400
-              mt-3
-              text-lg
-            "
-          >
+          <p className="of-page-desc mt-3">
             ניהול פעולות שנוצרו על ידי מערכת AI
           </p>
 
@@ -268,17 +243,7 @@ export default function ActionsPage() {
           && actions.length === 0
           && (
 
-            <div
-              className="
-                bg-white
-                dark:bg-zinc-900
-                rounded-3xl
-                p-8
-                border
-                border-zinc-200
-                dark:border-zinc-800
-              "
-            >
+            <div className="of-card of-card-p8">
               אין פעולות פתוחות
             </div>
 
@@ -294,16 +259,7 @@ export default function ActionsPage() {
 
               <div
                 key={action.id}
-                className="
-                  bg-white
-                  dark:bg-zinc-900
-                  border
-                  border-zinc-200
-                  dark:border-zinc-800
-                  rounded-3xl
-                  p-8
-                  shadow-sm
-                "
+                className="of-card of-card-p8 shadow-sm"
               >
 
                 {/* HEADER */}
@@ -343,25 +299,13 @@ export default function ActionsPage() {
 
                   </div>
 
-                  <div
-                    className="
-                      bg-blue-100
-                      text-blue-800
-                      dark:bg-blue-900/40
-                      dark:text-blue-300
-                      px-4
-                      py-2
-                      rounded-full
-                      text-sm
-                      font-semibold
-                    "
-                  >
+                  <Badge variant="info">
                     {
                       getStatusLabel(
                         action.status
                       )
                     }
-                  </div>
+                  </Badge>
 
                 </div>
 

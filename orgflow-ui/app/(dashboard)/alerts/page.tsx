@@ -12,7 +12,7 @@ export default function AlertsPage() {
   if (loading) {
 
     return (
-      <main className="p-10">
+      <main className="of-dashboard-page">
         טוען התראות...
       </main>
     );
@@ -20,13 +20,7 @@ export default function AlertsPage() {
 
   return (
 
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
       <div className="mb-10">
 
@@ -39,12 +33,7 @@ export default function AlertsPage() {
           AI Operational Monitoring
         </p>
 
-        <h1
-          className="
-            text-5xl
-            font-black
-          "
-        >
+        <h1 className="of-page-title">
           מרכז התראות
         </h1>
 
@@ -52,17 +41,7 @@ export default function AlertsPage() {
 
       {alerts.length === 0 && (
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-10
-          "
-        >
+        <div className="of-card of-card-p10 of-card-xl">
           אין התראות פעילות
         </div>
 

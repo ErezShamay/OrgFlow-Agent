@@ -18,21 +18,15 @@ export default function EmptyState({
   return (
     <div
       className="
+        of-card
+        of-card-p10
         flex
         min-h-48
         flex-col
         items-center
         justify-center
-        rounded-3xl
-        border
         border-dashed
-        border-zinc-300
-        bg-white
-        px-8
-        py-12
         text-center
-        dark:border-zinc-700
-        dark:bg-zinc-900
       "
       role="status"
     >
@@ -50,7 +44,9 @@ export default function EmptyState({
 
       {actionLabel && onAction ? (
         <div className="mt-6">
-          <Button onClick={onAction}>{actionLabel}</Button>
+          <Button variant="accent" onClick={onAction}>
+            {actionLabel}
+          </Button>
         </div>
       ) : null}
     </div>

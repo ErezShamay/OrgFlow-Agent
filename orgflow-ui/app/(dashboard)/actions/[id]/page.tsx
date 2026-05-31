@@ -9,6 +9,7 @@ import {
   useParams,
 } from "next/navigation";
 
+import Badge from "@/components/ui/Badge";
 import { useRealtime } from "@/hooks/useRealtime";
 import { apiFetch } from "@/lib/api/client";
 
@@ -251,7 +252,7 @@ export default function ActionDetailsPage() {
   if (loading) {
 
     return (
-      <main className="p-10">
+      <main className="of-dashboard-page">
         טוען פעולה...
       </main>
     );
@@ -263,7 +264,7 @@ export default function ActionDetailsPage() {
   ) {
 
     return (
-      <main className="p-10">
+      <main className="of-dashboard-page">
         פעולה לא נמצאה
       </main>
     );
@@ -274,27 +275,11 @@ export default function ActionDetailsPage() {
 
   return (
 
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
       {/* HEADER */}
 
-      <div
-        className="
-          bg-white
-          dark:bg-zinc-900
-          border
-          border-zinc-200
-          dark:border-zinc-800
-          rounded-3xl
-          p-10
-        "
-      >
+      <div className="of-card of-card-p10 of-card-xl">
 
         <div
           className="
@@ -396,14 +381,7 @@ export default function ActionDetailsPage() {
 
       {/* SLA */}
 
-      <div
-        className="
-          mt-10
-          border
-          rounded-3xl
-          p-8
-        "
-      >
+      <div className="of-card of-card-p8 mt-10">
 
         <div
           className="
@@ -501,17 +479,7 @@ export default function ActionDetailsPage() {
           הערות תפעוליות
         </h2>
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-3xl
-            p-8
-          "
-        >
+        <div className="of-card of-card-p8">
 
           <textarea
             value={newComment}
@@ -567,15 +535,7 @@ export default function ActionDetailsPage() {
 
               <div
                 key={comment.id}
-                className="
-                  bg-white
-                  dark:bg-zinc-900
-                  border
-                  border-zinc-200
-                  dark:border-zinc-800
-                  rounded-2xl
-                  p-6
-                "
+                className="of-card of-card-p6"
               >
 
                 <div
@@ -656,15 +616,7 @@ export default function ActionDetailsPage() {
 
               <div
                 key={activity.id}
-                className="
-                  bg-white
-                  dark:bg-zinc-900
-                  border
-                  border-zinc-200
-                  dark:border-zinc-800
-                  rounded-2xl
-                  p-6
-                "
+                className="of-card of-card-p6"
               >
 
                 <div
@@ -743,17 +695,7 @@ function InfoCard({
 
   return (
 
-    <div
-      className="
-        bg-white
-        dark:bg-zinc-900
-        border
-        border-zinc-200
-        dark:border-zinc-800
-        rounded-2xl
-        p-6
-      "
-    >
+    <div className="of-kpi-card">
 
       <p
         className="
@@ -783,44 +725,20 @@ function StatusBadge({
 }: {
   status: string;
 }) {
-
-  const styles = {
-
-    OPEN:
-      "bg-blue-100 text-blue-700",
-
-    IN_PROGRESS:
-      "bg-yellow-100 text-yellow-700",
-
-    BLOCKED:
-      "bg-orange-100 text-orange-700",
-
-    ESCALATED:
-      "bg-red-100 text-red-700",
-
-    COMPLETED:
-      "bg-green-100 text-green-700",
+  const variantByStatus: Record<
+    string,
+    "info" | "warning" | "danger" | "success" | "neutral"
+  > = {
+    OPEN: "info",
+    IN_PROGRESS: "warning",
+    BLOCKED: "warning",
+    ESCALATED: "danger",
+    COMPLETED: "success",
   };
 
   return (
-
-    <span
-      className={`
-        px-4
-        py-2
-        rounded-full
-        font-semibold
-
-        ${
-          styles[
-            status as keyof typeof styles
-          ]
-          || "bg-zinc-100 text-zinc-700"
-        }
-      `}
-    >
+    <Badge variant={variantByStatus[status] || "neutral"}>
       {status}
-    </span>
-
+    </Badge>
   );
 }

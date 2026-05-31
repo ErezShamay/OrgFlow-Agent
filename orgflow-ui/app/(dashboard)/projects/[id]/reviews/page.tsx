@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import Button from "@/components/ui/Button";
 import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
 
 type Props = {
@@ -28,31 +29,15 @@ export default function ReviewsPage({
   );
 
   return (
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
       <div className="mb-10">
 
-        <h1
-          className="
-            text-5xl
-            font-black
-          "
-        >
+        <h1 className="of-page-title">
           ביקורות AI
         </h1>
 
-        <p
-          className="
-            mt-4
-            text-zinc-500
-          "
-        >
+        <p className="of-page-desc mt-4">
           סקירת הביקורות בפרויקט
         </p>
 
@@ -73,17 +58,7 @@ export default function ReviewsPage({
       {!loading &&
         reviews.length === 0 && (
 
-        <div
-          className="
-            bg-white
-            dark:bg-zinc-900
-            rounded-3xl
-            p-8
-            border
-            border-zinc-200
-            dark:border-zinc-800
-          "
-        >
+        <div className="of-card of-card-p8">
           אין ביקורות AI פתוחות
         </div>
 
@@ -97,15 +72,7 @@ export default function ReviewsPage({
 
           <div
             key={review.id}
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-3xl
-              p-8
-            "
+            className="of-card of-card-p8"
           >
 
             <div className="space-y-5">
@@ -173,27 +140,17 @@ export default function ReviewsPage({
               "
             >
 
-              <button
+              <Button
+                variant="primary"
+                size="lg"
                 onClick={() =>
                   approveReview(
                     review.id
                   )
                 }
-                className="
-                  bg-zinc-900
-                  text-white
-                  dark:bg-white
-                  dark:text-black
-                  px-6
-                  py-3
-                  rounded-2xl
-                  font-semibold
-                  hover:opacity-90
-                  transition
-                "
               >
                 אישור ביקורת
-              </button>
+              </Button>
 
               <button
                 className="

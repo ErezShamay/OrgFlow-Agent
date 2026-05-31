@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import FilterBar from "@/components/ui/FilterBar";
@@ -202,24 +204,15 @@ export default function ProjectsPage() {
               })
             }
           />
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="lg"
             disabled={creating}
-            className="
-              rounded-2xl
-              bg-zinc-900
-              px-6
-              py-4
-              font-semibold
-              text-white
-              disabled:opacity-50
-              dark:bg-white
-              dark:text-black
-              md:col-span-2
-            "
+            className="md:col-span-2"
           >
             {creating ? "יוצר פרויקט..." : "צור פרויקט"}
-          </button>
+          </Button>
         </form>
       </Card>
 
@@ -275,9 +268,9 @@ export default function ProjectsPage() {
                   </p>
                 </div>
 
-                <div className="rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                <Badge variant="success">
                   {getStatusLabel(project.status)}
-                </div>
+                </Badge>
               </div>
 
               <div className="space-y-4">

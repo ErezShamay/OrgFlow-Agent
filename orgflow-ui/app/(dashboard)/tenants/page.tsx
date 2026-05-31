@@ -19,10 +19,10 @@ export default function TenantsPage() {
   const withEmail = tenants.filter((t) => t.email).length;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10 p-6 md:p-8">
+    <div className="of-dashboard-page of-container mx-auto max-w-5xl space-y-10">
       <header>
-        <h1 className="text-2xl font-bold md:text-3xl">מנהל דיירים</h1>
-        <p className="mt-2 max-w-2xl text-sm text-zinc-500">
+        <h1 className="of-page-title text-2xl md:text-3xl">מנהל דיירים</h1>
+        <p className="of-page-desc max-w-2xl text-sm">
           העלה קובץ Excel של רשימת דיירים — המערכת תחלץ את הנתונים, תאפשר עריכה,
           ותפיק 4 קבצי ייבוא: טלפון (VCF), מייל (CSV), דירות לזוהו, אנשי קשר
           לזוהו.
@@ -31,14 +31,14 @@ export default function TenantsPage() {
 
       <section>
         <SectionTitle step="1" title="העלאת קובץ" />
-        <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-900">
+        <div className="of-card of-card-p6 mb-4 grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setMode("single")}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+            className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
               mode === "single"
-                ? "bg-white shadow dark:bg-zinc-800"
-                : "text-zinc-500"
+                ? "bg-gradient-to-l from-blue-600 to-violet-600 text-white shadow-md"
+                : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             }`}
           >
             קובץ אחד
@@ -46,10 +46,10 @@ export default function TenantsPage() {
           <button
             type="button"
             onClick={() => setMode("merge")}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+            className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
               mode === "merge"
-                ? "bg-white shadow dark:bg-zinc-800"
-                : "text-zinc-500"
+                ? "bg-gradient-to-l from-blue-600 to-violet-600 text-white shadow-md"
+                : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             }`}
           >
             איחוד שני קבצים
@@ -64,7 +64,7 @@ export default function TenantsPage() {
 
       {tenants.length > 0 && (
         <>
-          <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+          <section className="of-card of-card-p6 border-emerald-500/30 bg-emerald-500/5">
             <h3 className="font-semibold">החילוץ הושלם</h3>
             <p className="mt-1 text-sm text-zinc-500">
               {tenants.length} דיירים · {withPhone} עם טלפון · {withEmail} עם
@@ -79,7 +79,7 @@ export default function TenantsPage() {
 
           <section>
             <SectionTitle step="3" title="כתובת הפרויקט" />
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="of-card of-card-p6">
               <label className="mb-2 block text-sm font-medium">
                 כתובת הפרויקט (תופיע בכל איש קשר ב-VCF ובייצוא לזוהו)
               </label>
@@ -88,7 +88,7 @@ export default function TenantsPage() {
                 value={projectAddress}
                 onChange={(e) => setProjectAddress(e.target.value)}
                 placeholder="לדוגמה: פינלס 9 תל אביב"
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
+                className="of-input of-focus-ring px-3 py-2 text-sm"
               />
             </div>
           </section>
@@ -109,7 +109,7 @@ export default function TenantsPage() {
 function SectionTitle({ step, title }: { step: string; title: string }) {
   return (
     <div className="mb-4 flex items-center gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-sm font-bold text-white dark:bg-white dark:text-zinc-900">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-bold text-white">
         {step}
       </div>
       <h2 className="text-xl font-semibold">{title}</h2>

@@ -4,35 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import UserMenu from "@/components/auth/UserMenu";
-import LocaleToggle from "@/components/ui/LocaleToggle";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import BrandLogo from "@/components/ui/BrandLogo";
+import SettingsNavLink from "@/components/ui/SettingsNavLink";
 import { GLOBAL_NAV_LINKS } from "@/lib/navigation";
 
 export default function HomeNavBar() {
   const pathname = usePathname();
 
   return (
-    <header
-      className="
-        sticky
-        top-0
-        z-40
-        border-b
-        border-zinc-200
-        bg-white/95
-        backdrop-blur
-        dark:border-zinc-800
-        dark:bg-zinc-950/95
-      "
-    >
+    <header className="of-glass-header sticky top-0 z-40">
       <div
         className="
-          mx-auto
+          of-container
           flex
-          max-w-7xl
           flex-col
           gap-4
-          px-4
           py-4
         "
       >
@@ -44,26 +30,10 @@ export default function HomeNavBar() {
             gap-4
           "
         >
-          <Link href="/">
-            <div>
-              <h1 className="text-xl font-bold">
-                Supervisor AI
-              </h1>
-              <p
-                className="
-                  text-sm
-                  text-zinc-500
-                  dark:text-zinc-400
-                "
-              >
-                שליטה ובקרה לפרויקטים
-              </p>
-            </div>
-          </Link>
+          <BrandLogo />
 
           <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
-            <LocaleToggle />
+            <SettingsNavLink />
             <UserMenu />
           </div>
         </div>
@@ -91,21 +61,11 @@ export default function HomeNavBar() {
                   py-2
                   text-sm
                   font-medium
-                  transition-colors
+                  transition-all
                   ${
                     isActive
-                      ? `
-                        bg-zinc-900
-                        text-white
-                        dark:bg-white
-                        dark:text-black
-                      `
-                      : `
-                        text-zinc-700
-                        hover:bg-zinc-100
-                        dark:text-zinc-300
-                        dark:hover:bg-zinc-800
-                      `
+                      ? "bg-gradient-to-l from-blue-600 to-violet-600 text-white shadow-md shadow-blue-600/20"
+                      : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   }
                 `}
               >

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import Badge from "@/components/ui/Badge";
 import { apiFetch } from "@/lib/api/client";
 
 type AutomationStats = {
@@ -350,7 +351,7 @@ export default function AutomationPage() {
   if (loading) {
 
     return (
-      <main className="p-10">
+      <main className="of-dashboard-page">
         טוען Automation Dashboard...
       </main>
     );
@@ -358,38 +359,17 @@ export default function AutomationPage() {
 
   return (
 
-    <main
-      className="
-        p-10
-        bg-zinc-100
-        dark:bg-zinc-950
-        min-h-screen
-        text-zinc-900
-        dark:text-zinc-100
-      "
-    >
+    <main className="of-dashboard-page">
 
       {/* HEADER */}
 
       <div className="mb-10">
 
-        <h1
-          className="
-            text-5xl
-            font-black
-          "
-        >
+        <h1 className="of-page-title">
           Automation Center
         </h1>
 
-        <p
-          className="
-            mt-4
-            text-xl
-            text-zinc-600
-            dark:text-zinc-400
-          "
-        >
+        <p className="of-page-desc mt-4">
           ניטור תשתיות אוטומציה ותהליכי AI
         </p>
 
@@ -409,15 +389,7 @@ export default function AutomationPage() {
         >
 
           <div
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-3xl
-              p-7
-            "
+            className="of-kpi-card"
           >
 
             <p
@@ -889,15 +861,7 @@ export default function AutomationPage() {
 
               <div
                 key={breaker.breaker_key}
-                className="
-                  bg-white
-                  dark:bg-zinc-900
-                  border
-                  border-zinc-200
-                  dark:border-zinc-800
-                  rounded-3xl
-                  p-7
-                "
+                className="of-kpi-card"
               >
 
                 <div
@@ -964,18 +928,7 @@ export default function AutomationPage() {
 
           {breakers.length === 0 && (
 
-            <div
-              className="
-                bg-white
-                dark:bg-zinc-900
-                border
-                border-zinc-200
-                dark:border-zinc-800
-                rounded-3xl
-                p-7
-                text-zinc-500
-              "
-            >
+            <div className="of-kpi-card text-zinc-500">
               No circuit breakers recorded yet.
             </div>
           )}
@@ -1005,15 +958,7 @@ export default function AutomationPage() {
 
               <div
                 key={run.id}
-                className="
-                  bg-white
-                  dark:bg-zinc-900
-                  border
-                  border-zinc-200
-                  dark:border-zinc-800
-                  rounded-3xl
-                  p-8
-                "
+                className="of-card of-card-p8"
               >
 
                 <div
@@ -1130,17 +1075,7 @@ function MetricCard({
 
   return (
 
-    <div
-      className="
-        bg-white
-        dark:bg-zinc-900
-        border
-        border-zinc-200
-        dark:border-zinc-800
-        rounded-3xl
-        p-6
-      "
-    >
+    <div className="of-kpi-card">
 
       <p
         className="
@@ -1207,15 +1142,7 @@ function JobHealthTable({
   return (
 
     <div
-      className="
-        bg-white
-        dark:bg-zinc-900
-        border
-        border-zinc-200
-        dark:border-zinc-800
-        rounded-3xl
-        p-7
-      "
+      className="of-kpi-card"
     >
 
       <h2
@@ -1316,15 +1243,7 @@ function AlertList({
   return (
 
     <div
-      className="
-        bg-white
-        dark:bg-zinc-900
-        border
-        border-zinc-200
-        dark:border-zinc-800
-        rounded-3xl
-        p-7
-      "
+      className="of-kpi-card"
     >
 
       <h2
@@ -1419,15 +1338,7 @@ function DistributionPanel({
   return (
 
     <div
-      className="
-        bg-white
-        dark:bg-zinc-900
-        border
-        border-zinc-200
-        dark:border-zinc-800
-        rounded-3xl
-        p-7
-      "
+      className="of-kpi-card"
     >
 
       <h3
@@ -1504,15 +1415,7 @@ function AIExecutionLogTable({
   return (
 
     <div
-      className="
-        bg-white
-        dark:bg-zinc-900
-        border
-        border-zinc-200
-        dark:border-zinc-800
-        rounded-3xl
-        p-7
-      "
+      className="of-kpi-card"
     >
 
       <h3
@@ -1645,42 +1548,20 @@ function HealthBadge({
 }: {
   health: string;
 }) {
-
-  const styles = {
-
-    HEALTHY:
-      "bg-green-100 text-green-700",
-
-    DEGRADED:
-      "bg-yellow-100 text-yellow-700",
-
-    CRITICAL:
-      "bg-red-100 text-red-700",
-
-    UNKNOWN:
-      "bg-zinc-100 text-zinc-700",
+  const variantByHealth: Record<
+    string,
+    "success" | "warning" | "danger" | "neutral"
+  > = {
+    HEALTHY: "success",
+    DEGRADED: "warning",
+    CRITICAL: "danger",
+    UNKNOWN: "neutral",
   };
 
   return (
-
-    <span
-      className={`
-        px-4
-        py-2
-        rounded-full
-        font-semibold
-        text-sm
-
-        ${
-          styles[
-            health as keyof typeof styles
-          ]
-          || "bg-zinc-100 text-zinc-700"
-        }
-      `}
-    >
+    <Badge variant={variantByHealth[health] || "neutral"}>
       {health}
-    </span>
+    </Badge>
   );
 }
 
@@ -1696,18 +1577,7 @@ function ExecutionList({
 
   return (
 
-    <div
-      className="
-        bg-white
-        dark:bg-zinc-900
-        border
-        border-zinc-200
-        dark:border-zinc-800
-        rounded-3xl
-        p-7
-        min-h-72
-      "
-    >
+    <div className="of-kpi-card min-h-72">
 
       <h3
         className="
@@ -1851,39 +1721,19 @@ function BreakerBadge({
 }: {
   state: string;
 }) {
-
-  const styles = {
-
-    CLOSED:
-      "bg-green-100 text-green-700",
-
-    HALF_OPEN:
-      "bg-yellow-100 text-yellow-700",
-
-    OPEN:
-      "bg-red-100 text-red-700",
+  const variantByState: Record<
+    string,
+    "success" | "warning" | "danger" | "neutral"
+  > = {
+    CLOSED: "success",
+    HALF_OPEN: "warning",
+    OPEN: "danger",
   };
 
   return (
-
-    <span
-      className={`
-        px-4
-        py-2
-        rounded-full
-        font-semibold
-
-        ${
-          styles[
-            state as keyof typeof styles
-          ]
-          || "bg-zinc-100 text-zinc-700"
-        }
-      `}
-    >
+    <Badge variant={variantByState[state] || "neutral"}>
       {state}
-    </span>
-
+    </Badge>
   );
 }
 
@@ -1892,65 +1742,35 @@ function StatusBadge({
 }: {
   status: string;
 }) {
+  const successStatuses = new Set([
+    "COMPLETED",
+    "SUCCESS",
+    "RECOVERED",
+  ]);
+  const warningStatuses = new Set([
+    "COMPLETED_WITH_ERRORS",
+    "WARNING",
+    "LOW_CONFIDENCE",
+  ]);
+  const dangerStatuses = new Set([
+    "FAILED",
+    "CRITICAL",
+    "DEAD_LETTERED",
+  ]);
+  const infoStatuses = new Set(["RUNNING"]);
 
-  const styles = {
+  let variant: "success" | "warning" | "danger" | "info" | "neutral" =
+    "neutral";
 
-    COMPLETED:
-      "bg-green-100 text-green-700",
+  if (successStatuses.has(status)) {
+    variant = "success";
+  } else if (warningStatuses.has(status)) {
+    variant = "warning";
+  } else if (dangerStatuses.has(status)) {
+    variant = "danger";
+  } else if (infoStatuses.has(status)) {
+    variant = "info";
+  }
 
-    SUCCESS:
-      "bg-green-100 text-green-700",
-
-    RECOVERED:
-      "bg-green-100 text-green-700",
-
-    COMPLETED_WITH_ERRORS:
-      "bg-yellow-100 text-yellow-700",
-
-    RUNNING:
-      "bg-blue-100 text-blue-700",
-
-    FAILED:
-      "bg-red-100 text-red-700",
-
-    CRITICAL:
-      "bg-red-100 text-red-700",
-
-    WARNING:
-      "bg-yellow-100 text-yellow-700",
-
-    SKIPPED:
-      "bg-zinc-100 text-zinc-700",
-
-    LOW_CONFIDENCE:
-      "bg-yellow-100 text-yellow-700",
-
-    NO_ACTION_NEEDED:
-      "bg-zinc-100 text-zinc-700",
-
-    DEAD_LETTERED:
-      "bg-red-100 text-red-700",
-  };
-
-  return (
-
-    <span
-      className={`
-        px-4
-        py-2
-        rounded-full
-        font-semibold
-
-        ${
-          styles[
-            status as keyof typeof styles
-          ]
-          || "bg-zinc-100 text-zinc-700"
-        }
-      `}
-    >
-      {status}
-    </span>
-
-  );
+  return <Badge variant={variant}>{status}</Badge>;
 }
