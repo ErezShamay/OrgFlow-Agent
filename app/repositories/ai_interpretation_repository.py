@@ -234,6 +234,39 @@ class AIInterpretationRepository:
 
         return response.data[0]
 
+    def reject_interpretation(
+        self,
+        interpretation_id: str,
+        reviewed_by: str,
+        review_notes: str | None = None,
+    ):
+        update_payload = {
+            "review_status": "REJECTED",
+            "reviewed_by": reviewed_by,
+            "reviewed_at": (
+                datetime
+                .now(UTC)
+                .isoformat()
+            ),
+            "review_notes": review_notes,
+        }
+
+        response = (
+            self.client
+            .table(self.table_name)
+            .update(update_payload)
+            .eq(
+                "id",
+                interpretation_id
+            )
+            .execute()
+        )
+
+        if not response.data:
+            return None
+
+        return response.data[0]
+
     def assign_reviewer(
         self,
         interpretation_id: str,

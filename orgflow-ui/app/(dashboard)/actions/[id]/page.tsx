@@ -9,9 +9,8 @@ import {
   useParams,
 } from "next/navigation";
 
-import {
-  useRealtime,
-} from "@/hooks/useRealtime";
+import { useRealtime } from "@/hooks/useRealtime";
+import { apiFetch } from "@/lib/api/client";
 
 type TimelineItem = {
   id: string;
@@ -153,9 +152,7 @@ export default function ActionDetailsPage() {
     try {
 
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}`
-        );
+        await apiFetch(`/actions/${actionId}`);
 
       if (!response.ok) {
 
@@ -184,9 +181,7 @@ export default function ActionDetailsPage() {
     try {
 
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/comments`
-        );
+        await apiFetch(`/actions/${actionId}/comments`);
 
       if (!response.ok) {
 
@@ -198,7 +193,11 @@ export default function ActionDetailsPage() {
       const result =
         await response.json();
 
-      setComments(result);
+      setComments(
+        Array.isArray(result)
+          ? result
+          : result.comments || []
+      );
 
     } catch (error) {
 
@@ -217,23 +216,13 @@ export default function ActionDetailsPage() {
       setSubmitting(true);
 
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/comments`,
+        await apiFetch(
+          `/actions/${actionId}/comments`,
           {
             method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
             body: JSON.stringify({
-
-              comment:
-                newComment,
-
-              created_by:
-                "ארז שמאי",
+              comment: newComment,
+              created_by: "ארז שמאי",
             }),
           }
         );

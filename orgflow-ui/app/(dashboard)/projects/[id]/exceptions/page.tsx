@@ -6,6 +6,8 @@ import {
   useState,
 } from "react";
 
+import { apiFetch } from "@/lib/api/client";
+
 type Action = {
   id: string;
   action_type: string;
@@ -42,8 +44,8 @@ export default function ProjectExceptionsPage({
     try {
 
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/projects/${resolvedParams.id}/exceptions`
+        await apiFetch(
+          `/projects/${resolvedParams.id}/exceptions`
         );
 
       const data =

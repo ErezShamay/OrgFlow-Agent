@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { apiFetch } from "@/lib/api/client";
 
 type AutomationStats = {
 
@@ -269,29 +265,17 @@ export default function AutomationPage() {
         aiLogsResponse,
       ] = await Promise.all([
 
-        fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/automation/health`
-        ),
+        apiFetch("/automation/health"),
 
-        fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/automation/stats`
-        ),
+        apiFetch("/automation/stats"),
 
-        fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/automation/runs`
-        ),
+        apiFetch("/automation/runs"),
 
-        fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/automation/circuit-breakers`
-        ),
+        apiFetch("/automation/circuit-breakers"),
 
-        fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/automation/ai-recovery`
-        ),
+        apiFetch("/automation/ai-recovery"),
 
-        fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/automation/ai-execution-logs`
-        ),
+        apiFetch("/automation/ai-execution-logs"),
       ]);
 
       const healthData =

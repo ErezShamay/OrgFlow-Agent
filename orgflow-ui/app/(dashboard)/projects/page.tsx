@@ -1,7 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useCallback, useState } from "react";
+
+import Card from "@/components/ui/Card";
+import EmptyState from "@/components/ui/EmptyState";
+import FilterBar from "@/components/ui/FilterBar";
+import LoadingState from "@/components/ui/LoadingState";
+import PageShell from "@/components/ui/PageShell";
+import PaginationControls from "@/components/ui/Pagination";
+import RetryPanel from "@/components/ui/RetryPanel";
+import SortSelect from "@/components/ui/SortSelect";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useFiltering } from "@/hooks/useFiltering";
+import { usePagination } from "@/hooks/usePagination";
+import { useSorting } from "@/hooks/useSorting";
+import { apiFetch } from "@/lib/api/client";
+import { showToast } from "@/lib/ui/toast";
+import { useI18n } from "@/providers/I18nProvider";
+import { useOffline } from "@/providers/OfflineProvider";
 
 type Project = {
   id: string;
@@ -12,215 +30,292 @@ type Project = {
   created_at: string;
 };
 
+type ProjectSortKey = "project_name" | "created_at" | "status";
+
 export default function ProjectsPage() {
-  const [projects, setProjects] =
-    useState<Project[]>([]);
+  const { t } = useI18n();
+  const { isOnline } = useOffline();
+  const { profile } = useAuth();
+  const [creating, setCreating] = useState(false);
+  const [newProject, setNewProject] = useState({
+    project_name: "",
+    supervisor_name: "",
+    supervisor_email: "",
+  });
 
-  const [loading, setLoading] =
-    useState(true);
+  const loadProjects = useCallback(async () => {
+    if (!isOnline) {
+      throw new Error(t("common.offline"));
+    }
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
+    const response = await apiFetch("/projects");
 
-  async function loadProjects() {
+    if (!response.ok) {
+      throw new Error("Failed to load projects");
+    }
+
+    return (await response.json()) as Project[];
+  }, [isOnline, t]);
+
+  const {
+    data: projects,
+    loading,
+    error,
+    retry,
+  } = useAsyncData(loadProjects, {
+    showErrorToast: true,
+    errorMessage: t("common.error"),
+  });
+
+  const projectList = projects ?? [];
+
+  const { filteredItems, searchQuery, setSearchQuery } =
+    useFiltering<Project, "project_name">(
+      projectList,
+      (item, field) => item[field],
+      "project_name"
+    );
+
+  const { sortedItems, sortKey, direction, setSort, options } =
+    useSorting<Project, ProjectSortKey>(
+      filteredItems,
+      [
+        { key: "project_name", label: "שם פרויקט" },
+        { key: "created_at", label: "תאריך" },
+        { key: "status", label: "סטטוס" },
+      ],
+      (item, key) => {
+        if (key === "created_at") {
+          return new Date(item.created_at).getTime();
+        }
+
+        return item[key];
+      },
+      "project_name"
+    );
+
+  const pagination = usePagination(sortedItems, 6);
+
+  async function handleCreateProject(event: React.FormEvent) {
+    event.preventDefault();
+
+    if (
+      !newProject.project_name.trim() ||
+      !newProject.supervisor_name.trim()
+    ) {
+      showToast("יש למלא שם פרויקט ומפקח", "error");
+      return;
+    }
+
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/projects`
-      );
+      setCreating(true);
 
-      const data = await response.json();
+      const response = await apiFetch("/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          project_name: newProject.project_name.trim(),
+          supervisor_name: newProject.supervisor_name.trim(),
+          supervisor_email:
+            newProject.supervisor_email.trim() || null,
+          organization_id: profile?.organization_id || null,
+          owner_id: profile?.id || null,
+        }),
+      });
 
-      setProjects(data);
-    } catch (error) {
-      console.error(error);
+      if (!response.ok) {
+        throw new Error("Failed to create project");
+      }
+
+      setNewProject({
+        project_name: "",
+        supervisor_name: "",
+        supervisor_email: "",
+      });
+
+      showToast("הפרויקט נוצר בהצלחה", "success");
+      await retry();
+    } catch {
+      showToast("שגיאה ביצירת הפרויקט", "error");
     } finally {
-      setLoading(false);
+      setCreating(false);
     }
   }
 
-  function getStatusLabel(
-    status: string
-  ) {
+  function getStatusLabel(status: string) {
     switch (status) {
       case "ACTIVE":
         return "פעיל";
-
       case "COMPLETED":
         return "הושלם";
-
       default:
         return status;
     }
   }
 
   return (
-    <main
-      className="
-        p-10
-        text-zinc-900
-        dark:text-zinc-100
-      "
+    <PageShell
+      title={t("projects.title")}
+      description="ניהול פרויקטים הנדסיים במערכת"
     >
-      <div className="mb-10">
+      <Card className="mb-8">
+        <h2 className="mb-6 text-2xl font-bold">
+          יצירת פרויקט חדש
+        </h2>
 
-        <h1 className="text-5xl font-bold">
-          פרויקטים
-        </h1>
-
-        <p
-          className="
-            mt-3
-            text-lg
-            text-zinc-600
-            dark:text-zinc-400
-          "
+        <form
+          onSubmit={handleCreateProject}
+          className="grid gap-4 md:grid-cols-2"
         >
-          ניהול פרויקטים הנדסיים במערכת
-        </p>
+          <input
+            className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+            placeholder="שם הפרויקט"
+            value={newProject.project_name}
+            onChange={(event) =>
+              setNewProject({
+                ...newProject,
+                project_name: event.target.value,
+              })
+            }
+            required
+          />
+          <input
+            className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+            placeholder="שם המפקח"
+            value={newProject.supervisor_name}
+            onChange={(event) =>
+              setNewProject({
+                ...newProject,
+                supervisor_name: event.target.value,
+              })
+            }
+            required
+          />
+          <input
+            className="rounded-2xl border border-zinc-200 bg-transparent p-4 md:col-span-2 dark:border-zinc-700"
+            placeholder="אימייל מפקח (אופציונלי)"
+            type="email"
+            value={newProject.supervisor_email}
+            onChange={(event) =>
+              setNewProject({
+                ...newProject,
+                supervisor_email: event.target.value,
+              })
+            }
+          />
+          <button
+            type="submit"
+            disabled={creating}
+            className="
+              rounded-2xl
+              bg-zinc-900
+              px-6
+              py-4
+              font-semibold
+              text-white
+              disabled:opacity-50
+              dark:bg-white
+              dark:text-black
+              md:col-span-2
+            "
+          >
+            {creating ? "יוצר פרויקט..." : "צור פרויקט"}
+          </button>
+        </form>
+      </Card>
 
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <FilterBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t("common.filter")}
+        />
+        <SortSelect
+          options={options}
+          sortKey={sortKey}
+          direction={direction}
+          onChange={setSort}
+        />
       </div>
 
-      {loading && (
-        <div>
-          טוען פרויקטים...
+      {loading ? (
+        <LoadingState message={t("common.loading")} />
+      ) : null}
+
+      {!loading && error ? (
+        <RetryPanel
+          message={error.message}
+          onRetry={() => {
+            void retry().catch(() =>
+              showToast(t("common.error"), "error")
+            );
+          }}
+        />
+      ) : null}
+
+      {!loading && !error && pagination.items.length === 0 ? (
+        <EmptyState title={t("projects.empty")} />
+      ) : null}
+
+      {!loading && !error ? (
+        <div className="grid gap-6">
+          {pagination.items.map((project) => (
+            <Card key={project.id}>
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold">
+                    <Link
+                      href={`/projects/${project.id}`}
+                      className="hover:underline"
+                    >
+                      {project.project_name}
+                    </Link>
+                  </h2>
+                  <p className="mt-2 text-zinc-500">
+                    {project.supervisor_name}
+                  </p>
+                </div>
+
+                <div className="rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                  {getStatusLabel(project.status)}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="mb-2 font-semibold">
+                    אימייל מפקח
+                  </h3>
+                  <p>{project.supervisor_email}</p>
+                </div>
+
+                <div>
+                  <h3 className="mb-2 font-semibold">
+                    תאריך יצירה
+                  </h3>
+                  <p>
+                    {new Date(
+                      project.created_at
+                    ).toLocaleDateString("he-IL")}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
-      )}
+      ) : null}
 
-      {!loading &&
-        projects.length === 0 && (
-          <div
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-3xl
-              p-8
-            "
-          >
-            אין פרויקטים
-          </div>
-        )}
-
-      <div className="grid gap-6">
-
-        {projects.map((project) => (
-
-          <div
-            key={project.id}
-            className="
-              bg-white
-              dark:bg-zinc-900
-              border
-              border-zinc-200
-              dark:border-zinc-800
-              rounded-3xl
-              p-8
-              shadow-sm
-            "
-          >
-
-            <div
-              className="
-                flex
-                justify-between
-                items-start
-                mb-6
-              "
-            >
-
-              <div>
-
-                <h2
-                  className="
-                    text-2xl
-                    font-semibold
-                  "
-                >
-                  {project.project_name}
-                </h2>
-
-                <p
-                  className="
-                    text-zinc-500
-                    mt-2
-                  "
-                >
-                  {project.supervisor_name}
-                </p>
-
-              </div>
-
-              <div
-                className="
-                  bg-green-100
-                  text-green-700
-                  dark:bg-green-900/40
-                  dark:text-green-300
-                  px-4
-                  py-2
-                  rounded-full
-                  text-sm
-                  font-semibold
-                "
-              >
-                {getStatusLabel(
-                  project.status
-                )}
-              </div>
-
-            </div>
-
-            <div className="space-y-4">
-
-              <div>
-
-                <h3
-                  className="
-                    font-semibold
-                    mb-2
-                  "
-                >
-                  אימייל מפקח
-                </h3>
-
-                <p>
-                  {project.supervisor_email}
-                </p>
-
-              </div>
-
-              <div>
-
-                <h3
-                  className="
-                    font-semibold
-                    mb-2
-                  "
-                >
-                  תאריך יצירה
-                </h3>
-
-                <p>
-                  {new Date(
-                    project.created_at
-                  ).toLocaleDateString(
-                    "he-IL"
-                  )}
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        ))}
-
-      </div>
-
-    </main>
+      {!loading && !error ? (
+        <PaginationControls
+          page={pagination.state.page}
+          totalPages={pagination.totalPages}
+          pageNumbers={pagination.pageNumbers}
+          hasNextPage={pagination.hasNextPage}
+          hasPreviousPage={pagination.hasPreviousPage}
+          onPageChange={pagination.setPage}
+          onNext={pagination.goToNextPage}
+          onPrevious={pagination.goToPreviousPage}
+        />
+      ) : null}
+    </PageShell>
   );
-} 
+}

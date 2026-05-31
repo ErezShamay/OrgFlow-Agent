@@ -3,6 +3,7 @@
 import { use } from "react";
 
 import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
+import { apiFetch } from "@/lib/api/client";
 
 type Props = {
   params: Promise<{
@@ -76,19 +77,12 @@ export default function ProjectActionsPage({
     try {
 
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/assign`,
+        await apiFetch(
+          `/actions/${actionId}/assign`,
           {
             method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
             body: JSON.stringify({
-              assigned_to:
-                assignedTo,
+              assigned_to: assignedTo,
             }),
           }
         );

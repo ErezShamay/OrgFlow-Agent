@@ -104,3 +104,44 @@ class PredictiveRiskService:
             "message":
                 message,
         }
+
+    @staticmethod
+    def analyze_portfolio(portfolio_summary: dict) -> dict:
+        projects = portfolio_summary.get("projects", [])
+        distribution = {
+            "HIGH_RISK": 0,
+            "MEDIUM_RISK": 0,
+            "LOW_RISK": 0,
+        }
+        total_risk_score = 0
+        high_risk_projects = []
+
+        for project in projects:
+            prediction = project["prediction"]["prediction"]
+            distribution[prediction] = distribution.get(prediction, 0) + 1
+            total_risk_score += project["prediction"]["risk_score"]
+
+            if prediction == "HIGH_RISK":
+                high_risk_projects.append({
+                    "project_id": project["project_id"],
+                    "project_name": project["project_name"],
+                    "risk_score": project["prediction"]["risk_score"],
+                })
+
+        average_risk_score = 0
+        if projects:
+            average_risk_score = round(total_risk_score / len(projects), 2)
+
+        if average_risk_score >= 70:
+            portfolio_risk_level = "HIGH"
+        elif average_risk_score >= 40:
+            portfolio_risk_level = "MEDIUM"
+        else:
+            portfolio_risk_level = "LOW"
+
+        return {
+            "portfolio_risk_level": portfolio_risk_level,
+            "average_risk_score": average_risk_score,
+            "distribution": distribution,
+            "high_risk_projects": high_risk_projects,
+        }

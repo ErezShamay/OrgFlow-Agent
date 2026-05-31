@@ -6,134 +6,182 @@ import {
   usePathname,
 } from "next/navigation";
 
+const GLOBAL_LINKS = [
+  { href: "/", label: "דף הבית" },
+  { href: "/portfolio", label: "תיק פרויקטים" },
+  { href: "/projects", label: "פרויקטים" },
+  { href: "/upload", label: "העלאת דוח" },
+  { href: "/reviews", label: "ביקורות AI" },
+  { href: "/actions", label: "פעולות תפעוליות" },
+  { href: "/escalations", label: "נקודות סיכון" },
+  { href: "/automation", label: "אוטומציה" },
+  { href: "/automation/dead-letters", label: "Dead Letters" },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const params = useParams();
+  const projectId =
+    typeof params?.id === "string"
+      ? params.id
+      : null;
 
-const projectMatch =
-  pathname.match(
-    /\/projects\/([^/]+)/
-  );
-
-const projectId =
-  projectMatch?.[1];
-
-const links = [
-
-  {
-    href:
-      `/projects/${projectId}`,
-
-    label:
-      "סקירת הפרויקט",
-  },
-
-  {
-    href:
-      `/projects/${projectId}/reviews`,
-
-    label:
-      "ביקורות AI",
-  },
-
-  {
-    href:
-      `/projects/${projectId}/actions`,
-
-    label:
-      "פעולות תפעוליות",
-  },
-
-  {
-    href:
-      `/projects/${projectId}/exceptions`,
-
-    label:
-      "נקודות סיכון/חריגות",
-  },
-
-  {
-    href: "/",
-
-    label:
-      "חזרה לעמוד הבית",
-  },
-];
+  const projectLinks = projectId
+    ? [
+        {
+          href: `/projects/${projectId}`,
+          label: "סקירת הפרויקט",
+        },
+        {
+          href: `/projects/${projectId}/reviews`,
+          label: "ביקורות AI",
+        },
+        {
+          href: `/projects/${projectId}/actions`,
+          label: "פעולות תפעוליות",
+        },
+        {
+          href: `/projects/${projectId}/escalations`,
+          label: "נקודות סיכון",
+        },
+        {
+          href: `/projects/${projectId}/exceptions`,
+          label: "חריגות",
+        },
+      ]
+    : [];
 
   return (
     <aside
       className="
-        w-72
-        min-h-screen
-        bg-white
-        dark:bg-zinc-900
-        border-l
+        w-full
+        border-b
         border-zinc-200
+        bg-white
+        p-4
         dark:border-zinc-800
-        p-6
+        dark:bg-zinc-900
+        lg:w-72
+        lg:min-h-screen
+        lg:border-b-0
+        lg:border-l
+        lg:p-6
       "
     >
       <div className="mb-10">
-
-      <Link href="/">
-        <h1 className="text-3xl font-bold cursor-pointer">
-          Supervisor AI
-        </h1>
-      </Link>
+        <Link href="/portfolio">
+          <h1 className="cursor-pointer text-3xl font-bold">
+            Supervisor AI
+          </h1>
+        </Link>
 
         <p
           className="
+            mt-2
             text-zinc-500
             dark:text-zinc-400
-            mt-2
           "
         >
           שליטה ובקרה לפרויקטים
         </p>
-
       </div>
 
-      <nav className="space-y-2">
+      <nav className="space-y-6">
+        <div>
+          <p
+            className="
+              mb-2
+              px-4
+              text-xs
+              font-semibold
+              uppercase
+              tracking-wide
+              text-zinc-400
+            "
+          >
+            ניווט ראשי
+          </p>
 
-        {links.map((link) => {
+          <div className="space-y-2">
+            {GLOBAL_LINKS.map((link) => (
+              <NavLink
+                key={link.href}
+                href={link.href}
+                label={link.label}
+                isActive={pathname === link.href}
+              />
+            ))}
+          </div>
+        </div>
 
-          const isActive =
-            pathname === link.href;
-
-          return (
-
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`
-                block
+        {projectLinks.length > 0 ? (
+          <div>
+            <p
+              className="
+                mb-2
                 px-4
-                py-3
-                rounded-2xl
-                transition-colors
-                font-medium
-
-                ${
-                  isActive
-                    ? `
-                      bg-zinc-900
-                      text-white
-                      dark:bg-white
-                      dark:text-black
-                    `
-                    : `
-                      hover:bg-zinc-100
-                      dark:hover:bg-zinc-800
-                    `
-                }
-              `}
+                text-xs
+                font-semibold
+                uppercase
+                tracking-wide
+                text-zinc-400
+              "
             >
-              {link.label}
-            </Link>
+              פרויקט נוכחי
+            </p>
 
-          );
-        })}
-
+            <div className="space-y-2">
+              {projectLinks.map((link) => (
+                <NavLink
+                  key={link.href}
+                  href={link.href}
+                  label={link.label}
+                  isActive={pathname === link.href}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
       </nav>
     </aside>
+  );
+}
+
+function NavLink({
+  href,
+  label,
+  isActive,
+}: {
+  href: string;
+  label: string;
+  isActive: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`
+        block
+        rounded-2xl
+        px-4
+        py-3
+        font-medium
+        transition-colors
+        ${
+          isActive
+            ? `
+              bg-zinc-900
+              text-white
+              dark:bg-white
+              dark:text-black
+            `
+            : `
+              hover:bg-zinc-100
+              dark:hover:bg-zinc-800
+            `
+        }
+      `}
+    >
+      {label}
+    </Link>
   );
 }

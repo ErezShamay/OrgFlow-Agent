@@ -116,6 +116,31 @@ from app.services.portfolio_insights_service import (
     PortfolioInsightsService
 )
 
+from app.services.portfolio_intelligence_dashboard_service import (
+    PortfolioIntelligenceDashboardService,
+)
+from app.services.database_hardening_dashboard_service import (
+    DatabaseHardeningDashboardService,
+)
+from app.services.devops_deployment_dashboard_service import (
+    DevopsDeploymentDashboardService,
+)
+from app.services.security_dashboard_service import (
+    SecurityDashboardService,
+)
+from app.services.observability_dashboard_service import (
+    ObservabilityDashboardService,
+)
+from app.services.testing_dashboard_service import (
+    TestingDashboardService,
+)
+from app.services.product_readiness_dashboard_service import (
+    ProductReadinessDashboardService,
+)
+from app.services.future_ai_features_dashboard_service import (
+    FutureAiFeaturesDashboardService,
+)
+
 from app.services.alert_engine_service import (
     AlertEngineService
 )
@@ -422,6 +447,7 @@ app.add_middleware(
         "/config/reload",
         "/secrets/rotation-status",
         "/auth/refresh",
+        "/auth/exchange",
     },
 )
 
@@ -501,8 +527,44 @@ portfolio_insights_service = (
     PortfolioInsightsService()
 )
 
+portfolio_intelligence_dashboard_service = (
+    PortfolioIntelligenceDashboardService(
+        portfolio_insights_service=portfolio_insights_service,
+    )
+)
+
+database_hardening_dashboard_service = (
+    DatabaseHardeningDashboardService()
+)
+
+devops_deployment_dashboard_service = (
+    DevopsDeploymentDashboardService()
+)
+
+security_dashboard_service = (
+    SecurityDashboardService()
+)
+
+observability_dashboard_service = (
+    ObservabilityDashboardService()
+)
+
+testing_dashboard_service = (
+    TestingDashboardService()
+)
+
+product_readiness_dashboard_service = (
+    ProductReadinessDashboardService()
+)
+
+future_ai_features_dashboard_service = (
+    FutureAiFeaturesDashboardService()
+)
+
 alert_engine_service = (
-    AlertEngineService()
+    AlertEngineService(
+        portfolio_service=portfolio_insights_service,
+    )
 )
 
 profile_service = (
@@ -629,6 +691,32 @@ class ManualApprovalRequest(
 ):
     requested_by: str
     notes: str | None = None
+
+
+class ExchangeTokenRequest(
+    BaseModel
+):
+    user_id: str
+
+
+class ApproveReviewRequest(
+    BaseModel
+):
+    reviewed_by: str
+    review_notes: str | None = None
+
+
+class RejectReviewRequest(
+    BaseModel
+):
+    reviewed_by: str
+    review_notes: str | None = None
+
+
+class ActionAssignRequest(
+    BaseModel
+):
+    assigned_to: str
 
 
 class CreateProjectRequest(
@@ -1082,6 +1170,40 @@ def refresh_access_token(request: Request):
     )
     return {"access_token": access_token, "token_type": "Bearer"}
 
+
+@app.post("/auth/exchange")
+def exchange_supabase_session(request: ExchangeTokenRequest):
+    profile = profile_service.get_profile(request.user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    org_id = str(profile.get("organization_id") or "").strip()
+    role = str(profile.get("role") or "VIEWER").strip().upper()
+    if not org_id:
+        raise HTTPException(status_code=422, detail="Profile missing organization_id")
+
+    access_token = jwt_service.issue_access_token(
+        user_id=request.user_id,
+        org_id=org_id,
+        role=role,
+        token_id=f"exchange-{request.user_id}",
+    )
+    logger.info(
+        "Supabase session exchanged for API token",
+        extra={
+            "event": "audit.login",
+            "user_id": request.user_id,
+            "org_id": org_id,
+            "role": role,
+        },
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "org_id": org_id,
+        "role": role,
+    }
+
 # ==========================================
 # AGENT APIs
 # ==========================================
@@ -1174,6 +1296,69 @@ def assign_review_reviewer(
         )
 
     return assignment
+
+
+@app.post("/reviews/{interpretation_id}/approve")
+async def approve_review(
+    interpretation_id: str,
+    request: ApproveReviewRequest,
+):
+    payload = (
+        ai_review_service
+        .approve_review(
+            interpretation_id=
+                interpretation_id,
+            reviewed_by=
+                request.reviewed_by,
+            review_notes=
+                request.review_notes or "",
+        )
+    )
+
+    if not payload:
+        raise HTTPException(
+            status_code=404,
+            detail="Review not found"
+        )
+
+    created_action = payload.get("created_action") or {}
+    notification_service.create_notification(
+        profile_id=request.reviewed_by,
+        title="ביקורת AI אושרה",
+        message=(
+            f"נוצרה פעולה תפעולית: "
+            f"{created_action.get('title', 'פעולה חדשה')}"
+        ),
+        notification_type="REVIEW_APPROVED",
+    )
+
+    return payload
+
+
+@app.post("/reviews/{interpretation_id}/reject")
+def reject_review(
+    interpretation_id: str,
+    request: RejectReviewRequest,
+):
+    payload = (
+        ai_review_service
+        .reject_review(
+            interpretation_id=
+                interpretation_id,
+            reviewed_by=
+                request.reviewed_by,
+            review_notes=
+                request.review_notes,
+        )
+    )
+
+    if not payload:
+        raise HTTPException(
+            status_code=404,
+            detail="Review not found"
+        )
+
+    return payload
 
 
 @app.get("/reviews/sla")
@@ -2328,6 +2513,101 @@ def get_project_operational_summary(project_id: str):
         .generate_project_summary(project_id)
     )
 
+
+# ==========================================
+# FLAT ACTION APIs (frontend convenience)
+# ==========================================
+
+
+@app.get("/actions/open")
+def get_open_actions():
+    return operational_action_service.get_open_actions()
+
+
+@app.get("/actions/escalations")
+def get_action_escalations():
+    return operational_action_service.get_escalations()
+
+
+@app.get("/actions/{action_id}")
+def get_action_details(action_id: str):
+    payload = operational_action_service.get_action_details(action_id)
+    if not payload.get("success"):
+        raise HTTPException(status_code=404, detail="Action not found")
+    return payload
+
+
+@app.get("/actions/{action_id}/comments")
+def list_action_comments(action_id: str):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return {"comments": operational_action_service.list_comments(action_id)}
+
+
+@app.post("/actions/{action_id}/comments")
+def create_action_comment(action_id: str, request: ActionCommentRequest):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return operational_action_service.add_comment(
+        action_id,
+        request.comment,
+        request.created_by,
+    )
+
+
+@app.post("/actions/{action_id}/close")
+def close_action(action_id: str):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return operational_action_service.close_action(action_id)
+
+
+@app.post("/actions/{action_id}/start")
+def start_action(action_id: str):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return operational_action_service.start_action(action_id)
+
+
+@app.post("/actions/{action_id}/block")
+def block_action(action_id: str):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return operational_action_service.block_action(action_id)
+
+
+@app.post("/actions/{action_id}/complete")
+def complete_action(action_id: str):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return operational_action_service.complete_action(action_id)
+
+
+@app.post("/actions/{action_id}/escalate")
+def escalate_action(action_id: str):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return operational_action_service.escalate_action(action_id)
+
+
+@app.post("/actions/{action_id}/assign")
+def assign_action(action_id: str, request: ActionAssignRequest):
+    action = operational_action_repository.get_action_by_id(action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return operational_action_service.assign_action(
+        action_id,
+        request.assigned_to,
+    )
+
+
 @app.patch("/notifications/{notification_id}/read")
 def mark_notification_as_read(notification_id: str):
 
@@ -2905,3 +3185,2261 @@ def build_dynamic_workflow(request: DynamicWorkflowBuilderRequest):
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# ==========================================
+# PORTFOLIO INTELLIGENCE
+# ==========================================
+
+
+@app.get("/portfolio/summary")
+def get_portfolio_summary():
+    return portfolio_intelligence_dashboard_service.get_summary()
+
+
+@app.get("/portfolio/dashboard")
+def get_portfolio_intelligence_dashboard(
+    organization_id: str | None = None,
+):
+    return portfolio_intelligence_dashboard_service.get_dashboard(
+        organization_id=organization_id,
+    )
+
+
+@app.get("/portfolio/trends")
+def get_portfolio_trends():
+    return portfolio_intelligence_dashboard_service.get_trends()
+
+
+@app.get("/portfolio/predictive-risk")
+def get_portfolio_predictive_risk():
+    return portfolio_intelligence_dashboard_service.get_predictive_risk()
+
+
+@app.get("/portfolio/executive-kpis")
+def get_portfolio_executive_kpis():
+    return portfolio_intelligence_dashboard_service.get_executive_kpis()
+
+
+@app.get("/portfolio/forecast")
+def get_portfolio_forecast(horizon_days: int = 30):
+    return portfolio_intelligence_dashboard_service.get_forecast(
+        horizon_days=horizon_days,
+    )
+
+
+@app.get("/portfolio/heatmap")
+def get_portfolio_heatmap():
+    return portfolio_intelligence_dashboard_service.get_heatmap()
+
+
+@app.get("/portfolio/benchmarks")
+def get_portfolio_benchmarks(organization_id: str | None = None):
+    return portfolio_intelligence_dashboard_service.get_benchmarks(
+        organization_id=organization_id,
+    )
+
+
+@app.get("/portfolio/recommendations")
+def get_portfolio_recommendations():
+    return portfolio_intelligence_dashboard_service.get_recommendations()
+
+
+@app.get("/portfolio/analytics")
+def get_portfolio_analytics():
+    return portfolio_intelligence_dashboard_service.get_analytics()
+
+
+@app.get("/portfolio/metrics")
+def get_portfolio_metrics():
+    return portfolio_intelligence_dashboard_service.get_metrics()
+
+
+@app.get("/portfolio/risk-scores")
+def get_portfolio_risk_scores():
+    return portfolio_intelligence_dashboard_service.get_risk_scores()
+
+
+@app.get("/portfolio/predictive-alerts")
+def get_portfolio_predictive_alerts():
+    return portfolio_intelligence_dashboard_service.get_predictive_alerts()
+
+
+@app.get("/portfolio/executive-summary")
+def get_portfolio_executive_summary():
+    return portfolio_intelligence_dashboard_service.get_executive_summary()
+
+
+@app.get("/portfolio/cross-organization")
+def get_portfolio_cross_organization_insights():
+    return (
+        portfolio_intelligence_dashboard_service
+        .get_cross_organization_insights()
+    )
+
+
+# ==========================================
+# DATABASE HARDENING
+# ==========================================
+
+
+@app.get("/database/dashboard")
+def get_database_hardening_dashboard():
+    return database_hardening_dashboard_service.get_dashboard()
+
+
+@app.get("/database/migrations")
+def list_database_migrations():
+    return database_hardening_dashboard_service.get_migrations()
+
+
+@app.get("/database/migrations/status")
+def get_database_migration_status():
+    return database_hardening_dashboard_service.get_migration_status()
+
+
+@app.post("/database/migrations/apply")
+def apply_database_migrations():
+    return database_hardening_dashboard_service.apply_migrations()
+
+
+@app.get("/database/rls/policies")
+def list_database_rls_policies():
+    return database_hardening_dashboard_service.get_rls_policies()
+
+
+@app.get("/database/rls/validate")
+def validate_database_rls():
+    return database_hardening_dashboard_service.validate_rls()
+
+
+@app.get("/database/foreign-keys")
+def list_database_foreign_keys():
+    return database_hardening_dashboard_service.get_foreign_keys()
+
+
+@app.get("/database/foreign-keys/validate")
+def validate_database_foreign_keys():
+    return database_hardening_dashboard_service.validate_foreign_keys()
+
+
+@app.get("/database/indexes")
+def list_database_indexes():
+    return database_hardening_dashboard_service.get_indexes()
+
+
+@app.get("/database/indexes/recommendations")
+def get_database_index_recommendations():
+    return database_hardening_dashboard_service.get_index_recommendations()
+
+
+@app.get("/database/soft-delete/tables")
+def list_soft_delete_tables():
+    return database_hardening_dashboard_service.get_soft_delete_tables()
+
+
+@app.get("/database/audit/tables")
+def list_audit_tables():
+    return database_hardening_dashboard_service.get_audit_tables()
+
+
+@app.get("/database/audit/log")
+def get_database_audit_log(
+    table_name: str | None = None,
+    organization_id: str | None = None,
+    limit: int = 100,
+):
+    return database_hardening_dashboard_service.get_audit_log(
+        table_name=table_name,
+        organization_id=organization_id,
+        limit=limit,
+    )
+
+
+@app.get("/database/backup/strategy")
+def get_database_backup_strategy():
+    return database_hardening_dashboard_service.get_backup_strategy()
+
+
+@app.get("/database/backup/status")
+def get_database_backup_status():
+    return database_hardening_dashboard_service.get_backup_status()
+
+
+@app.post("/database/backup/restore-test")
+def run_database_backup_restore_test(backup_id: str = "latest"):
+    return database_hardening_dashboard_service.run_backup_restore_test(
+        backup_id=backup_id,
+    )
+
+
+@app.get("/database/monitoring/health")
+def get_database_monitoring_health():
+    return database_hardening_dashboard_service.get_monitoring_health()
+
+
+@app.get("/database/monitoring/metrics")
+def get_database_monitoring_metrics():
+    return database_hardening_dashboard_service.get_monitoring_metrics()
+
+
+@app.get("/database/monitoring/alerts")
+def get_database_monitoring_alerts():
+    return database_hardening_dashboard_service.get_monitoring_alerts()
+
+
+@app.get("/database/seeds")
+def list_database_seed_scripts():
+    return database_hardening_dashboard_service.get_seed_scripts()
+
+
+@app.post("/database/seeds/demo")
+def generate_database_demo_seed():
+    return database_hardening_dashboard_service.generate_demo_seed()
+
+
+@app.get("/database/fixtures/types")
+def list_database_fixture_types():
+    return database_hardening_dashboard_service.get_fixture_types()
+
+
+@app.post("/database/fixtures/test-suite")
+def build_database_test_fixtures(organization_id: str = "org-fixture-1"):
+    return database_hardening_dashboard_service.build_test_fixtures(
+        organization_id=organization_id,
+    )
+
+
+@app.get("/database/query-optimization")
+def get_database_query_optimization_report():
+    return database_hardening_dashboard_service.get_query_optimization_report()
+
+
+@app.get("/database/connection-pool/config")
+def get_database_connection_pool_config():
+    return database_hardening_dashboard_service.get_connection_pool_config()
+
+
+@app.get("/database/connection-pool/stats")
+def get_database_connection_pool_stats():
+    return database_hardening_dashboard_service.get_connection_pool_stats()
+
+
+@app.get("/database/tenant-isolation")
+def get_database_tenant_isolation_report():
+    return database_hardening_dashboard_service.get_tenant_isolation_report()
+
+
+@app.get("/database/retention/policies")
+def list_database_retention_policies():
+    return database_hardening_dashboard_service.get_retention_policies()
+
+
+# ==========================================
+# DEVOPS & DEPLOYMENT
+# ==========================================
+
+
+@app.get("/devops/dashboard")
+def get_devops_dashboard():
+    return devops_deployment_dashboard_service.get_dashboard()
+
+
+@app.get("/devops/docker/images")
+def list_devops_docker_images():
+    return devops_deployment_dashboard_service.get_docker_images()
+
+
+@app.get("/devops/docker/validate")
+def validate_devops_dockerfiles():
+    return devops_deployment_dashboard_service.validate_dockerfiles()
+
+
+@app.get("/devops/docker/build")
+def get_devops_docker_build_instructions(image_name: str = "orgflow-api"):
+    return devops_deployment_dashboard_service.get_docker_build_instructions(
+        image_name,
+    )
+
+
+@app.get("/devops/compose/stack")
+def get_devops_compose_stack():
+    return devops_deployment_dashboard_service.get_compose_stack()
+
+
+@app.get("/devops/compose/validate")
+def validate_devops_compose():
+    return devops_deployment_dashboard_service.validate_compose()
+
+
+@app.get("/devops/compose/commands")
+def get_devops_compose_commands():
+    return devops_deployment_dashboard_service.get_compose_commands()
+
+
+@app.get("/devops/environments")
+def list_devops_environment_profiles():
+    return devops_deployment_dashboard_service.get_environment_profiles()
+
+
+@app.get("/devops/environments/{environment}")
+def get_devops_environment_profile(environment: str):
+    return devops_deployment_dashboard_service.get_environment_profile(
+        environment,
+    )
+
+
+@app.get("/devops/environments/production/validate")
+def validate_devops_production_environment():
+    return devops_deployment_dashboard_service.validate_production_environment()
+
+
+@app.get("/devops/cicd/pipeline")
+def get_devops_cicd_pipeline():
+    return devops_deployment_dashboard_service.get_cicd_pipeline()
+
+
+@app.get("/devops/cicd/status")
+def get_devops_cicd_status():
+    return devops_deployment_dashboard_service.get_cicd_status()
+
+
+@app.get("/devops/cicd/validate")
+def validate_devops_cicd_pipeline():
+    return devops_deployment_dashboard_service.validate_cicd_pipeline()
+
+
+@app.get("/devops/github/workflows")
+def list_devops_github_workflows():
+    return devops_deployment_dashboard_service.get_github_workflows()
+
+
+@app.get("/devops/github/validate")
+def validate_devops_github_workflows():
+    return devops_deployment_dashboard_service.validate_github_workflows()
+
+
+@app.get("/devops/staging/config")
+def get_devops_staging_config():
+    return devops_deployment_dashboard_service.get_staging_config()
+
+
+@app.get("/devops/staging/status")
+def get_devops_staging_status():
+    return devops_deployment_dashboard_service.get_staging_status()
+
+
+@app.get("/devops/staging/validate")
+def validate_devops_staging():
+    return devops_deployment_dashboard_service.validate_staging()
+
+
+@app.get("/devops/production/config")
+def get_devops_production_config():
+    return devops_deployment_dashboard_service.get_production_config()
+
+
+@app.get("/devops/production/status")
+def get_devops_production_status():
+    return devops_deployment_dashboard_service.get_production_status()
+
+
+@app.get("/devops/production/plan")
+def plan_devops_production_deployment(version: str = "latest"):
+    return devops_deployment_dashboard_service.plan_production_deployment(
+        version,
+    )
+
+
+@app.get("/devops/production/validate")
+def validate_devops_production():
+    return devops_deployment_dashboard_service.validate_production()
+
+
+@app.get("/devops/nginx/config")
+def get_devops_nginx_config():
+    return devops_deployment_dashboard_service.get_nginx_config()
+
+
+@app.get("/devops/nginx/validate")
+def validate_devops_nginx():
+    return devops_deployment_dashboard_service.validate_nginx()
+
+
+@app.get("/devops/nginx/routes")
+def get_devops_nginx_routes():
+    return devops_deployment_dashboard_service.get_nginx_routes()
+
+
+@app.get("/devops/https/config")
+def get_devops_https_config():
+    return devops_deployment_dashboard_service.get_https_config()
+
+
+@app.get("/devops/https/certificates")
+def get_devops_https_certificate_status():
+    return devops_deployment_dashboard_service.get_https_certificate_status()
+
+
+@app.get("/devops/https/validate")
+def validate_devops_https():
+    return devops_deployment_dashboard_service.validate_https()
+
+
+@app.get("/devops/cdn/config")
+def get_devops_cdn_config():
+    return devops_deployment_dashboard_service.get_cdn_config()
+
+
+@app.get("/devops/cdn/rules")
+def get_devops_cdn_cache_rules():
+    return devops_deployment_dashboard_service.get_cdn_cache_rules()
+
+
+@app.get("/devops/cdn/validate")
+def validate_devops_cdn():
+    return devops_deployment_dashboard_service.validate_cdn()
+
+
+@app.get("/devops/caching/config")
+def get_devops_caching_config():
+    return devops_deployment_dashboard_service.get_caching_config()
+
+
+@app.get("/devops/caching/validate")
+def validate_devops_caching():
+    return devops_deployment_dashboard_service.validate_caching()
+
+
+@app.get("/devops/caching/stats")
+def get_devops_caching_stats():
+    return devops_deployment_dashboard_service.get_caching_stats()
+
+
+@app.get("/devops/scaling/horizontal/config")
+def get_devops_horizontal_scaling_config():
+    return devops_deployment_dashboard_service.get_horizontal_scaling_config()
+
+
+@app.get("/devops/scaling/horizontal/status")
+def get_devops_horizontal_scaling_status():
+    return devops_deployment_dashboard_service.get_horizontal_scaling_status()
+
+
+@app.get("/devops/scaling/horizontal/simulate")
+def simulate_devops_horizontal_scaling(
+    cpu_percent: float = 45.0,
+    memory_percent: float = 52.0,
+    current_replicas: int = 3,
+):
+    return devops_deployment_dashboard_service.simulate_horizontal_scaling(
+        cpu_percent=cpu_percent,
+        memory_percent=memory_percent,
+        current_replicas=current_replicas,
+    )
+
+
+@app.get("/devops/scaling/workers/config")
+def get_devops_worker_scaling_config():
+    return devops_deployment_dashboard_service.get_worker_scaling_config()
+
+
+@app.get("/devops/scaling/workers/status")
+def get_devops_worker_scaling_status():
+    return devops_deployment_dashboard_service.get_worker_scaling_status()
+
+
+@app.get("/devops/scaling/workers/simulate")
+def simulate_devops_worker_scaling(
+    queue_depth: int = 35,
+    active_workers: int = 2,
+):
+    return devops_deployment_dashboard_service.simulate_worker_scaling(
+        queue_depth=queue_depth,
+        active_workers=active_workers,
+    )
+
+
+@app.get("/devops/monitoring/stack")
+def get_devops_monitoring_stack():
+    return devops_deployment_dashboard_service.get_monitoring_stack()
+
+
+@app.get("/devops/monitoring/validate")
+def validate_devops_monitoring_stack():
+    return devops_deployment_dashboard_service.validate_monitoring_stack()
+
+
+@app.get("/devops/monitoring/metrics")
+def get_devops_monitoring_metrics():
+    return devops_deployment_dashboard_service.get_monitoring_metrics()
+
+
+@app.get("/devops/uptime/checks")
+def list_devops_uptime_checks():
+    return devops_deployment_dashboard_service.get_uptime_checks()
+
+
+@app.get("/devops/uptime/status")
+def get_devops_uptime_status():
+    return devops_deployment_dashboard_service.get_uptime_status()
+
+
+@app.get("/devops/logging/config")
+def get_devops_logging_config():
+    return devops_deployment_dashboard_service.get_logging_config()
+
+
+@app.get("/devops/logging/streams")
+def get_devops_log_streams():
+    return devops_deployment_dashboard_service.get_log_streams()
+
+
+@app.get("/devops/logging/validate")
+def validate_devops_logging():
+    return devops_deployment_dashboard_service.validate_logging()
+
+
+@app.get("/devops/logging/search")
+def search_devops_logs(
+    query: str = "",
+    level: str | None = None,
+    limit: int = 100,
+):
+    return devops_deployment_dashboard_service.search_logs(
+        query=query,
+        level=level,
+        limit=limit,
+    )
+
+
+@app.get("/devops/disaster-recovery/plan")
+def get_devops_disaster_recovery_plan():
+    return devops_deployment_dashboard_service.get_disaster_recovery_plan()
+
+
+@app.get("/devops/disaster-recovery/rto-rpo")
+def get_devops_disaster_recovery_rto_rpo():
+    return devops_deployment_dashboard_service.get_disaster_recovery_rto_rpo()
+
+
+@app.post("/devops/disaster-recovery/drill")
+def run_devops_disaster_recovery_drill(scenario: str = "API_OUTAGE"):
+    return devops_deployment_dashboard_service.run_disaster_recovery_drill(
+        scenario,
+    )
+
+
+@app.get("/devops/rollout/checklist")
+def get_devops_rollout_checklist():
+    return devops_deployment_dashboard_service.get_rollout_checklist()
+
+
+@app.get("/devops/rollout/evaluate")
+def evaluate_devops_rollout_checklist(
+    completed_ids: str | None = None,
+):
+    ids = completed_ids.split(",") if completed_ids else None
+    return devops_deployment_dashboard_service.evaluate_rollout_checklist(ids)
+
+
+@app.get("/devops/readiness/framework")
+def get_devops_readiness_framework():
+    return devops_deployment_dashboard_service.get_readiness_framework()
+
+
+@app.get("/devops/readiness/review")
+def run_devops_readiness_review(passed_checks: str | None = None):
+    checks = passed_checks.split(",") if passed_checks else None
+    return devops_deployment_dashboard_service.run_readiness_review(checks)
+
+
+@app.get("/devops/readiness/blockers")
+def get_devops_readiness_blockers(passed_checks: str | None = None):
+    checks = passed_checks.split(",") if passed_checks else None
+    return devops_deployment_dashboard_service.get_readiness_blockers(checks)
+
+
+# ==========================================
+# SECURITY
+# ==========================================
+
+
+@app.get("/security/dashboard")
+def get_security_dashboard():
+    return security_dashboard_service.get_dashboard()
+
+
+@app.get("/security/rate-limiting/config")
+def get_security_rate_limiting_config():
+    return security_dashboard_service.get_rate_limiting_config()
+
+
+@app.get("/security/rate-limiting/check")
+def check_security_rate_limit(
+    client_id: str = "default",
+    tier: str = "authenticated",
+    current_count: int = 0,
+):
+    return security_dashboard_service.check_rate_limit(
+        client_id=client_id,
+        tier=tier,
+        current_count=current_count,
+    )
+
+
+@app.get("/security/rate-limiting/validate")
+def validate_security_rate_limiting():
+    return security_dashboard_service.validate_rate_limiting()
+
+
+@app.get("/security/cors/recommendations")
+def get_security_cors_recommendations():
+    return security_dashboard_service.get_cors_recommendations()
+
+
+@app.get("/security/cors/evaluate")
+def evaluate_security_cors(allow_origins: str | None = None):
+    origins = allow_origins.split(",") if allow_origins else None
+    return security_dashboard_service.evaluate_cors(allow_origins=origins)
+
+
+@app.get("/security/cors/validate")
+def validate_security_cors():
+    return security_dashboard_service.validate_cors()
+
+
+@app.get("/security/secrets")
+def list_security_managed_secrets():
+    return security_dashboard_service.list_managed_secrets()
+
+
+@app.get("/security/secrets/validate")
+def validate_security_secrets_hygiene():
+    return security_dashboard_service.validate_secrets_hygiene()
+
+
+@app.get("/security/secrets/rotation-policy")
+def get_security_secrets_rotation_policy():
+    return security_dashboard_service.get_secrets_rotation_policy()
+
+
+@app.get("/security/sql-injection/checklist")
+def get_security_sql_injection_checklist():
+    return security_dashboard_service.get_sql_injection_checklist()
+
+
+@app.get("/security/sql-injection/scan")
+def scan_security_sql_input(value: str = ""):
+    return security_dashboard_service.scan_sql_input(value)
+
+
+@app.get("/security/sql-injection/validate")
+def validate_security_sql_posture():
+    return security_dashboard_service.validate_sql_posture()
+
+
+@app.get("/security/uploads/policy")
+def get_security_file_upload_policy():
+    return security_dashboard_service.get_file_upload_policy()
+
+
+@app.get("/security/uploads/validate")
+def validate_security_file_upload(
+    filename: str = "report.pdf",
+    size_bytes: int | None = None,
+):
+    return security_dashboard_service.validate_file_upload(
+        filename=filename,
+        size_bytes=size_bytes,
+    )
+
+
+@app.get("/security/malware/config")
+def get_security_malware_scanner_config():
+    return security_dashboard_service.get_malware_scanner_config()
+
+
+@app.get("/security/malware/validate")
+def validate_security_malware_scanner():
+    return security_dashboard_service.validate_malware_scanner()
+
+
+@app.get("/security/auth/controls")
+def get_security_auth_hardening_controls():
+    return security_dashboard_service.get_auth_hardening_controls()
+
+
+@app.get("/security/auth/token-policy")
+def evaluate_security_token_policy(
+    access_token_ttl_minutes: int = 15,
+    refresh_token_ttl_days: int = 7,
+):
+    return security_dashboard_service.evaluate_token_policy(
+        access_token_ttl_minutes=access_token_ttl_minutes,
+        refresh_token_ttl_days=refresh_token_ttl_days,
+    )
+
+
+@app.get("/security/auth/validate")
+def validate_security_auth_hardening():
+    return security_dashboard_service.validate_auth_hardening()
+
+
+@app.get("/security/audit/events")
+def get_security_audit_events():
+    return security_dashboard_service.get_security_audit_events()
+
+
+@app.get("/security/audit/coverage")
+def get_security_audit_coverage():
+    return security_dashboard_service.get_audit_coverage()
+
+
+@app.get("/security/audit/validate")
+def validate_security_audit_logging():
+    return security_dashboard_service.validate_security_audit_logging()
+
+
+@app.get("/security/permissions/matrix")
+def get_security_permissions_matrix():
+    return security_dashboard_service.get_permissions_matrix()
+
+
+@app.get("/security/permissions/validate")
+def validate_security_permissions_matrix():
+    return security_dashboard_service.validate_permissions_matrix()
+
+
+@app.get("/security/permissions/check")
+def check_security_role_permission(
+    role: str = "VIEWER",
+    required_permission: str = "projects:read",
+):
+    return security_dashboard_service.validate_role_permission(
+        role=role,
+        required_permission=required_permission,
+    )
+
+
+@app.get("/security/owasp/assessment")
+def get_security_owasp_assessment():
+    return security_dashboard_service.get_owasp_assessment()
+
+
+@app.get("/security/owasp/controls/{control_id}")
+def evaluate_security_owasp_control(control_id: str):
+    return security_dashboard_service.evaluate_owasp_control(control_id)
+
+
+@app.get("/security/owasp/validate")
+def validate_security_owasp_review():
+    return security_dashboard_service.validate_owasp_review()
+
+
+@app.get("/security/dependencies/lock-files")
+def list_security_dependency_lock_files():
+    return security_dashboard_service.list_dependency_lock_files()
+
+
+@app.get("/security/dependencies/scan")
+def simulate_security_dependency_scan(
+    critical: int = 0,
+    high: int = 0,
+):
+    return security_dashboard_service.simulate_dependency_scan(
+        critical=critical,
+        high=high,
+    )
+
+
+@app.get("/security/dependencies/validate")
+def validate_security_dependency_scanning():
+    return security_dashboard_service.validate_dependency_scanning()
+
+
+@app.get("/security/supply-chain/controls")
+def get_security_supply_chain_controls():
+    return security_dashboard_service.get_supply_chain_controls()
+
+
+@app.get("/security/supply-chain/validate")
+def validate_security_supply_chain():
+    return security_dashboard_service.validate_supply_chain()
+
+
+@app.get("/security/supply-chain/sbom")
+def get_security_sbom_status():
+    return security_dashboard_service.get_sbom_status()
+
+
+@app.get("/security/pentest/scenarios")
+def list_security_pentest_scenarios():
+    return security_dashboard_service.list_pentest_scenarios()
+
+
+@app.post("/security/pentest/run")
+def run_security_pentest_scenario(scenario_id: str = "AUTH_BYPASS"):
+    return security_dashboard_service.run_pentest_scenario(scenario_id)
+
+
+@app.post("/security/pentest/smoke")
+def run_security_pentest_smoke_suite():
+    return security_dashboard_service.run_pentest_smoke_suite()
+
+
+@app.get("/security/tenant-isolation/report")
+def get_security_tenant_isolation_report():
+    return security_dashboard_service.get_tenant_isolation_report()
+
+
+@app.get("/security/tenant-isolation/validate")
+def validate_security_tenant_isolation():
+    return security_dashboard_service.validate_tenant_isolation()
+
+
+@app.get("/security/tenant-isolation/check")
+def check_security_tenant_access(
+    table_name: str = "projects",
+    requesting_org_id: str = "org-1",
+):
+    return security_dashboard_service.validate_tenant_access(
+        table_name=table_name,
+        record={"organization_id": requesting_org_id},
+        requesting_org_id=requesting_org_id,
+    )
+
+
+@app.get("/security/abuse/config")
+def get_security_api_abuse_config():
+    return security_dashboard_service.get_api_abuse_config()
+
+
+@app.get("/security/abuse/evaluate")
+def evaluate_security_api_abuse(
+    client_id: str = "client-1",
+    requests_per_minute: int = 0,
+    failed_auth_count: int = 0,
+):
+    return security_dashboard_service.evaluate_api_abuse(
+        client_id=client_id,
+        requests_per_minute=requests_per_minute,
+        failed_auth_count=failed_auth_count,
+    )
+
+
+@app.get("/security/abuse/validate")
+def validate_security_api_abuse_protection():
+    return security_dashboard_service.validate_api_abuse_protection()
+
+
+# ==========================================
+# OBSERVABILITY
+# ==========================================
+
+
+@app.get("/observability/dashboard")
+def get_observability_dashboard():
+    return observability_dashboard_service.get_dashboard()
+
+
+@app.get("/observability/logging/config")
+def get_observability_logging_config():
+    return observability_dashboard_service.get_logging_config()
+
+
+@app.get("/observability/logging/streams")
+def get_observability_log_streams():
+    return observability_dashboard_service.get_log_streams()
+
+
+@app.get("/observability/logging/search")
+def search_observability_logs(
+    query: str = "",
+    level: str | None = None,
+    limit: int = 100,
+):
+    return observability_dashboard_service.search_logs(
+        query=query,
+        level=level,
+        limit=limit,
+    )
+
+
+@app.get("/observability/logging/validate")
+def validate_observability_logging():
+    return observability_dashboard_service.validate_logging()
+
+
+@app.get("/observability/metrics/config")
+def get_observability_metrics_config():
+    return observability_dashboard_service.get_metrics_config()
+
+
+@app.get("/observability/metrics/catalog")
+def get_observability_metrics_catalog():
+    return observability_dashboard_service.get_metrics_catalog()
+
+
+@app.get("/observability/metrics/snapshot")
+def get_observability_metrics_snapshot(
+    requests_total: int = 0,
+    active_connections: int = 0,
+    memory_bytes: int = 0,
+):
+    return observability_dashboard_service.get_metrics_snapshot(
+        requests_total=requests_total,
+        active_connections=active_connections,
+        memory_bytes=memory_bytes,
+    )
+
+
+@app.get("/observability/metrics/validate")
+def validate_observability_metrics():
+    return observability_dashboard_service.validate_metrics()
+
+
+@app.get("/observability/prometheus/config")
+def get_observability_prometheus_config():
+    return observability_dashboard_service.get_prometheus_config()
+
+
+@app.get("/observability/prometheus/validate")
+def validate_observability_prometheus():
+    return observability_dashboard_service.validate_prometheus()
+
+
+@app.get("/observability/prometheus/targets")
+def get_observability_prometheus_targets():
+    return observability_dashboard_service.get_prometheus_targets()
+
+
+@app.get("/observability/grafana/config")
+def get_observability_grafana_config():
+    return observability_dashboard_service.get_grafana_config()
+
+
+@app.get("/observability/grafana/dashboards")
+def list_observability_grafana_dashboards():
+    return observability_dashboard_service.list_grafana_dashboards()
+
+
+@app.get("/observability/grafana/dashboards/{uid}")
+def get_observability_grafana_dashboard(uid: str):
+    return observability_dashboard_service.get_grafana_dashboard(uid)
+
+
+@app.get("/observability/grafana/validate")
+def validate_observability_grafana():
+    return observability_dashboard_service.validate_grafana()
+
+
+@app.get("/observability/ai-metrics/config")
+def get_observability_ai_metrics_config():
+    return observability_dashboard_service.get_ai_metrics_config()
+
+
+@app.get("/observability/ai-metrics/catalog")
+def get_observability_ai_metrics_catalog():
+    return observability_dashboard_service.get_ai_metrics_catalog()
+
+
+@app.get("/observability/ai-metrics/snapshot")
+def get_observability_ai_metrics_snapshot(
+    tokens_used: int = 0,
+    avg_latency_ms: float = 0.0,
+    error_rate: float = 0.0,
+):
+    return observability_dashboard_service.get_ai_metrics_snapshot(
+        tokens_used=tokens_used,
+        avg_latency_ms=avg_latency_ms,
+        error_rate=error_rate,
+    )
+
+
+@app.get("/observability/ai-metrics/validate")
+def validate_observability_ai_metrics():
+    return observability_dashboard_service.validate_ai_metrics()
+
+
+@app.get("/observability/automation-metrics/config")
+def get_observability_automation_metrics_config():
+    return observability_dashboard_service.get_automation_metrics_config()
+
+
+@app.get("/observability/automation-metrics/catalog")
+def get_observability_automation_metrics_catalog():
+    return observability_dashboard_service.get_automation_metrics_catalog()
+
+
+@app.get("/observability/automation-metrics/snapshot")
+def get_observability_automation_metrics_snapshot(
+    jobs_processed: int = 0,
+    queue_depth: int = 0,
+    success_rate: float = 100.0,
+):
+    return observability_dashboard_service.get_automation_metrics_snapshot(
+        jobs_processed=jobs_processed,
+        queue_depth=queue_depth,
+        success_rate=success_rate,
+    )
+
+
+@app.get("/observability/automation-metrics/validate")
+def validate_observability_automation_metrics():
+    return observability_dashboard_service.validate_automation_metrics()
+
+
+@app.get("/observability/sla/targets")
+def get_observability_sla_targets():
+    return observability_dashboard_service.get_sla_targets()
+
+
+@app.get("/observability/sla/evaluate")
+def evaluate_observability_sla(
+    metric: str = "api_availability",
+    actual_value: float = 99.95,
+):
+    return observability_dashboard_service.evaluate_sla(
+        metric=metric,
+        actual_value=actual_value,
+    )
+
+
+@app.get("/observability/sla/compliance")
+def get_observability_sla_compliance():
+    return observability_dashboard_service.get_sla_compliance()
+
+
+@app.get("/observability/sla/validate")
+def validate_observability_sla_metrics():
+    return observability_dashboard_service.validate_sla_metrics()
+
+
+@app.get("/observability/tracing/config")
+def get_observability_tracing_config():
+    return observability_dashboard_service.get_tracing_config()
+
+
+@app.get("/observability/tracing/validate")
+def validate_observability_tracing():
+    return observability_dashboard_service.validate_tracing()
+
+
+@app.get("/observability/alerting/config")
+def get_observability_alerting_config():
+    return observability_dashboard_service.get_alerting_config()
+
+
+@app.get("/observability/alerting/rules")
+def list_observability_alert_rules():
+    return observability_dashboard_service.list_alert_rules()
+
+
+@app.get("/observability/alerting/evaluate")
+def evaluate_observability_alert_rule(
+    rule_id: str = "HIGH_ERROR_RATE",
+    current_value: float = 0.0,
+):
+    return observability_dashboard_service.evaluate_alert_rule(
+        rule_id=rule_id,
+        current_value=current_value,
+    )
+
+
+@app.get("/observability/alerting/validate")
+def validate_observability_alerting():
+    return observability_dashboard_service.validate_alerting()
+
+
+@app.get("/observability/crashes/config")
+def get_observability_crash_reporting_config():
+    return observability_dashboard_service.get_crash_reporting_config()
+
+
+@app.get("/observability/crashes/recent")
+def get_observability_recent_crashes(limit: int = 10):
+    return observability_dashboard_service.get_recent_crashes(limit=limit)
+
+
+@app.get("/observability/crashes/validate")
+def validate_observability_crash_reporting():
+    return observability_dashboard_service.validate_crash_reporting()
+
+
+@app.get("/observability/sentry/config")
+def get_observability_sentry_config():
+    return observability_dashboard_service.get_sentry_config()
+
+
+@app.get("/observability/sentry/checklist")
+def get_observability_sentry_checklist():
+    return observability_dashboard_service.get_sentry_checklist()
+
+
+@app.get("/observability/sentry/validate")
+def validate_observability_sentry():
+    return observability_dashboard_service.validate_sentry()
+
+
+@app.get("/observability/runtime/snapshot")
+def get_observability_runtime_snapshot():
+    return observability_dashboard_service.get_runtime_snapshot()
+
+
+@app.get("/observability/runtime/health")
+def get_observability_runtime_health():
+    return observability_dashboard_service.get_runtime_health()
+
+
+@app.get("/observability/runtime/validate")
+def validate_observability_runtime_diagnostics():
+    return observability_dashboard_service.validate_runtime_diagnostics()
+
+
+@app.get("/observability/performance/config")
+def get_observability_performance_config():
+    return observability_dashboard_service.get_performance_config()
+
+
+@app.get("/observability/performance/evaluate")
+def evaluate_observability_performance(
+    p50_ms: float = 0.0,
+    p95_ms: float = 0.0,
+    p99_ms: float = 0.0,
+    error_rate: float = 0.0,
+    throughput_rps: float = 0.0,
+):
+    return observability_dashboard_service.evaluate_performance(
+        p50_ms=p50_ms,
+        p95_ms=p95_ms,
+        p99_ms=p99_ms,
+        error_rate=error_rate,
+        throughput_rps=throughput_rps,
+    )
+
+
+@app.get("/observability/performance/summary")
+def get_observability_performance_summary():
+    return observability_dashboard_service.get_performance_summary()
+
+
+@app.get("/observability/performance/validate")
+def validate_observability_performance():
+    return observability_dashboard_service.validate_performance()
+
+
+@app.get("/testing/dashboard")
+def get_testing_dashboard():
+    return testing_dashboard_service.get_dashboard()
+
+
+@app.get("/testing/unit/config")
+def get_testing_unit_config():
+    return testing_dashboard_service.get_unit_config()
+
+
+@app.get("/testing/unit/suites")
+def list_testing_unit_suites():
+    return testing_dashboard_service.list_unit_suites()
+
+
+@app.get("/testing/unit/coverage")
+def evaluate_testing_unit_coverage(coverage_percent: float = 0.0):
+    return testing_dashboard_service.evaluate_unit_coverage(
+        coverage_percent=coverage_percent,
+    )
+
+
+@app.get("/testing/unit/validate")
+def validate_testing_unit():
+    return testing_dashboard_service.validate_unit_tests()
+
+
+@app.get("/testing/integration/config")
+def get_testing_integration_config():
+    return testing_dashboard_service.get_integration_config()
+
+
+@app.get("/testing/integration/scenarios")
+def list_testing_integration_scenarios():
+    return testing_dashboard_service.list_integration_scenarios()
+
+
+@app.get("/testing/integration/validate")
+def validate_testing_integration():
+    return testing_dashboard_service.validate_integration_tests()
+
+
+@app.get("/testing/api/config")
+def get_testing_api_config():
+    return testing_dashboard_service.get_api_config()
+
+
+@app.get("/testing/api/endpoints")
+def list_testing_api_endpoints():
+    return testing_dashboard_service.list_api_endpoints()
+
+
+@app.get("/testing/api/simulate")
+def simulate_testing_api_request(
+    method: str = "GET",
+    path: str = "/health",
+    status_code: int = 200,
+):
+    return testing_dashboard_service.simulate_api_request(
+        method=method,
+        path=path,
+        status_code=status_code,
+    )
+
+
+@app.get("/testing/api/validate")
+def validate_testing_api():
+    return testing_dashboard_service.validate_api_tests()
+
+
+@app.get("/testing/frontend/config")
+def get_testing_frontend_config():
+    return testing_dashboard_service.get_frontend_config()
+
+
+@app.get("/testing/frontend/suites")
+def list_testing_frontend_suites():
+    return testing_dashboard_service.list_frontend_suites()
+
+
+@app.get("/testing/frontend/validate")
+def validate_testing_frontend():
+    return testing_dashboard_service.validate_frontend_tests()
+
+
+@app.get("/testing/playwright/config")
+def get_testing_playwright_config():
+    return testing_dashboard_service.get_playwright_config()
+
+
+@app.get("/testing/playwright/flows")
+def list_testing_playwright_flows():
+    return testing_dashboard_service.list_playwright_flows()
+
+
+@app.get("/testing/playwright/evaluate")
+def evaluate_testing_playwright_flow(flow_id: str = "login"):
+    return testing_dashboard_service.evaluate_playwright_flow(flow_id=flow_id)
+
+
+@app.get("/testing/playwright/validate")
+def validate_testing_playwright():
+    return testing_dashboard_service.validate_playwright()
+
+
+@app.get("/testing/automation/config")
+def get_testing_automation_config():
+    return testing_dashboard_service.get_automation_config()
+
+
+@app.get("/testing/automation/tests")
+def list_testing_automation_tests():
+    return testing_dashboard_service.list_automation_tests()
+
+
+@app.get("/testing/automation/validate")
+def validate_testing_automation():
+    return testing_dashboard_service.validate_automation_tests()
+
+
+@app.get("/testing/ai-mock/config")
+def get_testing_ai_mock_config():
+    return testing_dashboard_service.get_ai_mock_config()
+
+
+@app.get("/testing/ai-mock/fixtures")
+def list_testing_ai_mock_fixtures():
+    return testing_dashboard_service.list_ai_mock_fixtures()
+
+
+@app.get("/testing/ai-mock/simulate")
+def simulate_testing_ai_mock(
+    provider: str = "openai",
+    fixture_id: str = "review_summary",
+):
+    return testing_dashboard_service.simulate_ai_mock(
+        provider=provider,
+        fixture_id=fixture_id,
+    )
+
+
+@app.get("/testing/ai-mock/validate")
+def validate_testing_ai_mock():
+    return testing_dashboard_service.validate_ai_mock_tests()
+
+
+@app.get("/testing/load/config")
+def get_testing_load_config():
+    return testing_dashboard_service.get_load_config()
+
+
+@app.get("/testing/load/scenarios")
+def list_testing_load_scenarios():
+    return testing_dashboard_service.list_load_scenarios()
+
+
+@app.get("/testing/load/evaluate")
+def evaluate_testing_load(
+    p95_ms: float = 0.0,
+    error_rate_percent: float = 0.0,
+):
+    return testing_dashboard_service.evaluate_load_results(
+        p95_ms=p95_ms,
+        error_rate_percent=error_rate_percent,
+    )
+
+
+@app.get("/testing/load/validate")
+def validate_testing_load():
+    return testing_dashboard_service.validate_load_testing()
+
+
+@app.get("/testing/recovery/config")
+def get_testing_recovery_config():
+    return testing_dashboard_service.get_recovery_config()
+
+
+@app.get("/testing/recovery/scenarios")
+def list_testing_recovery_scenarios():
+    return testing_dashboard_service.list_recovery_scenarios()
+
+
+@app.get("/testing/recovery/simulate")
+def simulate_testing_recovery(scenario_id: str = "dlq_replay"):
+    return testing_dashboard_service.simulate_recovery(scenario_id=scenario_id)
+
+
+@app.get("/testing/recovery/validate")
+def validate_testing_recovery():
+    return testing_dashboard_service.validate_recovery_testing()
+
+
+@app.get("/testing/chaos/config")
+def get_testing_chaos_config():
+    return testing_dashboard_service.get_chaos_config()
+
+
+@app.get("/testing/chaos/experiments")
+def list_testing_chaos_experiments():
+    return testing_dashboard_service.list_chaos_experiments()
+
+
+@app.get("/testing/chaos/evaluate")
+def evaluate_testing_chaos_safety(experiment_id: str = "kill_api_pod"):
+    return testing_dashboard_service.evaluate_chaos_safety(
+        experiment_id=experiment_id,
+    )
+
+
+@app.get("/testing/chaos/validate")
+def validate_testing_chaos():
+    return testing_dashboard_service.validate_chaos_testing()
+
+
+@app.get("/testing/contract/config")
+def get_testing_contract_config():
+    return testing_dashboard_service.get_contract_config()
+
+
+@app.get("/testing/contract/contracts")
+def list_testing_contracts():
+    return testing_dashboard_service.list_contracts()
+
+
+@app.get("/testing/contract/validate-change")
+def validate_testing_contract_change(change_type: str = "add_optional_field"):
+    return testing_dashboard_service.validate_contract_change(
+        change_type=change_type,
+    )
+
+
+@app.get("/testing/contract/validate")
+def validate_testing_contract():
+    return testing_dashboard_service.validate_contract_testing()
+
+
+@app.get("/testing/security/config")
+def get_testing_security_config():
+    return testing_dashboard_service.get_security_test_config()
+
+
+@app.get("/testing/security/cases")
+def list_testing_security_cases():
+    return testing_dashboard_service.list_security_test_cases()
+
+
+@app.get("/testing/security/run")
+def run_testing_security_case(case_id: str = "jwt_expired"):
+    return testing_dashboard_service.run_security_test_case(case_id=case_id)
+
+
+@app.get("/testing/security/validate")
+def validate_testing_security():
+    return testing_dashboard_service.validate_security_testing()
+
+
+@app.get("/testing/performance/config")
+def get_testing_performance_config():
+    return testing_dashboard_service.get_performance_test_config()
+
+
+@app.get("/testing/performance/benchmarks")
+def list_testing_performance_benchmarks():
+    return testing_dashboard_service.list_performance_benchmarks()
+
+
+@app.get("/testing/performance/evaluate")
+def evaluate_testing_performance_benchmark(
+    benchmark_id: str = "project_list",
+    p95_ms: float = 0.0,
+):
+    return testing_dashboard_service.evaluate_performance_benchmark(
+        benchmark_id=benchmark_id,
+        p95_ms=p95_ms,
+    )
+
+
+@app.get("/testing/performance/validate")
+def validate_testing_performance():
+    return testing_dashboard_service.validate_performance_testing()
+
+
+@app.get("/testing/regression/config")
+def get_testing_regression_config():
+    return testing_dashboard_service.get_regression_config()
+
+
+@app.get("/testing/regression/suites")
+def list_testing_regression_suites():
+    return testing_dashboard_service.list_regression_suites()
+
+
+@app.get("/testing/regression/compare")
+def compare_testing_regression_baseline(
+    suite_id: str = "api_responses",
+    changed_snapshots: int = 0,
+):
+    return testing_dashboard_service.compare_regression_baseline(
+        suite_id=suite_id,
+        changed_snapshots=changed_snapshots,
+    )
+
+
+@app.get("/testing/regression/validate")
+def validate_testing_regression():
+    return testing_dashboard_service.validate_regression_testing()
+
+
+# ==========================================
+# PRODUCT READINESS
+# ==========================================
+
+
+@app.get("/product-readiness/dashboard")
+def get_product_readiness_dashboard():
+    return product_readiness_dashboard_service.get_dashboard()
+
+
+@app.get("/product-readiness/onboarding/config")
+def get_product_onboarding_config():
+    return product_readiness_dashboard_service.get_onboarding_config()
+
+
+@app.get("/product-readiness/onboarding/steps")
+def list_product_onboarding_steps():
+    return product_readiness_dashboard_service.list_onboarding_steps()
+
+
+@app.get("/product-readiness/onboarding/progress")
+def evaluate_product_onboarding_progress(completed_steps: str = ""):
+    return product_readiness_dashboard_service.evaluate_onboarding_progress(
+        completed_steps=completed_steps,
+    )
+
+
+@app.get("/product-readiness/onboarding/validate")
+def validate_product_onboarding_flow():
+    return product_readiness_dashboard_service.validate_onboarding_flow()
+
+
+@app.get("/product-readiness/demo-data/config")
+def get_product_demo_data_config():
+    return product_readiness_dashboard_service.get_demo_data_config()
+
+
+@app.get("/product-readiness/demo-data/presets")
+def list_product_demo_data_presets():
+    return product_readiness_dashboard_service.list_demo_data_presets()
+
+
+@app.get("/product-readiness/demo-data/simulate")
+def simulate_product_demo_data(preset_id: str = "startup"):
+    return product_readiness_dashboard_service.simulate_demo_data(preset_id=preset_id)
+
+
+@app.get("/product-readiness/demo-data/validate")
+def validate_product_demo_data_generator():
+    return product_readiness_dashboard_service.validate_demo_data_generator()
+
+
+@app.get("/product-readiness/multi-tenant/config")
+def get_product_multi_tenant_config():
+    return product_readiness_dashboard_service.get_multi_tenant_config()
+
+
+@app.get("/product-readiness/multi-tenant/checklist")
+def list_product_multi_tenant_checklist():
+    return product_readiness_dashboard_service.list_multi_tenant_checklist()
+
+
+@app.get("/product-readiness/multi-tenant/evaluate")
+def evaluate_product_multi_tenant_readiness(passed_items: str = ""):
+    return product_readiness_dashboard_service.evaluate_multi_tenant_readiness(
+        passed_items=passed_items,
+    )
+
+
+@app.get("/product-readiness/multi-tenant/validate")
+def validate_product_multi_tenant_readiness():
+    return product_readiness_dashboard_service.validate_multi_tenant_readiness()
+
+
+@app.get("/product-readiness/pricing/config")
+def get_product_pricing_config():
+    return product_readiness_dashboard_service.get_pricing_config()
+
+
+@app.get("/product-readiness/pricing/tiers")
+def list_product_pricing_tiers():
+    return product_readiness_dashboard_service.list_pricing_tiers()
+
+
+@app.get("/product-readiness/pricing/estimate")
+def calculate_product_pricing_estimate(
+    tier_id: str = "starter",
+    seats: int = 5,
+    billing_period: str = "monthly",
+):
+    return product_readiness_dashboard_service.calculate_pricing_estimate(
+        tier_id=tier_id,
+        seats=seats,
+        billing_period=billing_period,
+    )
+
+
+@app.get("/product-readiness/pricing/validate")
+def validate_product_pricing_model():
+    return product_readiness_dashboard_service.validate_pricing_model()
+
+
+@app.get("/product-readiness/admin/config")
+def get_product_admin_panel_config():
+    return product_readiness_dashboard_service.get_admin_panel_config()
+
+
+@app.get("/product-readiness/admin/modules")
+def list_product_admin_modules():
+    return product_readiness_dashboard_service.list_admin_modules()
+
+
+@app.get("/product-readiness/admin/access")
+def check_product_admin_access(role: str = "VIEWER"):
+    return product_readiness_dashboard_service.check_admin_access(role=role)
+
+
+@app.get("/product-readiness/admin/validate")
+def validate_product_admin_panel():
+    return product_readiness_dashboard_service.validate_admin_panel()
+
+
+@app.get("/product-readiness/analytics/config")
+def get_product_analytics_config():
+    return product_readiness_dashboard_service.get_product_analytics_config()
+
+
+@app.get("/product-readiness/analytics/events")
+def list_product_analytics_events():
+    return product_readiness_dashboard_service.list_product_analytics_events()
+
+
+@app.get("/product-readiness/analytics/evaluate")
+def evaluate_product_analytics(events_implemented: str = ""):
+    return product_readiness_dashboard_service.evaluate_product_analytics(
+        events_implemented=events_implemented,
+    )
+
+
+@app.get("/product-readiness/analytics/validate")
+def validate_product_analytics():
+    return product_readiness_dashboard_service.validate_product_analytics()
+
+
+@app.get("/product-readiness/quotas/config")
+def get_product_usage_quotas_config():
+    return product_readiness_dashboard_service.get_usage_quotas_config()
+
+
+@app.get("/product-readiness/quotas/list")
+def list_product_usage_quotas():
+    return product_readiness_dashboard_service.list_usage_quotas()
+
+
+@app.get("/product-readiness/quotas/check")
+def check_product_usage_quota(
+    metric: str = "ai_tokens",
+    plan: str = "starter",
+    current_usage: int = 0,
+):
+    return product_readiness_dashboard_service.check_usage_quota(
+        metric=metric,
+        plan=plan,
+        current_usage=current_usage,
+    )
+
+
+@app.get("/product-readiness/quotas/validate")
+def validate_product_usage_quotas():
+    return product_readiness_dashboard_service.validate_usage_quotas()
+
+
+@app.get("/product-readiness/billing/config")
+def get_product_billing_config():
+    return product_readiness_dashboard_service.get_billing_config()
+
+
+@app.get("/product-readiness/billing/products")
+def list_product_billing_products():
+    return product_readiness_dashboard_service.list_billing_products()
+
+
+@app.get("/product-readiness/billing/webhook")
+def simulate_product_billing_webhook(event_type: str = "invoice.paid"):
+    return product_readiness_dashboard_service.simulate_billing_webhook(
+        event_type=event_type,
+    )
+
+
+@app.get("/product-readiness/billing/validate")
+def validate_product_billing_integration():
+    return product_readiness_dashboard_service.validate_billing_integration()
+
+
+@app.get("/product-readiness/subscriptions/config")
+def get_product_subscription_config():
+    return product_readiness_dashboard_service.get_subscription_config()
+
+
+@app.get("/product-readiness/subscriptions/plans")
+def list_product_subscription_plans():
+    return product_readiness_dashboard_service.list_subscription_plans()
+
+
+@app.get("/product-readiness/subscriptions/upgrade")
+def evaluate_product_subscription_upgrade(
+    from_plan: str = "starter",
+    to_plan: str = "growth",
+):
+    return product_readiness_dashboard_service.evaluate_subscription_upgrade(
+        from_plan=from_plan,
+        to_plan=to_plan,
+    )
+
+
+@app.get("/product-readiness/subscriptions/validate")
+def validate_product_subscription_plans():
+    return product_readiness_dashboard_service.validate_subscription_plans()
+
+
+@app.get("/product-readiness/support/config")
+def get_product_support_config():
+    return product_readiness_dashboard_service.get_support_config()
+
+
+@app.get("/product-readiness/support/channels")
+def list_product_support_channels():
+    return product_readiness_dashboard_service.list_support_channels()
+
+
+@app.get("/product-readiness/support/sla")
+def evaluate_product_support_sla(
+    plan: str = "starter",
+    hours_open: float = 0.0,
+):
+    return product_readiness_dashboard_service.evaluate_support_sla(
+        plan=plan,
+        hours_open=hours_open,
+    )
+
+
+@app.get("/product-readiness/support/validate")
+def validate_product_support_tooling():
+    return product_readiness_dashboard_service.validate_support_tooling()
+
+
+@app.get("/product-readiness/documentation/config")
+def get_product_documentation_config():
+    return product_readiness_dashboard_service.get_documentation_config()
+
+
+@app.get("/product-readiness/documentation/sections")
+def list_product_documentation_sections():
+    return product_readiness_dashboard_service.list_documentation_sections()
+
+
+@app.get("/product-readiness/documentation/coverage")
+def evaluate_product_documentation_coverage(published_sections: str = ""):
+    return product_readiness_dashboard_service.evaluate_documentation_coverage(
+        published_sections=published_sections,
+    )
+
+
+@app.get("/product-readiness/documentation/validate")
+def validate_product_documentation():
+    return product_readiness_dashboard_service.validate_documentation()
+
+
+@app.get("/product-readiness/api-docs/config")
+def get_product_api_docs_config():
+    return product_readiness_dashboard_service.get_api_docs_config()
+
+
+@app.get("/product-readiness/api-docs/groups")
+def list_product_api_doc_groups():
+    return product_readiness_dashboard_service.list_api_doc_groups()
+
+
+@app.get("/product-readiness/api-docs/completeness")
+def evaluate_product_api_docs_completeness(documented_tags: str = ""):
+    return product_readiness_dashboard_service.evaluate_api_docs_completeness(
+        documented_tags=documented_tags,
+    )
+
+
+@app.get("/product-readiness/api-docs/validate")
+def validate_product_api_documentation():
+    return product_readiness_dashboard_service.validate_api_documentation()
+
+
+@app.get("/product-readiness/dev-docs/config")
+def get_product_internal_docs_config():
+    return product_readiness_dashboard_service.get_internal_docs_config()
+
+
+@app.get("/product-readiness/dev-docs/guides")
+def list_product_internal_docs_guides():
+    return product_readiness_dashboard_service.list_internal_docs_guides()
+
+
+@app.get("/product-readiness/dev-docs/onboarding")
+def evaluate_product_internal_docs_onboarding(available_guides: str = ""):
+    return product_readiness_dashboard_service.evaluate_internal_docs_onboarding(
+        available_guides=available_guides,
+    )
+
+
+@app.get("/product-readiness/dev-docs/validate")
+def validate_product_internal_developer_docs():
+    return product_readiness_dashboard_service.validate_internal_developer_docs()
+
+
+@app.get("/product-readiness/website/config")
+def get_product_website_config():
+    return product_readiness_dashboard_service.get_product_website_config()
+
+
+@app.get("/product-readiness/website/pages")
+def list_product_website_pages():
+    return product_readiness_dashboard_service.list_product_website_pages()
+
+
+@app.get("/product-readiness/website/launch")
+def evaluate_product_website_launch(published_slugs: str = ""):
+    return product_readiness_dashboard_service.evaluate_product_website_launch(
+        published_slugs=published_slugs,
+    )
+
+
+@app.get("/product-readiness/website/validate")
+def validate_product_website():
+    return product_readiness_dashboard_service.validate_product_website()
+
+
+@app.get("/product-readiness/marketing/config")
+def get_product_marketing_assets_config():
+    return product_readiness_dashboard_service.get_marketing_assets_config()
+
+
+@app.get("/product-readiness/marketing/assets")
+def list_product_marketing_assets():
+    return product_readiness_dashboard_service.list_marketing_assets()
+
+
+@app.get("/product-readiness/marketing/check")
+def check_product_marketing_asset(asset_id: str = "logo_primary"):
+    return product_readiness_dashboard_service.check_marketing_asset(asset_id=asset_id)
+
+
+@app.get("/product-readiness/marketing/validate")
+def validate_product_marketing_assets():
+    return product_readiness_dashboard_service.validate_marketing_assets()
+
+
+@app.get("/product-readiness/investor-deck/config")
+def get_product_investor_deck_config():
+    return product_readiness_dashboard_service.get_investor_deck_config()
+
+
+@app.get("/product-readiness/investor-deck/slides")
+def list_product_investor_deck_slides():
+    return product_readiness_dashboard_service.list_investor_deck_slides()
+
+
+@app.get("/product-readiness/investor-deck/evaluate")
+def evaluate_product_investor_deck(completed_slides: str = ""):
+    return product_readiness_dashboard_service.evaluate_investor_deck(
+        completed_slides=completed_slides,
+    )
+
+
+@app.get("/product-readiness/investor-deck/validate")
+def validate_product_investor_demo_deck():
+    return product_readiness_dashboard_service.validate_investor_demo_deck()
+
+
+@app.get("/product-readiness/demo-env/config")
+def get_product_demo_environment_config():
+    return product_readiness_dashboard_service.get_demo_environment_config()
+
+
+@app.get("/product-readiness/demo-env/features")
+def list_product_demo_environment_features():
+    return product_readiness_dashboard_service.list_demo_environment_features()
+
+
+@app.get("/product-readiness/demo-env/health")
+def evaluate_product_demo_environment_health(
+    api_up: bool = True,
+    ui_up: bool = True,
+    data_seeded: bool = True,
+):
+    return product_readiness_dashboard_service.evaluate_demo_environment_health(
+        api_up=api_up,
+        ui_up=ui_up,
+        data_seeded=data_seeded,
+    )
+
+
+@app.get("/product-readiness/demo-env/validate")
+def validate_product_demo_environment():
+    return product_readiness_dashboard_service.validate_demo_environment()
+
+
+@app.get("/product-readiness/beta/config")
+def get_product_beta_testing_config():
+    return product_readiness_dashboard_service.get_beta_testing_config()
+
+
+@app.get("/product-readiness/beta/stages")
+def list_product_beta_testing_stages():
+    return product_readiness_dashboard_service.list_beta_testing_stages()
+
+
+@app.get("/product-readiness/beta/enrollment")
+def evaluate_product_beta_enrollment(
+    current_participants: int = 0,
+    approved: bool = True,
+):
+    return product_readiness_dashboard_service.evaluate_beta_enrollment(
+        current_participants=current_participants,
+        approved=approved,
+    )
+
+
+@app.get("/product-readiness/beta/validate")
+def validate_product_beta_testing_flow():
+    return product_readiness_dashboard_service.validate_beta_testing_flow()
+
+
+@app.get("/product-readiness/customer-onboarding/config")
+def get_product_customer_onboarding_config():
+    return product_readiness_dashboard_service.get_customer_onboarding_config()
+
+
+@app.get("/product-readiness/customer-onboarding/milestones")
+def list_product_customer_onboarding_milestones():
+    return product_readiness_dashboard_service.list_customer_onboarding_milestones()
+
+
+@app.get("/product-readiness/customer-onboarding/progress")
+def evaluate_product_customer_onboarding(completed_milestones: str = ""):
+    return product_readiness_dashboard_service.evaluate_customer_onboarding(
+        completed_milestones=completed_milestones,
+    )
+
+
+@app.get("/product-readiness/customer-onboarding/validate")
+def validate_product_customer_onboarding_flow():
+    return product_readiness_dashboard_service.validate_customer_onboarding_flow()
+
+
+@app.get("/product-readiness/saas/config")
+def get_product_saas_readiness_config():
+    return product_readiness_dashboard_service.get_saas_readiness_config()
+
+
+@app.get("/product-readiness/saas/categories")
+def list_product_saas_readiness_categories():
+    return product_readiness_dashboard_service.list_saas_readiness_categories()
+
+
+@app.get("/product-readiness/saas/assessment")
+def run_product_saas_readiness_assessment(passed_checks: str | None = None):
+    return product_readiness_dashboard_service.run_saas_readiness_assessment(
+        passed_checks=passed_checks,
+    )
+
+
+@app.get("/product-readiness/saas/validate")
+def validate_product_saas_readiness():
+    return product_readiness_dashboard_service.validate_saas_readiness()
+
+
+@app.get("/product-readiness/usage-tracking/config")
+def get_product_usage_tracking_config():
+    return product_readiness_dashboard_service.get_usage_tracking_config()
+
+
+@app.get("/product-readiness/usage-tracking/metrics")
+def list_product_usage_tracking_metrics():
+    return product_readiness_dashboard_service.list_usage_tracking_metrics()
+
+
+@app.get("/product-readiness/usage-tracking/record")
+def record_product_usage(
+    organization_id: str = "org-1",
+    metric: str = "ai_tokens",
+    amount: int = 0,
+):
+    return product_readiness_dashboard_service.track_usage(
+        organization_id=organization_id,
+        metric=metric,
+        amount=amount,
+    )
+
+
+@app.get("/product-readiness/usage-tracking/summary")
+def summarize_product_usage(
+    organization_id: str = "org-1",
+    ai_tokens: int = 0,
+    reports: int = 0,
+    api_requests: int = 0,
+    storage_gb: int = 0,
+    active_users: int = 0,
+):
+    return product_readiness_dashboard_service.summarize_usage_tracking(
+        organization_id=organization_id,
+        ai_tokens=ai_tokens,
+        reports=reports,
+        api_requests=api_requests,
+        storage_gb=storage_gb,
+        active_users=active_users,
+    )
+
+
+@app.get("/product-readiness/usage-tracking/validate")
+def validate_product_usage_tracking():
+    return product_readiness_dashboard_service.validate_usage_tracking()
+
+
+@app.get("/product-readiness/product-demo/config")
+def get_product_demo_config():
+    return product_readiness_dashboard_service.get_product_demo_config()
+
+
+@app.get("/product-readiness/product-demo/scenarios")
+def list_product_demo_scenarios():
+    return product_readiness_dashboard_service.list_product_demo_scenarios()
+
+
+@app.get("/product-readiness/product-demo/evaluate")
+def evaluate_product_demo(completed_scenarios: str = ""):
+    return product_readiness_dashboard_service.evaluate_product_demo(
+        completed_scenarios=completed_scenarios,
+    )
+
+
+@app.get("/product-readiness/product-demo/validate")
+def validate_product_demo():
+    return product_readiness_dashboard_service.validate_product_demo()
+
+# ==========================================
+# FUTURE AI FEATURES
+# ==========================================
+
+
+@app.get("/future-ai/dashboard")
+def get_future_ai_dashboard():
+    return future_ai_features_dashboard_service.get_dashboard()
+
+@app.get("/future-ai/autonomous-workflows/config")
+def future_ai_autonomous_workflows_config():
+    return future_ai_features_dashboard_service.get_autonomous_workflows_config()
+
+@app.get("/future-ai/autonomous-workflows/templates")
+def future_ai_autonomous_workflows_templates():
+    return future_ai_features_dashboard_service.list_autonomous_workflow_templates()
+
+@app.get("/future-ai/autonomous-workflows/run")
+def future_ai_autonomous_workflows_run(template_id: str = "escalation_response", approved: bool = True):
+    return future_ai_features_dashboard_service.evaluate_autonomous_workflow_run(template_id=template_id, approved=approved)
+
+@app.get("/future-ai/autonomous-workflows/validate")
+def future_ai_autonomous_workflows_validate():
+    return future_ai_features_dashboard_service.validate_autonomous_workflows()
+
+@app.get("/future-ai/ai-action-generation/config")
+def future_ai_ai_action_generation_config():
+    return future_ai_features_dashboard_service.get_ai_action_generation_config()
+
+@app.get("/future-ai/ai-action-generation/types")
+def future_ai_ai_action_generation_types():
+    return future_ai_features_dashboard_service.list_ai_action_generation_types()
+
+@app.get("/future-ai/ai-action-generation/simulate")
+def future_ai_ai_action_generation_simulate(project_id: str = "p1", signal_count: int = 3):
+    return future_ai_features_dashboard_service.simulate_ai_action_generation(project_id=project_id, signal_count=signal_count)
+
+@app.get("/future-ai/ai-action-generation/validate")
+def future_ai_ai_action_generation_validate():
+    return future_ai_features_dashboard_service.validate_ai_action_generation()
+
+@app.get("/future-ai/project-forecasting/config")
+def future_ai_project_forecasting_config():
+    return future_ai_features_dashboard_service.get_ai_project_forecasting_config()
+
+@app.get("/future-ai/project-forecasting/metrics")
+def future_ai_project_forecasting_metrics():
+    return future_ai_features_dashboard_service.list_ai_project_forecast_metrics()
+
+@app.get("/future-ai/project-forecasting/forecast")
+def future_ai_project_forecasting_forecast(project_id: str = "p1", health_score: int = 55):
+    return future_ai_features_dashboard_service.run_ai_project_forecast(project_id=project_id, health_score=health_score)
+
+@app.get("/future-ai/project-forecasting/validate")
+def future_ai_project_forecasting_validate():
+    return future_ai_features_dashboard_service.validate_ai_project_forecasting()
+
+@app.get("/future-ai/anomaly-detection/config")
+def future_ai_anomaly_detection_config():
+    return future_ai_features_dashboard_service.get_ai_anomaly_detection_config()
+
+@app.get("/future-ai/anomaly-detection/detectors")
+def future_ai_anomaly_detection_detectors():
+    return future_ai_features_dashboard_service.list_ai_anomaly_detectors()
+
+@app.get("/future-ai/anomaly-detection/scan")
+def future_ai_anomaly_detection_scan(metric: str = "actions", current_value: float = 120.0, baseline: float = 40.0):
+    return future_ai_features_dashboard_service.scan_ai_anomalies(metric=metric, current_value=current_value, baseline=baseline)
+
+@app.get("/future-ai/anomaly-detection/validate")
+def future_ai_anomaly_detection_validate():
+    return future_ai_features_dashboard_service.validate_ai_anomaly_detection()
+
+@app.get("/future-ai/scheduling-optimization/config")
+def future_ai_scheduling_optimization_config():
+    return future_ai_features_dashboard_service.get_ai_scheduling_optimization_config()
+
+@app.get("/future-ai/scheduling-optimization/constraints")
+def future_ai_scheduling_optimization_constraints():
+    return future_ai_features_dashboard_service.list_ai_scheduling_constraints()
+
+@app.get("/future-ai/scheduling-optimization/optimize")
+def future_ai_scheduling_optimization_optimize(action_count: int = 8, available_hours: float = 6.0):
+    return future_ai_features_dashboard_service.run_ai_schedule_optimization(action_count=action_count, available_hours=available_hours)
+
+@app.get("/future-ai/scheduling-optimization/validate")
+def future_ai_scheduling_optimization_validate():
+    return future_ai_features_dashboard_service.validate_ai_scheduling_optimization()
+
+@app.get("/future-ai/recommendation-engine/config")
+def future_ai_recommendation_engine_config():
+    return future_ai_features_dashboard_service.get_ai_recommendation_engine_config()
+
+@app.get("/future-ai/recommendation-engine/types")
+def future_ai_recommendation_engine_types():
+    return future_ai_features_dashboard_service.list_ai_recommendation_types()
+
+@app.get("/future-ai/recommendation-engine/generate")
+def future_ai_recommendation_engine_generate(context: str = "project", item_count: int = 3):
+    return future_ai_features_dashboard_service.generate_ai_recommendations(context=context, item_count=item_count)
+
+@app.get("/future-ai/recommendation-engine/validate")
+def future_ai_recommendation_engine_validate():
+    return future_ai_features_dashboard_service.validate_ai_recommendation_engine()
+
+@app.get("/future-ai/executive-assistant/config")
+def future_ai_executive_assistant_config():
+    return future_ai_features_dashboard_service.get_ai_executive_assistant_config()
+
+@app.get("/future-ai/executive-assistant/capabilities")
+def future_ai_executive_assistant_capabilities():
+    return future_ai_features_dashboard_service.list_ai_executive_assistant_capabilities()
+
+@app.get("/future-ai/executive-assistant/briefing")
+def future_ai_executive_assistant_briefing(topics: str = ""):
+    return future_ai_features_dashboard_service.compose_ai_executive_briefing(topics=topics)
+
+@app.get("/future-ai/executive-assistant/validate")
+def future_ai_executive_assistant_validate():
+    return future_ai_features_dashboard_service.validate_ai_executive_assistant()
+
+@app.get("/future-ai/voice-summaries/config")
+def future_ai_voice_summaries_config():
+    return future_ai_features_dashboard_service.get_voice_summaries_config()
+
+@app.get("/future-ai/voice-summaries/voices")
+def future_ai_voice_summaries_voices():
+    return future_ai_features_dashboard_service.list_voice_summary_voices()
+
+@app.get("/future-ai/voice-summaries/synthesize")
+def future_ai_voice_summaries_synthesize(text_length: int = 500):
+    return future_ai_features_dashboard_service.synthesize_voice_summary(text_length=text_length)
+
+@app.get("/future-ai/voice-summaries/validate")
+def future_ai_voice_summaries_validate():
+    return future_ai_features_dashboard_service.validate_voice_summaries()
+
+@app.get("/future-ai/whatsapp/config")
+def future_ai_whatsapp_config():
+    return future_ai_features_dashboard_service.get_whatsapp_integration_config()
+
+@app.get("/future-ai/whatsapp/templates")
+def future_ai_whatsapp_templates():
+    return future_ai_features_dashboard_service.list_whatsapp_templates()
+
+@app.get("/future-ai/whatsapp/webhook")
+def future_ai_whatsapp_webhook(signature_valid: bool = True):
+    return future_ai_features_dashboard_service.validate_whatsapp_webhook(signature_valid=signature_valid)
+
+@app.get("/future-ai/whatsapp/validate")
+def future_ai_whatsapp_validate():
+    return future_ai_features_dashboard_service.validate_whatsapp_integration()
+
+@app.get("/future-ai/email-ingestion/config")
+def future_ai_email_ingestion_config():
+    return future_ai_features_dashboard_service.get_email_ingestion_ai_config()
+
+@app.get("/future-ai/email-ingestion/parsers")
+def future_ai_email_ingestion_parsers():
+    return future_ai_features_dashboard_service.list_email_ingestion_parsers()
+
+@app.get("/future-ai/email-ingestion/process")
+def future_ai_email_ingestion_process(has_attachment: bool = True, subject: str = "Q1 report"):
+    return future_ai_features_dashboard_service.process_email_ingestion(has_attachment=has_attachment, subject=subject)
+
+@app.get("/future-ai/email-ingestion/validate")
+def future_ai_email_ingestion_validate():
+    return future_ai_features_dashboard_service.validate_email_ingestion_ai()
+
+@app.get("/future-ai/sharepoint/config")
+def future_ai_sharepoint_config():
+    return future_ai_features_dashboard_service.get_sharepoint_integration_config()
+
+@app.get("/future-ai/sharepoint/targets")
+def future_ai_sharepoint_targets():
+    return future_ai_features_dashboard_service.list_sharepoint_sync_targets()
+
+@app.get("/future-ai/sharepoint/sync")
+def future_ai_sharepoint_sync(site_id: str = "site-1", files_found: int = 5):
+    return future_ai_features_dashboard_service.sync_sharepoint_library(site_id=site_id, files_found=files_found)
+
+@app.get("/future-ai/sharepoint/validate")
+def future_ai_sharepoint_validate():
+    return future_ai_features_dashboard_service.validate_sharepoint_integration()
+
+@app.get("/future-ai/teams/config")
+def future_ai_teams_config():
+    return future_ai_features_dashboard_service.get_teams_integration_config()
+
+@app.get("/future-ai/teams/commands")
+def future_ai_teams_commands():
+    return future_ai_features_dashboard_service.list_teams_commands()
+
+@app.get("/future-ai/teams/notify")
+def future_ai_teams_notify(channel_id: str = "general", urgent: bool = False):
+    return future_ai_features_dashboard_service.post_teams_notification(channel_id=channel_id, urgent=urgent)
+
+@app.get("/future-ai/teams/validate")
+def future_ai_teams_validate():
+    return future_ai_features_dashboard_service.validate_teams_integration()
+
+@app.get("/future-ai/slack/config")
+def future_ai_slack_config():
+    return future_ai_features_dashboard_service.get_slack_integration_config()
+
+@app.get("/future-ai/slack/commands")
+def future_ai_slack_commands():
+    return future_ai_features_dashboard_service.list_slack_slash_commands()
+
+@app.get("/future-ai/slack/events")
+def future_ai_slack_events(event_type: str = "app_mention"):
+    return future_ai_features_dashboard_service.handle_slack_event(event_type=event_type)
+
+@app.get("/future-ai/slack/validate")
+def future_ai_slack_validate():
+    return future_ai_features_dashboard_service.validate_slack_integration()
+
+@app.get("/future-ai/copilots/config")
+def future_ai_copilots_config():
+    return future_ai_features_dashboard_service.get_ai_copilots_config()
+
+@app.get("/future-ai/copilots/list")
+def future_ai_copilots_list():
+    return future_ai_features_dashboard_service.list_ai_copilots()
+
+@app.get("/future-ai/copilots/invoke")
+def future_ai_copilots_invoke(copilot_id: str = "project_copilot", prompt_length: int = 50):
+    return future_ai_features_dashboard_service.invoke_ai_copilot(copilot_id=copilot_id, prompt_length=prompt_length)
+
+@app.get("/future-ai/copilots/validate")
+def future_ai_copilots_validate():
+    return future_ai_features_dashboard_service.validate_ai_copilots()
+
+@app.get("/future-ai/conversational-workspace/config")
+def future_ai_conversational_workspace_config():
+    return future_ai_features_dashboard_service.get_conversational_workspace_ai_config()
+
+@app.get("/future-ai/conversational-workspace/tools")
+def future_ai_conversational_workspace_tools():
+    return future_ai_features_dashboard_service.list_conversational_workspace_tools()
+
+@app.get("/future-ai/conversational-workspace/chat")
+def future_ai_conversational_workspace_chat(message: str = "Summarize today", project_id: str = "p1"):
+    return future_ai_features_dashboard_service.chat_conversational_workspace(message=message, project_id=project_id)
+
+@app.get("/future-ai/conversational-workspace/validate")
+def future_ai_conversational_workspace_validate():
+    return future_ai_features_dashboard_service.validate_conversational_workspace_ai()
+
+@app.get("/future-ai/recovery-agents/config")
+def future_ai_recovery_agents_config():
+    return future_ai_features_dashboard_service.get_autonomous_recovery_agents_config()
+
+@app.get("/future-ai/recovery-agents/agents")
+def future_ai_recovery_agents_agents():
+    return future_ai_features_dashboard_service.list_autonomous_recovery_agents()
+
+@app.get("/future-ai/recovery-agents/triage")
+def future_ai_recovery_agents_triage(failure_category: str = "transient", retry_count: int = 1):
+    return future_ai_features_dashboard_service.triage_autonomous_recovery_failure(failure_category=failure_category, retry_count=retry_count)
+
+@app.get("/future-ai/recovery-agents/validate")
+def future_ai_recovery_agents_validate():
+    return future_ai_features_dashboard_service.validate_autonomous_recovery_agents()

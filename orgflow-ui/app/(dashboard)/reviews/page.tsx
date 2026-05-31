@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api/client";
+import { showToast } from "@/lib/ui/toast";
+
 type Review = {
   id: string;
   business_impact: string;
@@ -13,6 +17,7 @@ type Review = {
 };
 
 export default function ReviewsPage() {
+  const { profile } = useAuth();
 
   const [reviews, setReviews] =
     useState<Review[]>([]);
@@ -20,17 +25,16 @@ export default function ReviewsPage() {
   const [loading, setLoading] =
     useState(true);
 
+  const [processingId, setProcessingId] =
+    useState<string | null>(null);
+
   useEffect(() => {
-    loadReviews();
+    void loadReviews();
   }, []);
 
   async function loadReviews() {
-
     try {
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reviews/pending`
-      );
+      const response = await apiFetch("/reviews/pending");
 
       const data =
         await response.json();
@@ -45,6 +49,76 @@ export default function ReviewsPage() {
 
       setLoading(false);
 
+    }
+  }
+
+  async function approveReview(reviewId: string) {
+    setProcessingId(reviewId);
+
+    try {
+      const response = await apiFetch(
+        `/reviews/${reviewId}/approve`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            reviewed_by:
+              profile?.full_name ||
+              profile?.email ||
+              profile?.id ||
+              "reviewer",
+            review_notes: "Approved from reviews dashboard",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Approve failed");
+      }
+
+      setReviews((current) =>
+        current.filter((review) => review.id !== reviewId)
+      );
+      showToast("הביקורת אושרה בהצלחה", "success");
+    } catch (error) {
+      console.error(error);
+      showToast("שגיאה באישור הביקורת", "error");
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function rejectReview(reviewId: string) {
+    setProcessingId(reviewId);
+
+    try {
+      const response = await apiFetch(
+        `/reviews/${reviewId}/reject`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            reviewed_by:
+              profile?.full_name ||
+              profile?.email ||
+              profile?.id ||
+              "reviewer",
+            review_notes: "Rejected from reviews dashboard",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Reject failed");
+      }
+
+      setReviews((current) =>
+        current.filter((review) => review.id !== reviewId)
+      );
+      showToast("הביקורת נדחתה", "success");
+    } catch (error) {
+      console.error(error);
+      showToast("שגיאה בדחיית הביקורת", "error");
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -385,6 +459,8 @@ export default function ReviewsPage() {
             >
 
               <button
+                disabled={processingId === review.id}
+                onClick={() => approveReview(review.id)}
                 className="
                   bg-zinc-900
                   text-white
@@ -396,12 +472,15 @@ export default function ReviewsPage() {
                   font-semibold
                   hover:opacity-90
                   transition
+                  disabled:opacity-50
                 "
               >
                 אישור ביקורת
               </button>
 
               <button
+                disabled={processingId === review.id}
+                onClick={() => rejectReview(review.id)}
                 className="
                   border
                   border-zinc-300
@@ -413,6 +492,7 @@ export default function ReviewsPage() {
                   hover:bg-zinc-100
                   dark:hover:bg-zinc-800
                   transition
+                  disabled:opacity-50
                 "
               >
                 דחייה

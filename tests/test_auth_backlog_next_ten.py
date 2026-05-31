@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from fastapi.testclient import TestClient
 
+import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.config import config_manager
 from app.main import app
@@ -141,3 +142,28 @@ def test_permission_matrix_endpoint_available():
     assert response.status_code == 401
     # Endpoint is auth-protected by middleware but still registered.
     assert any(route.path == "/auth/permission-matrix" for route in app.routes)
+
+
+def test_auth_exchange_issues_access_token(monkeypatch):
+    class FakeProfileService:
+        def get_profile(self, profile_id: str):
+            return {
+                "id": profile_id,
+                "organization_id": "org-1",
+                "role": "MANAGER",
+                "email": "manager@example.com",
+            }
+
+    monkeypatch.setattr(main_module, "profile_service", FakeProfileService())
+    client = TestClient(app)
+
+    response = client.post(
+        "/auth/exchange",
+        json={"user_id": "user-1"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["access_token"]
+    assert payload["org_id"] == "org-1"
+    assert payload["role"] == "MANAGER"

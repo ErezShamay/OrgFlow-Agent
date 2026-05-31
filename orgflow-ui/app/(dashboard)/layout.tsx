@@ -1,6 +1,8 @@
 import Sidebar from "@/app/components/sidebar";
 
 import UserMenu from "@/components/auth/UserMenu";
+import LocaleToggle from "@/components/ui/LocaleToggle";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 export default function DashboardLayout({
   children,
@@ -14,8 +16,10 @@ export default function DashboardLayout({
       className="
         flex
         min-h-screen
+        flex-col
         bg-zinc-50
         dark:bg-black
+        lg:flex-row
       "
     >
 
@@ -23,8 +27,9 @@ export default function DashboardLayout({
 
       <div
         className="
-          flex-1
           flex
+          min-w-0
+          flex-1
           flex-col
         "
       >
@@ -33,16 +38,21 @@ export default function DashboardLayout({
 
         <header
           className="
-            h-20
-            border-b
-            border-zinc-200
-            dark:border-zinc-800
-            bg-white
-            dark:bg-zinc-950
-            px-8
             flex
+            h-auto
+            min-h-20
+            flex-wrap
             items-center
             justify-between
+            gap-4
+            border-b
+            border-zinc-200
+            bg-white
+            px-4
+            py-4
+            dark:border-zinc-800
+            dark:bg-zinc-950
+            md:px-8
           "
         >
 
@@ -68,7 +78,11 @@ export default function DashboardLayout({
 
           </div>
 
-          <UserMenu />
+          <div className="flex flex-wrap items-center gap-2">
+            <ThemeToggle />
+            <LocaleToggle />
+            <UserMenu />
+          </div>
 
         </header>
 

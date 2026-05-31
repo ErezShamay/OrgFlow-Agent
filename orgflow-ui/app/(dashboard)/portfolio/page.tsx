@@ -1,9 +1,8 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { apiFetch } from "@/lib/api/client";
 
 type Prediction = {
   prediction: string;
@@ -57,23 +56,12 @@ export default function PortfolioPage() {
     setLoading
   ] = useState(true);
 
-  useEffect(() => {
-
-    loadPortfolio();
-
-  }, []);
-
-  async function loadPortfolio() {
-
+  const loadPortfolio = useCallback(async () => {
     try {
-
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/portfolio/summary`
-        );
+        await apiFetch("/portfolio/summary");
 
       if (!response.ok) {
-
         throw new Error(
           "Failed loading portfolio"
         );
@@ -83,16 +71,31 @@ export default function PortfolioPage() {
         await response.json();
 
       setPortfolio(data);
-
     } catch (error) {
-
       console.error(error);
-
     } finally {
-
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadPortfolio();
+
+    const pollingInterval =
+      Number(
+        process.env
+          .NEXT_PUBLIC_POLLING_INTERVAL
+      ) || 30000;
+
+    const interval =
+      setInterval(() => {
+        void loadPortfolio();
+      }, pollingInterval);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [loadPortfolio]);
 
   if (loading) {
 

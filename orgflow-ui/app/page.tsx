@@ -5,6 +5,8 @@ import UserMenu from "@/components/auth/UserMenu";
 
 import { useEffect, useState } from "react";
 
+import { apiFetch } from "@/lib/api/client";
+
 type Project = {
   id: string;
   project_name: string;
@@ -34,9 +36,7 @@ export default function HomePage() {
 
     try {
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/organizations`
-      );
+      const response = await apiFetch("/organizations");
 
       const data =
         await response.json();

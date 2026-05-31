@@ -238,7 +238,37 @@ class OperationalActionService:
                 ESCALATED,
             )
         )
-    
+
+    def close_action(
+        self,
+        action_id: str,
+    ):
+
+        action = (
+            self.repository
+            .close_action(
+                action_id
+            )
+        )
+
+        WorkspaceActivityRepository.create_activity(
+            project_id=
+                action["project_id"],
+            activity_type=
+                "ACTION_STATUS_CHANGED",
+            title=
+                "פעולה נסגרה",
+            description=
+                f"{action['title']} → CLOSED",
+        )
+        self._append_history(
+            action_id=action_id,
+            event_type="STATUS_CHANGED",
+            payload={"status": "CLOSED"},
+        )
+
+        return action
+
     def assign_action(
         self,
         action_id: str,

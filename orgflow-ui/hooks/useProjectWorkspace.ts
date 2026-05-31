@@ -8,6 +8,9 @@ import {
 
 import { toast } from "sonner";
 
+import { apiFetch } from "@/lib/api/client";
+import { useAuth } from "@/contexts/AuthContext";
+
 type Project = {
   id: string;
   project_name: string;
@@ -87,6 +90,7 @@ type WorkspaceResponse = {
 export function useProjectWorkspace(
   projectId: string
 ) {
+  const { profile } = useAuth();
 
   // =========================
   // STATE
@@ -134,51 +138,6 @@ export function useProjectWorkspace(
   const [loading, setLoading] =
     useState(true);
 
-  function getApiUrl() {
-    return (
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:8000"
-    );
-  }
-
-  function getAlternateApiUrl(
-    url: string
-  ) {
-    if (url.includes("127.0.0.1")) {
-      return url.replace(
-        "127.0.0.1",
-        "localhost"
-      );
-    }
-
-    if (url.includes("localhost")) {
-      return url.replace(
-        "localhost",
-        "127.0.0.1"
-      );
-    }
-
-    return url;
-  }
-
-  async function tryFetch(
-    url: string,
-    options?: RequestInit
-  ) {
-    try {
-      return await fetch(url, options);
-    } catch (error) {
-      const altUrl =
-        getAlternateApiUrl(url);
-
-      if (altUrl === url) {
-        throw error;
-      }
-
-      return await fetch(altUrl, options);
-    }
-  }
-
   // =========================
   // LOAD WORKSPACE
   // =========================
@@ -194,21 +153,17 @@ export function useProjectWorkspace(
 
         setLoading(true);
 
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL ||
-          "http://localhost:8000";
-
         const [
           workspaceResponse,
           summaryResponse,
         ] = await Promise.all([
 
-          tryFetch(
-            `${apiUrl}/projects/${projectId}/workspace`
+          apiFetch(
+            `/projects/${projectId}/workspace`
           ),
 
-          tryFetch(
-            `${apiUrl}/projects/${projectId}/operational-summary`
+          apiFetch(
+            `/projects/${projectId}/operational-summary`
           ),
         ]);
 
@@ -361,8 +316,8 @@ export function useProjectWorkspace(
     try {
 
       const response =
-        await tryFetch(
-          `${getApiUrl()}/reviews/${reviewId}/approve`,
+        await apiFetch(
+          `/reviews/${reviewId}/approve`,
           {
             method: "POST",
 
@@ -373,7 +328,9 @@ export function useProjectWorkspace(
 
             body: JSON.stringify({
               reviewed_by:
-                "ארז שמאי",
+                profile?.id ||
+                profile?.email ||
+                "reviewer",
 
               review_notes:
                 "Approved from workspace",
@@ -436,8 +393,8 @@ export function useProjectWorkspace(
     try {
 
       const response =
-        await tryFetch(
-          `${getApiUrl()}/actions/${actionId}/close`,
+        await apiFetch(
+          `/actions/${actionId}/close`,
           {
             method: "POST",
           }
@@ -482,8 +439,8 @@ export function useProjectWorkspace(
     try {
 
       const response =
-        await tryFetch(
-          `${getApiUrl()}/actions/${actionId}/start`,
+        await apiFetch(
+          `/actions/${actionId}/start`,
           {
             method: "POST",
           }
@@ -526,8 +483,8 @@ export function useProjectWorkspace(
     try {
 
       const response =
-        await tryFetch(
-          `${getApiUrl()}/actions/${actionId}/block`,
+        await apiFetch(
+          `/actions/${actionId}/block`,
           {
             method: "POST",
           }
@@ -570,8 +527,8 @@ export function useProjectWorkspace(
     try {
 
       const response =
-        await tryFetch(
-          `${getApiUrl()}/actions/${actionId}/complete`,
+        await apiFetch(
+          `/actions/${actionId}/complete`,
           {
             method: "POST",
           }
@@ -614,8 +571,8 @@ export function useProjectWorkspace(
     try {
 
       const response =
-        await tryFetch(
-          `${getApiUrl()}/actions/${actionId}/escalate`,
+        await apiFetch(
+          `/actions/${actionId}/escalate`,
           {
             method: "POST",
           }

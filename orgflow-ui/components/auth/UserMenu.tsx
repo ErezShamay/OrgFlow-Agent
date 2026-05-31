@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api/client";
 
 import {
   useRouter,
@@ -88,13 +86,9 @@ export default function UserMenu() {
 
     try {
 
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:8000";
-
       const response =
-        await fetch(
-          `${apiUrl}/profiles/${profile?.id}/notifications`
+        await apiFetch(
+          `/profiles/${profile?.id}/notifications`
         );
 
       if (!response.ok) {
@@ -121,8 +115,8 @@ export default function UserMenu() {
 
     try {
 
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/notifications/${notificationId}/read`,
+      await apiFetch(
+        `/notifications/${notificationId}/read`,
         {
           method: "PATCH",
         }

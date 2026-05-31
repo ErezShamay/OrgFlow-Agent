@@ -1,0 +1,23 @@
+{
+  "uid": "orgflow-ai",
+  "title": "AI Runtime Metrics",
+  "tags": ["orgflow", "ai"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "title": "Token Usage",
+      "type": "graph",
+      "targets": [{"expr": "rate(ai_tokens_used_total[5m])"}]
+    },
+    {
+      "title": "AI Latency",
+      "type": "graph",
+      "targets": [{"expr": "histogram_quantile(0.95, ai_request_duration_seconds)"}]
+    },
+    {
+      "title": "Provider Failures",
+      "type": "graph",
+      "targets": [{"expr": "rate(ai_request_errors_total[5m])"}]
+    }
+  ]
+}

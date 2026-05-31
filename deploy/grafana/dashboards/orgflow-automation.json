@@ -1,0 +1,23 @@
+{
+  "uid": "orgflow-automation",
+  "title": "Automation Metrics",
+  "tags": ["orgflow", "automation"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "title": "Job Success Rate",
+      "type": "graph",
+      "targets": [{"expr": "rate(automation_jobs_processed_total{status=\"success\"}[5m])"}]
+    },
+    {
+      "title": "Queue Depth",
+      "type": "graph",
+      "targets": [{"expr": "automation_queue_depth"}]
+    },
+    {
+      "title": "Retry Count",
+      "type": "graph",
+      "targets": [{"expr": "rate(automation_retries_total[5m])"}]
+    }
+  ]
+}

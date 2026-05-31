@@ -5,6 +5,8 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 import AuthGuard from "@/components/auth/AuthGuard";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import AppProviders from "@/providers/AppProviders";
 
 import "./globals.css";
 
@@ -38,21 +40,22 @@ export default function RootLayout({
         "
       >
 
-        <AuthProvider>
-
+        <AppProviders>
+          <AuthProvider>
             <AuthGuard>
-
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
 
               <Toaster
                 richColors
                 position="top-left"
                 closeButton
+                style={{ zIndex: "var(--of-z-toast)" }}
               />
-
             </AuthGuard>
-
-</AuthProvider>
+          </AuthProvider>
+        </AppProviders>
 
       </body>
 

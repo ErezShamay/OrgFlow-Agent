@@ -5,17 +5,21 @@ from app.services.portfolio_insights_service import (
 
 class AlertEngineService:
 
-    def __init__(self):
+    def __init__(
+        self,
+        portfolio_service: PortfolioInsightsService | None = None,
+    ):
 
         self.portfolio_service = (
-            PortfolioInsightsService()
+            portfolio_service or PortfolioInsightsService()
         )
 
     def generate_alerts(
         self,
+        portfolio_summary: dict | None = None,
     ):
 
-        portfolio = (
+        portfolio = portfolio_summary or (
             self.portfolio_service
             .generate_portfolio_summary()
         )

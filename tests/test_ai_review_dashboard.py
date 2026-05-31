@@ -871,3 +871,57 @@ def test_manual_approval_workflow_endpoint(monkeypatch):
     payload = response.json()
     assert payload["workflow_type"] == "REVIEW_MANUAL_APPROVAL"
     assert payload["status"] == "PENDING"
+
+
+def test_approve_review_endpoint_returns_payload(monkeypatch):
+    class FakeReviewService:
+        def approve_review(self, interpretation_id: str, reviewed_by: str, review_notes: str):
+            return {
+                "approved_interpretation": {
+                    "id": interpretation_id,
+                    "review_status": "APPROVED",
+                },
+                "created_action": {
+                    "id": "act-1",
+                    "title": "Follow up with contractor",
+                },
+            }
+
+    class FakeNotificationService:
+        def create_notification(self, **kwargs):
+            return kwargs
+
+    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(main_module, "notification_service", FakeNotificationService())
+    client = TestClient(app)
+
+    response = client.post(
+        "/reviews/ai-900/approve",
+        json={"reviewed_by": "manager-1", "review_notes": "Approved"},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["created_action"]["id"] == "act-1"
+
+
+def test_reject_review_endpoint_returns_payload(monkeypatch):
+    class FakeReviewService:
+        def reject_review(self, interpretation_id: str, reviewed_by: str, review_notes: str | None):
+            return {
+                "id": interpretation_id,
+                "review_status": "REJECTED",
+            }
+
+    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    client = TestClient(app)
+
+    response = client.post(
+        "/reviews/ai-900/reject",
+        json={"reviewed_by": "manager-1", "review_notes": "Rejected"},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["review_status"] == "REJECTED"

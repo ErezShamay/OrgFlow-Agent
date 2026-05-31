@@ -1,0 +1,16 @@
+__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+orgflow-ui/node_modules
+orgflow-ui/.next
+.pytest_cache
+*.md
+tests
+terminals
+.cursor

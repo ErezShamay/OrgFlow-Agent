@@ -13,14 +13,18 @@ from app.services.predictive_risk_service import (
 
 class PortfolioInsightsService:
 
-    def __init__(self):
+    def __init__(
+        self,
+        project_repository: ProjectRepository | None = None,
+        workspace_service: ProjectWorkspaceService | None = None,
+    ):
 
         self.project_repository = (
-            ProjectRepository()
+            project_repository or ProjectRepository()
         )
 
         self.workspace_service = (
-            ProjectWorkspaceService()
+            workspace_service or ProjectWorkspaceService()
         )
 
     def generate_portfolio_summary(

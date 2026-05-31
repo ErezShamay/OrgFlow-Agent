@@ -11,9 +11,10 @@ import {
   useAuth,
 } from "@/contexts/AuthContext";
 
+import { apiFetch } from "@/lib/api/client";
 import {
-  canManageActions,
   canEscalateActions,
+  canManageActions,
 } from "@/lib/auth/permissions";
 
 type Action = {
@@ -70,9 +71,7 @@ export default function ActionsPage() {
     try {
 
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/actions/open`
-        );
+        await apiFetch("/actions/open");
 
       const data =
         await response.json();
@@ -136,30 +135,28 @@ export default function ActionsPage() {
     actionId: string,
     status: string,
   ) {
+    const endpointByStatus: Record<string, string> = {
+      IN_PROGRESS: "start",
+      COMPLETED: "complete",
+      BLOCKED: "block",
+      ESCALATED: "escalate",
+      CLOSED: "close",
+    };
+
+    const endpoint = endpointByStatus[status];
+
+    if (!endpoint) {
+      return;
+    }
 
     try {
-
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/status`,
-        {
-
-          method: "PATCH",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            status,
-          }),
-        }
+      await apiFetch(
+        `/actions/${actionId}/${endpoint}`,
+        { method: "POST" }
       );
 
       await loadActions();
-
     } catch (error) {
-
       console.error(error);
     }
   }
@@ -183,21 +180,12 @@ export default function ActionsPage() {
         actionId
       );
 
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/actions/${actionId}/assign`,
+      await apiFetch(
+        `/actions/${actionId}/assign`,
         {
-
-          method: "PATCH",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
+          method: "POST",
           body: JSON.stringify({
-
-            assigned_to:
-              assignedTo,
+            assigned_to: assignedTo,
           }),
         }
       );

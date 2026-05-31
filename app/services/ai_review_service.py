@@ -108,6 +108,42 @@ class AIReviewService:
                 created_action,
         }
 
+    def reject_review(
+        self,
+        interpretation_id: str,
+        reviewed_by: str,
+        review_notes: str | None = None,
+    ):
+
+        rejected = (
+            self.repository
+            .reject_interpretation(
+                interpretation_id=
+                    interpretation_id,
+                reviewed_by=
+                    reviewed_by,
+                review_notes=
+                    review_notes,
+            )
+        )
+
+        if not rejected:
+            return None
+
+        self._write_audit_log(
+            interpretation_id=
+                interpretation_id,
+            event_type=
+                "REVIEW_REJECTED",
+            actor=
+                reviewed_by,
+            details={
+                "review_notes": review_notes,
+            },
+        )
+
+        return rejected
+
     def get_reviews_by_project(
         self,
         project_id: str

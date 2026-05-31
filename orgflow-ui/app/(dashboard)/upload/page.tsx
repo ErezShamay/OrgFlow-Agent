@@ -5,6 +5,9 @@ import {
   useState,
 } from "react";
 
+import { apiFetch } from "@/lib/api/client";
+import { showToast } from "@/lib/ui/toast";
+
 type Project = {
   id: string;
   project_name: string;
@@ -35,9 +38,7 @@ export default function UploadPage() {
       try {
 
         const response =
-          await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/projects`
-          );
+          await apiFetch("/projects");
 
         const data =
           await response.json();
@@ -103,8 +104,8 @@ export default function UploadPage() {
       );
 
       const response =
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/reports/upload`,
+        await apiFetch(
+          "/reports/upload",
           {
             method: "POST",
             body: formData,
@@ -112,14 +113,14 @@ export default function UploadPage() {
         );
 
       if (!response.ok) {
-
         throw new Error(
           "Upload failed"
         );
       }
 
-      alert(
-        "הדוח הועלה בהצלחה"
+      showToast(
+        "הדוח הועלה בהצלחה",
+        "success"
       );
 
       setSelectedFile(null);
@@ -128,8 +129,9 @@ export default function UploadPage() {
 
       console.error(error);
 
-      alert(
-        "שגיאה בהעלאת הדוח"
+      showToast(
+        "שגיאה בהעלאת הדוח",
+        "error"
       );
 
     } finally {

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { apiFetch } from "@/lib/api/client";
+
 type Escalation = {
   id: string;
   title: string;
@@ -23,9 +25,7 @@ export default function EscalationsPage() {
 
   async function loadEscalations() {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/actions/escalations`
-      );
+      const response = await apiFetch("/actions/escalations");
 
       const data = await response.json();
 
