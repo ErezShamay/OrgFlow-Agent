@@ -144,6 +144,27 @@ class CircuitBreakerService:
         threshold = self.threshold_service.get_threshold(breaker_key)
 
         if state == "HALF_OPEN":
+            supports_half_open_count = getattr(
+                self.repository,
+                "supports_half_open_success_count",
+                None,
+            )
+            if callable(supports_half_open_count):
+                column_supported = supports_half_open_count()
+            else:
+                column_supported = True
+
+            if not column_supported:
+                self.repository.update_breaker(
+                    breaker_key,
+                    {
+                        "state": "CLOSED",
+                        "failure_count": 0,
+                        "cooldown_until": None,
+                    },
+                )
+                return
+
             success_count = breaker.get("half_open_success_count", 0) + 1
             if success_count >= threshold["half_open_success_threshold"]:
                 self.repository.update_breaker(
@@ -163,19 +184,21 @@ class CircuitBreakerService:
             )
             return
 
+        payload = {
+            "state": "CLOSED",
+            "failure_count": 0,
+        }
+        supports_half_open_count = getattr(
+            self.repository,
+            "supports_half_open_success_count",
+            None,
+        )
+        if callable(supports_half_open_count) and supports_half_open_count():
+            payload["half_open_success_count"] = 0
+
         self.repository.update_breaker(
-
             breaker_key,
-
-            {
-                "state":
-                    "CLOSED",
-
-                "failure_count":
-                    0,
-
-                "half_open_success_count": 0,
-            }
+            payload,
         )
 
     # ==========================================

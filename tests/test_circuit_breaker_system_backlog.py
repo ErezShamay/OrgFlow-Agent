@@ -50,6 +50,9 @@ class FakeCircuitBreakerRepository:
             return
         self.breakers[breaker_key].update(data)
 
+    def supports_half_open_success_count(self) -> bool:
+        return True
+
 
 def build_circuit_breaker_service(breakers: list[dict] | None = None):
     repository = FakeCircuitBreakerRepository(breakers)
