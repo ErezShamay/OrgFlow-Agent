@@ -37,3 +37,23 @@ export function getRoleDescription(
 ): string | undefined {
   return ROLE_DESCRIPTIONS[normalizeRole(role)];
 }
+
+export function getRoleBadgeClass(
+  role?: string | null
+): string {
+  const normalized = normalizeRole(role);
+
+  if (normalized === GLOBAL_ADMIN_ROLE) {
+    return "bg-brand-muted text-brand dark:bg-brand/15 dark:text-brand-light";
+  }
+
+  if (normalized === CUSTOMER_ADMIN_ROLE) {
+    return "bg-brand-gold/15 text-brand-gold-dark dark:bg-brand-gold/10 dark:text-brand-gold";
+  }
+
+  if (normalized === "MANAGER" || normalized === "SUPERVISOR") {
+    return "bg-brand-muted/80 text-brand-dark dark:bg-brand/10 dark:text-brand-light";
+  }
+
+  return "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
+}

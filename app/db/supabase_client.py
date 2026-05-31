@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from contextlib import AbstractContextManager
 import threading
 import time
 from collections.abc import Callable
 from typing import Any
 
+import httpx
 from supabase import create_client
+from supabase.lib.client_options import SyncClientOptions
 
 from app.config.settings import settings
 from app.exceptions import ConflictError, DatabaseError
@@ -16,26 +17,139 @@ from app.exceptions import ConflictError, DatabaseError
 SUPABASE_URL = str(settings.SUPABASE_URL) if settings.SUPABASE_URL else None
 SUPABASE_KEY = str(settings.SUPABASE_KEY) if settings.SUPABASE_KEY else None
 
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-else:
-    supabase = None
+_TRANSIENT_ERRNOS = frozenset({11, 35, 104, 110})
+_TRANSIENT_EXCEPTIONS = (
+    httpx.ReadError,
+    httpx.ConnectError,
+    httpx.ConnectTimeout,
+    httpx.ReadTimeout,
+    httpx.WriteTimeout,
+    httpx.PoolTimeout,
+    httpx.RemoteProtocolError,
+    httpx.NetworkError,
+)
 
 
-def _run_with_timeout(
-    operation: Callable[[], Any],
-    timeout_seconds: float,
-) -> Any:
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(operation)
-        try:
-            return future.result(timeout=timeout_seconds)
-        except FuturesTimeoutError as exc:
-            raise DatabaseError(
-                message="Database operation timed out",
-                operation="timeout",
-                details={"timeout_seconds": timeout_seconds},
-            ) from exc
+def _is_transient_error(exc: Exception) -> bool:
+    if isinstance(exc, _TRANSIENT_EXCEPTIONS):
+        return True
+
+    cause = exc.__cause__
+    if isinstance(cause, OSError) and cause.errno in _TRANSIENT_ERRNOS:
+        return True
+
+    message = str(exc).lower()
+    return "resource temporarily unavailable" in message
+
+
+def _build_httpx_client() -> httpx.Client:
+    timeout = httpx.Timeout(settings.DB_OPERATION_TIMEOUT_SECONDS)
+    limits = httpx.Limits(
+        max_connections=20,
+        max_keepalive_connections=10,
+    )
+    return httpx.Client(timeout=timeout, limits=limits)
+
+
+class ResilientRequestBuilder:
+    __slots__ = ("_builder",)
+
+    def __init__(self, builder: Any) -> None:
+        object.__setattr__(self, "_builder", builder)
+
+    def execute(self, *args: Any, **kwargs: Any) -> Any:
+        return SupabaseClient.execute_with_resilience(
+            lambda: self._builder.execute(*args, **kwargs),
+            operation_name="postgrest_execute",
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self._builder, name)
+        if not callable(attr):
+            return attr
+
+        def method(*args: Any, **kwargs: Any) -> Any:
+            result = attr(*args, **kwargs)
+            if hasattr(result, "execute"):
+                return ResilientRequestBuilder(result)
+            return result
+
+        return method
+
+
+class ResilientAuthAdminProxy:
+    __slots__ = ("_admin",)
+
+    def __init__(self, admin: Any) -> None:
+        object.__setattr__(self, "_admin", admin)
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self._admin, name)
+        if not callable(attr):
+            return attr
+
+        def method(*args: Any, **kwargs: Any) -> Any:
+            return SupabaseClient.execute_with_resilience(
+                lambda: attr(*args, **kwargs),
+                operation_name=f"auth_admin_{name}",
+            )
+
+        return method
+
+
+class ResilientAuthProxy:
+    __slots__ = ("_auth",)
+
+    def __init__(self, auth: Any) -> None:
+        object.__setattr__(self, "_auth", auth)
+
+    @property
+    def admin(self) -> ResilientAuthAdminProxy:
+        return ResilientAuthAdminProxy(self._auth.admin)
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self._auth, name)
+        if not callable(attr):
+            return attr
+
+        def method(*args: Any, **kwargs: Any) -> Any:
+            return SupabaseClient.execute_with_resilience(
+                lambda: attr(*args, **kwargs),
+                operation_name=f"auth_{name}",
+            )
+
+        return method
+
+
+class ResilientSupabaseProxy:
+    __slots__ = ("_client",)
+
+    def __init__(self, client: Any) -> None:
+        object.__setattr__(self, "_client", client)
+
+    def table(self, name: str) -> ResilientRequestBuilder:
+        return ResilientRequestBuilder(self._client.table(name))
+
+    @property
+    def auth(self) -> ResilientAuthProxy:
+        return ResilientAuthProxy(self._client.auth)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._client, name)
+
+
+def _create_supabase_client() -> ResilientSupabaseProxy | None:
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
+
+    options = SyncClientOptions(
+        httpx_client=_build_httpx_client(),
+    )
+    client = create_client(SUPABASE_URL, SUPABASE_KEY, options)
+    return ResilientSupabaseProxy(client)
+
+
+supabase = _create_supabase_client()
 
 
 class ResilientTransaction(AbstractContextManager["ResilientTransaction"]):
@@ -72,7 +186,10 @@ class ResilientTransaction(AbstractContextManager["ResilientTransaction"]):
         committed_ops = 0
         try:
             for operation in self._operations:
-                SupabaseClient.execute_with_resilience(operation, operation_name="transaction_commit")
+                SupabaseClient.execute_with_resilience(
+                    operation,
+                    operation_name="transaction_commit",
+                )
                 committed_ops += 1
             self._committed = True
         except Exception as exc:
@@ -122,11 +239,9 @@ class SupabaseClient:
         *,
         operation_name: str = "db_operation",
         max_attempts: int | None = None,
-        timeout_seconds: float | None = None,
         base_delay_seconds: float | None = None,
     ) -> Any:
         attempts = max_attempts or settings.DB_RETRY_MAX_ATTEMPTS
-        timeout = timeout_seconds or settings.DB_OPERATION_TIMEOUT_SECONDS
         base_delay = (
             settings.DB_RETRY_BASE_DELAY_SECONDS
             if base_delay_seconds is None
@@ -136,16 +251,22 @@ class SupabaseClient:
 
         for attempt in range(1, attempts + 1):
             try:
-                return _run_with_timeout(operation, timeout)
+                return operation()
             except DatabaseError:
                 raise
             except Exception as exc:
                 last_error = exc
-                if attempt >= attempts:
+                should_retry = _is_transient_error(exc)
+                if not should_retry or attempt >= attempts:
                     break
                 backoff = base_delay * (2 ** (attempt - 1))
                 if backoff > 0:
                     time.sleep(backoff)
+
+        if isinstance(last_error, Exception) and not _is_transient_error(
+            last_error
+        ):
+            raise last_error
 
         raise DatabaseError(
             message="Database operation failed after retries",

@@ -20,42 +20,42 @@ const FEATURES = [
     title: "ביקורות AI אוטומטיות",
     description:
       "ניתוח דוחות הנדסיים, זיהוי חריגות וסיכונים — בזמן אמת ובדיוק גבוה.",
-    accent: "from-blue-500 to-cyan-500",
+    accent: "from-brand to-brand-light",
   },
   {
     icon: FileSearch,
     title: "ניתוח חריגות חכם",
     description:
       "מיפוי, סיווג ומעקב אחר חריגות בפרויקט — עם המלצות פעולה מיידיות.",
-    accent: "from-violet-500 to-purple-500",
+    accent: "from-brand-gold to-amber-500",
   },
   {
     icon: Shield,
     title: "פיקוח הנדסי רציף",
     description:
       "שקיפות מלאה על מצב הפרויקט, נקודות סיכון וסטטוס ביצוע לכל שלב.",
-    accent: "from-emerald-500 to-teal-500",
+    accent: "from-teal-500 to-brand-light",
   },
   {
     icon: Building2,
     title: "התחדשות עירונית",
     description:
       "מותאם לפרויקטי בנייה, פינוי-בינוי ותמ\"א — עם תהליכי עבודה מוכרים.",
-    accent: "from-amber-500 to-orange-500",
+    accent: "from-brand to-brand-gold",
   },
   {
     icon: Zap,
     title: "אוטומציה תפעולית",
     description:
       "הפקת פעולות, התראות ודוחות — ללא עבודה ידנית חוזרת.",
-    accent: "from-rose-500 to-pink-500",
+    accent: "from-brand-gold to-brand-gold-dark",
   },
   {
     icon: Layers,
     title: "ניהול רב-פרויקטים",
     description:
       "תצוגת פורטפolio מרכזית לכל החברות והפרויקטים — במקום אחד.",
-    accent: "from-indigo-500 to-blue-500",
+    accent: "from-brand-dark to-brand",
   },
 ] as const;
 

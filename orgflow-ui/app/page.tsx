@@ -23,17 +23,17 @@ function AuthenticatedHero() {
           gap-2
           rounded-full
           border
-          border-blue-200/60
-          bg-blue-50/80
+          border-brand/20
+          bg-brand-muted/80
           px-4
           py-2
           text-sm
           font-medium
-          text-blue-700
+          text-brand
           backdrop-blur-sm
-          dark:border-blue-800/40
-          dark:bg-blue-950/40
-          dark:text-blue-300
+          dark:border-brand/30
+          dark:bg-brand/10
+          dark:text-brand-light
         "
       >
         <Sparkles className="h-4 w-4" />

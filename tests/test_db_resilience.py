@@ -1,28 +1,27 @@
 from __future__ import annotations
 
-import time
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 from app.db.supabase_client import ResilientTransaction, SupabaseClient
 from app.exceptions import ConflictError, DatabaseError
 
 
-def test_execute_with_resilience_retries_then_succeeds():
+def test_execute_with_resilience_retries_transient_errors():
     attempts = {"count": 0}
 
     def flaky():
         attempts["count"] += 1
         if attempts["count"] < 3:
-            raise RuntimeError("transient")
+            raise httpx.ReadError("[Errno 35] Resource temporarily unavailable")
         return "ok"
 
     result = SupabaseClient.execute_with_resilience(
         flaky,
         operation_name="test_retry",
         max_attempts=3,
-        timeout_seconds=1.0,
         base_delay_seconds=0,
     )
 
@@ -32,35 +31,35 @@ def test_execute_with_resilience_retries_then_succeeds():
 
 def test_execute_with_resilience_raises_database_error_after_retries():
     def always_fail():
-        raise RuntimeError("down")
+        raise httpx.ReadError("[Errno 35] Resource temporarily unavailable")
 
     with pytest.raises(DatabaseError) as exc_info:
         SupabaseClient.execute_with_resilience(
             always_fail,
             operation_name="test_retry_failure",
             max_attempts=2,
-            timeout_seconds=1.0,
             base_delay_seconds=0,
         )
 
     assert exc_info.value.details["attempts"] == 2
 
 
-def test_execute_with_resilience_times_out():
-    def slow_operation():
-        time.sleep(0.05)
-        return "late"
+def test_execute_with_resilience_does_not_retry_non_transient_errors():
+    attempts = {"count": 0}
 
-    with pytest.raises(DatabaseError) as exc_info:
+    def always_fail():
+        attempts["count"] += 1
+        raise ValueError("invalid input")
+
+    with pytest.raises(ValueError):
         SupabaseClient.execute_with_resilience(
-            slow_operation,
-            operation_name="test_timeout",
-            max_attempts=1,
-            timeout_seconds=0.01,
+            always_fail,
+            operation_name="test_no_retry",
+            max_attempts=3,
             base_delay_seconds=0,
         )
 
-    assert exc_info.value.details["timeout_seconds"] == 0.01
+    assert attempts["count"] == 1
 
 
 def test_transaction_rolls_back_on_failure():

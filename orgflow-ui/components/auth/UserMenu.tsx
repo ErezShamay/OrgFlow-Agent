@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRealtime } from "@/hooks/useRealtime";
 import { apiFetch } from "@/lib/api/client";
 import { normalizeRole } from "@/lib/auth/role";
-import { getRoleLabel } from "@/lib/auth/roleLabels";
+import { getRoleLabel, getRoleBadgeClass } from "@/lib/auth/roleLabels";
 
 type Notification = {
   id: string;
@@ -340,15 +340,7 @@ export default function UserMenu() {
                   py-1
                   text-xs
                   font-semibold
-                  ${
-                    effectiveRole === "PLATFORM_ADMIN"
-                      ? "bg-purple-100 text-purple-700"
-                      : effectiveRole === "ADMIN"
-                        ? "bg-red-100 text-red-700"
-                        : effectiveRole === "MANAGER"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-zinc-100 text-zinc-700"
-                  }
+                  ${getRoleBadgeClass(effectiveRole)}
                 `}
               >
                 {getRoleLabel(effectiveRole)}

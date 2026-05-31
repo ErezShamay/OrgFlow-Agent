@@ -40,10 +40,9 @@ export default function RootLayout({
 
       <body
         className="
-          bg-zinc-100
-          dark:bg-zinc-950
-          text-zinc-900
-          dark:text-zinc-100
+          bg-[var(--of-color-surface-muted)]
+          dark:bg-[var(--of-color-surface-muted)]
+          text-[var(--of-color-text)]
           antialiased
         "
       >
