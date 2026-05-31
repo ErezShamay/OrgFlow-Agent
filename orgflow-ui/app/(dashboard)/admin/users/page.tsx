@@ -3,6 +3,7 @@
 import {
   FormEvent,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -50,11 +51,20 @@ function AdminUsersContent() {
   const canManageOrganizations = useCanManageOrganizations();
   const effectiveRole = profile?.role || sessionRole;
   const hasClientAdmin = organizationHasClientAdmin(users);
-  const roleOptions: Array<"ADMIN" | "SUPERVISOR" | "VIEWER"> = [
-    ...inviteableRoles(effectiveRole, {
-      hasClientAdmin,
-    }),
-  ];
+  const [role, setRole] = useState<string>("VIEWER");
+  const roleOptions = useMemo(
+    () => [
+      ...inviteableRoles(effectiveRole, {
+        hasClientAdmin,
+      }),
+    ] as Array<"ADMIN" | "SUPERVISOR" | "VIEWER">,
+    [effectiveRole, hasClientAdmin],
+  );
+  const selectedRole = roleOptions.includes(
+    role as (typeof roleOptions)[number]
+  )
+    ? role
+    : (roleOptions[0] ?? "VIEWER");
 
   const [customerOrganizations, setCustomerOrganizations] =
     useState<CustomerOrganization[]>([]);
@@ -68,18 +78,8 @@ function AdminUsersContent() {
 
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<string>("VIEWER");
   const [organizationName, setOrganizationName] = useState("");
   const [organizationEmail, setOrganizationEmail] = useState("");
-
-  useEffect(() => {
-    if (
-      roleOptions.length > 0
-      && !roleOptions.includes(role as (typeof roleOptions)[number])
-    ) {
-      setRole(roleOptions[0]);
-    }
-  }, [roleOptions, role]);
 
   useEffect(() => {
     void loadUsers();
@@ -178,7 +178,7 @@ function AdminUsersContent() {
         body: JSON.stringify({
           email,
           full_name: fullName,
-          role,
+          role: selectedRole,
         }),
       });
 
@@ -495,7 +495,7 @@ function AdminUsersContent() {
               תפקיד
             </label>
             <select
-              value={role}
+              value={selectedRole}
               onChange={(e) => setRole(e.target.value)}
               className="of-input of-focus-ring w-full text-sm"
             >
