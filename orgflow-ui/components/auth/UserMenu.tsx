@@ -130,12 +130,8 @@ export default function UserMenu() {
   }
 
   async function handleLogout() {
-
     await signOut();
-
-    router.push(
-      "/auth/login"
-    );
+    router.push("/");
   }
 
   if (!user) {
