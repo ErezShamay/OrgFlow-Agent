@@ -15,7 +15,11 @@ from app.exceptions import ConflictError, DatabaseError
 
 SUPABASE_URL = str(settings.SUPABASE_URL) if settings.SUPABASE_URL else None
 SUPABASE_KEY = str(settings.SUPABASE_KEY) if settings.SUPABASE_KEY else None
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+else:
+    supabase = None
 
 
 def _run_with_timeout(
@@ -98,6 +102,11 @@ class SupabaseClient:
 
     @staticmethod
     def get_client():
+        if supabase is None:
+            raise DatabaseError(
+                message="Supabase is not configured",
+                operation="get_client",
+            )
         return supabase
 
     @classmethod

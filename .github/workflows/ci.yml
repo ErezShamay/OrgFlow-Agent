@@ -77,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build UI image
-        run: docker build -f Dockerfile -t orgflow-ui:latest orgflow-ui
+        run: docker build -f orgflow-ui/Dockerfile -t orgflow-ui:latest orgflow-ui
 
   deploy-staging:
     runs-on: ubuntu-latest

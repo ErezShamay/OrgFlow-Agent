@@ -46,14 +46,16 @@ export default function AdminUsersPage() {
 
 function AdminUsersContent() {
   const { profile, organizations, currentOrgId, sessionRole } = useAuth();
+  const [users, setUsers] = useState<ManagedUser[]>([]);
   const canManageOrganizations = useCanManageOrganizations();
   const effectiveRole = profile?.role || sessionRole;
   const hasClientAdmin = organizationHasClientAdmin(users);
-  const roleOptions = inviteableRoles(effectiveRole, {
-    hasClientAdmin,
-  });
+  const roleOptions: Array<"ADMIN" | "SUPERVISOR" | "VIEWER"> = [
+    ...inviteableRoles(effectiveRole, {
+      hasClientAdmin,
+    }),
+  ];
 
-  const [users, setUsers] = useState<ManagedUser[]>([]);
   const [customerOrganizations, setCustomerOrganizations] =
     useState<CustomerOrganization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,8 +73,11 @@ function AdminUsersContent() {
   const [organizationEmail, setOrganizationEmail] = useState("");
 
   useEffect(() => {
-    if (!roleOptions.includes(role as typeof roleOptions[number])) {
-      setRole(roleOptions[0] || "VIEWER");
+    if (
+      roleOptions.length > 0
+      && !roleOptions.includes(role as (typeof roleOptions)[number])
+    ) {
+      setRole(roleOptions[0]);
     }
   }, [roleOptions, role]);
 
