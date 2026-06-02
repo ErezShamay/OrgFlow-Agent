@@ -12,8 +12,10 @@ import {
 import FinishReportDialog, {
   type ClosePreview,
 } from "@/components/field-reports/FinishReportDialog";
-import GenerateVisitReportPdfButton from "@/components/field-reports/GenerateVisitReportPdfButton";
+import VisitReportAlerts from "@/components/field-reports/VisitReportAlerts";
 import SendToCoreDialog from "@/components/field-reports/SendToCoreDialog";
+import VisitReportPdfActions from "@/components/field-reports/VisitReportPdfActions";
+import VisitReportPrimaryActions from "@/components/field-reports/VisitReportPrimaryActions";
 import VisitReportEditor from "@/components/field-reports/VisitReportEditor";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -453,181 +455,65 @@ export default function FieldVisitReportPage() {
           </span>
         </p>
         {report.is_editable && !editSession.blockingSession ? (
-          <div className="flex flex-wrap items-center gap-2.5 pt-1">
-            <Button
-              size="lg"
-              className="min-h-12"
-              onClick={() => void openFinishDialog()}
-              disabled={!isOnline}
-            >
-              {isReopenedForEdit ? "סגור דוח שוב" : "סיום דוח"}
-            </Button>
-            {isReopenedForEdit ? (
-              <GenerateVisitReportPdfButton
-                report={report}
-                variant="secondary"
-                className="min-h-12"
-                forceRegenerate
-                onCacheChange={setHasLocalPdf}
-                onComplete={() => {
-                  setHasLocalPdf(true);
-                  setPdfNotice(
-                    "ה-PDF עודכן לפי השינויים האחרונים, נשמר במכשיר והורד."
-                  );
-                  setPdfError("");
-                }}
-                onError={(message) => {
-                  setPdfError(message);
-                  setPdfNotice("");
-                }}
-              />
-            ) : null}
-            {!isOnline ? (
-              <span className="self-center text-sm text-amber-800">
-                סגירה דורשת רשת
-              </span>
-            ) : null}
-            {isReopenedForEdit ? (
-              <span className="text-sm text-zinc-600">
-                ניתן לעדכן PDF לפני סגירה — נשמרת גרסה אחרונה בלבד במכשיר.
-              </span>
-            ) : null}
+          <div>
+            <VisitReportPrimaryActions
+              report={report}
+              isOnline={isOnline}
+              isReopenedForEdit={isReopenedForEdit}
+              reopenLoading={reopenLoading}
+              hasLocalPdf={hasLocalPdf}
+              onOpenFinishDialog={() => void openFinishDialog()}
+              onConfirmReopenReport={() => void confirmReopenReport()}
+              onOpenSendDialog={openSendDialog}
+            />
+            <VisitReportPdfActions
+              report={report}
+              isReopenedForEdit={isReopenedForEdit}
+              showPendingSendState={showPendingSendState}
+              hasLocalPdf={hasLocalPdf}
+              onCacheChange={setHasLocalPdf}
+              onSetNotice={setPdfNotice}
+              onSetError={setPdfError}
+            />
           </div>
         ) : null}
         {!report.is_editable && report.can_reopen ? (
-          <div className="flex flex-wrap items-center gap-2.5 pt-1">
-            <Button
-              size="lg"
-              className="min-h-12"
-              onClick={() => void confirmReopenReport()}
-              disabled={!isOnline || reopenLoading}
-            >
-              {reopenLoading ? "פותח לעריכה..." : "ערוך שוב"}
-            </Button>
-            {report.can_send_to_core ? (
-              <Button
-                variant="secondary"
-                size="lg"
-                className="min-h-12"
-                onClick={() => openSendDialog()}
-                disabled={!hasLocalPdf}
-              >
-                שלח לליבה
-              </Button>
-            ) : null}
-            {!isOnline ? (
-              <span className="self-center text-sm text-amber-800">
-                עריכה מחדש דורשת רשת
-              </span>
-            ) : null}
-            {!hasLocalPdf && report.can_send_to_core ? (
-              <span className="text-sm text-amber-800">
-                הפק PDF לפני שליחה לליבה
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-        {!report.is_editable
-        && (report.status === "CLOSED"
-          || report.status === "PENDING_UPLOAD"
-          || report.status === "LOCKED"
-          || showPendingSendState) ? (
-          <div className="flex flex-wrap items-center gap-2.5 pt-1">
-            <GenerateVisitReportPdfButton
+          <div>
+            <VisitReportPrimaryActions
               report={report}
-              className="min-h-12"
-              onCacheChange={setHasLocalPdf}
-              onComplete={(source) => {
-                setHasLocalPdf(true);
-                setPdfNotice(
-                  source === "cache"
-                    ? "ה-PDF הורד מהעותק השמור במכשיר (ללא רשת)."
-                    : "ה-PDF הופק, נשמר במכשיר והורד."
-                );
-                setPdfError("");
-              }}
-              onError={(message) => {
-                setPdfError(message);
-                setPdfNotice("");
-              }}
+              isOnline={isOnline}
+              isReopenedForEdit={isReopenedForEdit}
+              reopenLoading={reopenLoading}
+              hasLocalPdf={hasLocalPdf}
+              onOpenFinishDialog={() => void openFinishDialog()}
+              onConfirmReopenReport={() => void confirmReopenReport()}
+              onOpenSendDialog={openSendDialog}
             />
-            {hasLocalPdf ? (
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200">
-                PDF שמור במכשיר
-              </span>
-            ) : null}
-            <span className="text-sm text-zinc-600">
-              {hasLocalPdf
-                ? "ניתן להוריד שוב את ה-PDF גם ללא רשת."
-                : "הפקה ראשונה דורשת גופן מקומי; לאחר מכן ההורדה זמינה גם בלי רשת."}
-            </span>
           </div>
         ) : null}
-        {pdfNotice ? (
-          <p className="text-sm text-emerald-700 dark:text-emerald-300">
-            {pdfNotice}
-          </p>
-        ) : null}
-        {pdfError ? (
-          <p className="text-sm text-red-600">{pdfError}</p>
-        ) : null}
-        {reopenError ? (
-          <p className="text-sm text-red-600">{reopenError}</p>
-        ) : null}
-        {sendNotice ? (
-          <p className="text-sm text-emerald-700 dark:text-emerald-300">
-            {sendNotice}
-          </p>
-        ) : null}
-        {showPendingSendState ? (
-          <div className="space-y-1 text-sm text-sky-800 dark:text-sky-300">
-            <p>
-              הדוח ממתין לשליחה לליבה. לא ניתן לערוך עד לסיום ההעלאה.
-            </p>
-            {pendingSendPhase ? (
-              <p className="text-sky-700 dark:text-sky-200">
-                {pendingSendPhase}
-              </p>
-            ) : null}
-            {pendingSendError ? (
-              <p className="text-amber-800 dark:text-amber-200">
-                {pendingSendError}
-              </p>
-            ) : null}
-            {localPendingSend ? (
-              <div className="pt-1">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="min-h-12"
-                  onClick={cancelPendingSend}
-                >
-                  בטל המתנה לשליחה
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-        {hasPendingSendFailure ? (
-          <div className="space-y-1 text-sm text-amber-800 dark:text-amber-200">
-            <p>
-              השליחה לליבה נכשלה. ניתן לערוך את הדוח או לנסות שליחה מחדש.
-            </p>
-            {pendingSendError ? <p>{pendingSendError}</p> : null}
-            {report.can_send_to_core ? (
-              <div className="pt-1">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="min-h-12"
-                  onClick={() => openSendDialog()}
-                >
-                  נסה שליחה מחדש
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+        <VisitReportPdfActions
+          report={report}
+          isReopenedForEdit={isReopenedForEdit}
+          showPendingSendState={showPendingSendState}
+          hasLocalPdf={hasLocalPdf}
+          onCacheChange={setHasLocalPdf}
+          onSetNotice={setPdfNotice}
+          onSetError={setPdfError}
+        />
+        <VisitReportAlerts
+          report={report}
+          pdfNotice={pdfNotice}
+          pdfError={pdfError}
+          reopenError={reopenError}
+          sendNotice={sendNotice}
+          showPendingSendState={showPendingSendState}
+          pendingSendPhase={pendingSendPhase}
+          pendingSendError={pendingSendError}
+          localPendingSend={localPendingSend}
+          hasPendingSendFailure={hasPendingSendFailure}
+          onCancelPendingSend={cancelPendingSend}
+          onOpenSendDialog={openSendDialog}
+        />
       </header>
 
       <FinishReportDialog
@@ -689,6 +575,38 @@ export default function FieldVisitReportPage() {
           report={report}
           onReportChange={setReport}
         />
+      ) : null}
+
+      {!editSession.blockingSession && report.is_editable ? (
+        <section className="rounded-xl border border-zinc-200 bg-white/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <VisitReportPrimaryActions
+            report={report}
+            isOnline={isOnline}
+            isReopenedForEdit={isReopenedForEdit}
+            reopenLoading={reopenLoading}
+            hasLocalPdf={hasLocalPdf}
+            compact
+            onOpenFinishDialog={() => void openFinishDialog()}
+            onConfirmReopenReport={() => void confirmReopenReport()}
+            onOpenSendDialog={openSendDialog}
+          />
+        </section>
+      ) : null}
+
+      {!editSession.blockingSession && !report.is_editable && report.can_reopen ? (
+        <section className="rounded-xl border border-zinc-200 bg-white/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <VisitReportPrimaryActions
+            report={report}
+            isOnline={isOnline}
+            isReopenedForEdit={isReopenedForEdit}
+            reopenLoading={reopenLoading}
+            hasLocalPdf={hasLocalPdf}
+            compact
+            onOpenFinishDialog={() => void openFinishDialog()}
+            onConfirmReopenReport={() => void confirmReopenReport()}
+            onOpenSendDialog={openSendDialog}
+          />
+        </section>
       ) : null}
     </div>
   );

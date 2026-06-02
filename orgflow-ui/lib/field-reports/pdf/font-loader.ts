@@ -51,15 +51,27 @@ export async function createPdfPrinter() {
   const pdfMakeModule = await import("pdfmake/build/pdfmake");
   const pdfFontsModule = await import("pdfmake/build/vfs_fonts");
   const pdfMake = pdfMakeModule.default;
-  const baseVfs = pdfFontsModule.default?.pdfMake?.vfs || {};
+  const baseVfs =
+    pdfFontsModule.default?.pdfMake?.vfs
+    || pdfFontsModule.default
+    || {};
 
   const hebrewFont = await fetchFontBase64();
 
-  pdfMake.vfs = {
+  const mergedVfs = {
     ...baseVfs,
     [FONT_FILE]: hebrewFont,
   };
-  pdfMake.fonts = {
+
+  // pdfmake 0.3.x no longer supports direct assignment to `vfs`.
+  // Use the public API so the font exists in the virtual file system.
+  if (typeof pdfMake.addVirtualFileSystem === "function") {
+    pdfMake.addVirtualFileSystem(mergedVfs);
+  } else {
+    (pdfMake as { vfs?: Record<string, string> }).vfs = mergedVfs;
+  }
+
+  const mergedFonts = {
     ...(pdfMake.fonts || {}),
     NotoSansHebrew: {
       normal: FONT_FILE,
@@ -68,6 +80,12 @@ export async function createPdfPrinter() {
       bolditalics: FONT_FILE,
     },
   };
+
+  if (typeof pdfMake.addFonts === "function") {
+    pdfMake.addFonts(mergedFonts);
+  } else {
+    pdfMake.fonts = mergedFonts;
+  }
 
   return pdfMake;
 }

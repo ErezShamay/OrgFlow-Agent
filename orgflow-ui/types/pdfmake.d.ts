@@ -100,7 +100,7 @@ declare module "pdfmake/build/pdfmake" {
   }
 
   interface PdfMakeStatic {
-    vfs: Record<string, string>;
+    vfs?: Record<string, string>;
     fonts: Record<
       string,
       {
@@ -110,6 +110,18 @@ declare module "pdfmake/build/pdfmake" {
         bolditalics: string;
       }
     >;
+    addVirtualFileSystem?(vfs: Record<string, string>): void;
+    addFonts?(
+      fonts: Record<
+        string,
+        {
+          normal: string;
+          bold: string;
+          italics: string;
+          bolditalics: string;
+        }
+      >
+    ): void;
     createPdf(docDefinition: TDocumentDefinitions): PdfDocument;
   }
 
