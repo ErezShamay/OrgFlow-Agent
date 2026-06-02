@@ -36,6 +36,14 @@ export default function FieldReportsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportsError, setReportsError] = useState("");
+  const [showOfflinePrepGuide, setShowOfflinePrepGuide] = useState(false);
+
+  async function handleOfflinePrep() {
+    const saved = await offlinePrep.prepare();
+    if (saved) {
+      setShowOfflinePrepGuide(true);
+    }
+  }
 
   const loadInProgressCount = useCallback(async function loadInProgressCount() {
     try {
@@ -160,7 +168,7 @@ export default function FieldReportsPage() {
             size="lg"
             className={FR_TOUCH_BUTTON}
             disabled={offlinePrep.loading}
-            onClick={() => void offlinePrep.prepare()}
+            onClick={() => void handleOfflinePrep()}
           >
             {offlinePrep.loading
               ? "מכין..."
@@ -185,6 +193,39 @@ export default function FieldReportsPage() {
             ? ` · קטלוג ${offlinePrep.catalogVersion}`
             : ""}
         </p>
+      ) : null}
+
+      {showOfflinePrepGuide && offlinePrep.isReady ? (
+        <div
+          className="space-y-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-950 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100"
+          role="status"
+        >
+          <p className="font-semibold">ההכנה לא מקוון הושלמה</p>
+          <p className="text-sky-900 dark:text-sky-200">
+            זה לא יוצר דוח — רק שומר במכשיר נתונים לעבודה בשטח. כך ממשיכים:
+          </p>
+          <ol className="list-decimal space-y-1.5 pr-5 text-sky-900 dark:text-sky-200">
+            <li>
+              <strong>עם רשת:</strong> לחץ «דוח ביקור חדש» (או פתח דוח בעבודה)
+              וצור את הדוח.
+            </li>
+            <li>
+              <strong>בשטח בלי רשת:</strong> המשך בדוח שכבר פתחת; בחירת ממצאים
+              מהמפרט תעבוד מהנתונים שנשמרו.
+            </li>
+            <li>
+              <strong>שוב עם רשת:</strong> סיום דוח, הפקת PDF ושליחה לליבה.
+            </li>
+          </ol>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowOfflinePrepGuide(false)}
+          >
+            הבנתי
+          </Button>
+        </div>
       ) : null}
 
       {offlinePrep.error ? (
