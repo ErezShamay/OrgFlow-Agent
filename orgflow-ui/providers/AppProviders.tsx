@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { I18nProvider } from "@/providers/I18nProvider";
 import { OfflineProvider } from "@/providers/OfflineProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import PwaRegistration from "@/components/pwa/PwaRegistration";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 
 export default function AppProviders({
@@ -16,6 +17,7 @@ export default function AppProviders({
     <ThemeProvider>
       <I18nProvider>
         <OfflineProvider>
+          <PwaRegistration />
           <OfflineBanner />
           {children}
         </OfflineProvider>

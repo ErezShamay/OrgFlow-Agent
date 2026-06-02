@@ -8,6 +8,9 @@ from app.exceptions.exceptions import (
 from app.repositories.field_report_module_repository import (
     FieldReportModuleRepository,
 )
+from app.repositories.field_visit_report_repository import (
+    FieldVisitReportRepository,
+)
 from app.repositories.organization_repository import (
     OrganizationRepository,
 )
@@ -20,12 +23,18 @@ class FieldReportModuleService:
             FieldReportModuleRepository | None = None,
         organization_repository:
             OrganizationRepository | None = None,
+        visit_report_repository:
+            FieldVisitReportRepository | None = None,
     ) -> None:
         self.module_repository = (
             module_repository or FieldReportModuleRepository()
         )
         self.organization_repository = (
             organization_repository or OrganizationRepository()
+        )
+        self.visit_report_repository = (
+            visit_report_repository
+            or FieldVisitReportRepository()
         )
 
     def is_storage_available(self) -> bool:
@@ -75,6 +84,7 @@ class FieldReportModuleService:
         for organization in organizations:
             org_id = str(organization["id"])
             module = module_by_org.get(org_id)
+            unsent_drafts_count = self._count_unsent_drafts(org_id)
             items.append({
                 "organization_id": org_id,
                 "organization_name": (
@@ -95,6 +105,7 @@ class FieldReportModuleService:
                     if module
                     else None
                 ),
+                "unsent_drafts_count": unsent_drafts_count,
             })
 
         return {
@@ -102,6 +113,22 @@ class FieldReportModuleService:
             "total": len(items),
             "storage_available": self.is_storage_available(),
         }
+
+    def _count_unsent_drafts(
+        self,
+        organization_id: str,
+    ) -> int:
+        if not self.visit_report_repository.is_storage_available():
+            return 0
+
+        reports = self.visit_report_repository.list_by_organization(
+            organization_id
+        )
+        return sum(
+            1
+            for report in reports
+            if str(report.get("status") or "") != "LOCKED"
+        )
 
     def set_enabled(
         self,

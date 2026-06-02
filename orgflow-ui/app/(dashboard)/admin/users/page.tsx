@@ -42,11 +42,24 @@ type FieldReportModuleRow = {
   organization_name: string;
   contact_email?: string;
   is_enabled: boolean;
+  unsent_drafts_count?: number;
 };
 
 type FieldReportModulesResponse = {
   organizations: FieldReportModuleRow[];
   storage_available?: boolean;
+};
+
+type OrganizationReportProfile = {
+  organization_id: string;
+  organization_name: string;
+  contact_email?: string | null;
+  report_phone?: string | null;
+  report_address_line?: string | null;
+  report_city?: string | null;
+  report_tagline?: string | null;
+  logo_storage_path?: string | null;
+  logo_url?: string | null;
 };
 
 export default function AdminUsersPage() {
@@ -88,6 +101,22 @@ function AdminUsersContent() {
   const [togglingModuleOrgId, setTogglingModuleOrgId] = useState<
     string | null
   >(null);
+  const [editingProfileOrgId, setEditingProfileOrgId] = useState<
+    string | null
+  >(null);
+  const [loadingProfileOrgId, setLoadingProfileOrgId] = useState<
+    string | null
+  >(null);
+  const [savingProfileOrgId, setSavingProfileOrgId] = useState<
+    string | null
+  >(null);
+  const [profileForm, setProfileForm] = useState({
+    report_phone: "",
+    report_address_line: "",
+    report_city: "",
+    report_tagline: "",
+    logo_storage_path: "",
+  });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [creatingOrganization, setCreatingOrganization] = useState(false);
@@ -183,6 +212,95 @@ function AdminUsersContent() {
       toast.error(message);
     } finally {
       setTogglingModuleOrgId(null);
+    }
+  }
+
+  function resetProfileForm(profile?: OrganizationReportProfile) {
+    setProfileForm({
+      report_phone: profile?.report_phone || "",
+      report_address_line: profile?.report_address_line || "",
+      report_city: profile?.report_city || "",
+      report_tagline: profile?.report_tagline || "",
+      logo_storage_path: profile?.logo_storage_path || "",
+    });
+  }
+
+  async function handleEditFieldReportProfile(
+    organizationId: string
+  ) {
+    try {
+      setLoadingProfileOrgId(organizationId);
+      setError("");
+
+      const response = await apiFetch(
+        `/admin/field-reports/organizations/${organizationId}/profile`
+      );
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error?.message
+            || data?.detail
+            || "טעינת פרופיל ארגון לדוחות נכשלה"
+        );
+      }
+
+      resetProfileForm(data as OrganizationReportProfile);
+      setEditingProfileOrgId(organizationId);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "טעינת פרופיל ארגון לדוחות נכשלה";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoadingProfileOrgId(null);
+    }
+  }
+
+  async function handleSaveFieldReportProfile(
+    organizationId: string
+  ) {
+    try {
+      setSavingProfileOrgId(organizationId);
+      setError("");
+
+      const response = await apiFetch(
+        `/admin/field-reports/organizations/${organizationId}/profile`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            report_phone: profileForm.report_phone || null,
+            report_address_line: profileForm.report_address_line || null,
+            report_city: profileForm.report_city || null,
+            report_tagline: profileForm.report_tagline || null,
+            logo_storage_path: profileForm.logo_storage_path || null,
+          }),
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error?.message
+            || data?.detail
+            || "שמירת פרופיל הארגון נכשלה"
+        );
+      }
+
+      resetProfileForm(data as OrganizationReportProfile);
+      toast.success("פרופיל ארגון לדוחות נשמר");
+      setEditingProfileOrgId(null);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "שמירת פרופיל הארגון נכשלה";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSavingProfileOrgId(null);
     }
   }
 
@@ -548,45 +666,182 @@ function AdminUsersContent() {
               {fieldReportModules.map((row) => (
                 <li
                   key={row.organization_id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200/80 px-4 py-3 dark:border-zinc-800"
+                  className="rounded-xl border border-zinc-200/80 px-4 py-3 dark:border-zinc-800"
                 >
-                  <div>
-                    <span className="font-medium">
-                      {row.organization_name}
-                    </span>
-                    <span className="mx-2 text-zinc-400">·</span>
-                    <span className="text-zinc-500">
-                      {row.contact_email || row.organization_id}
-                    </span>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <span className="font-medium">
+                        {row.organization_name}
+                      </span>
+                      <span className="mx-2 text-zinc-400">·</span>
+                      <span className="text-zinc-500">
+                        {row.contact_email || row.organization_id}
+                      </span>
+                      {(row.unsent_drafts_count || 0) > 0 ? (
+                        <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                          {row.unsent_drafts_count} טיוטות שלא נשלחו לליבה נשמרו
+                          לביקורת ספק.
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {row.is_enabled ? (
+                        <Badge variant="success">מופעל</Badge>
+                      ) : (
+                        <Badge variant="neutral">כבוי</Badge>
+                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={
+                          !fieldReportStorageAvailable
+                          || togglingModuleOrgId === row.organization_id
+                        }
+                        onClick={() =>
+                          void handleToggleFieldReportModule(
+                            row.organization_id,
+                            !row.is_enabled
+                          )
+                        }
+                      >
+                        {togglingModuleOrgId === row.organization_id
+                          ? "מעדכן..."
+                          : row.is_enabled
+                            ? "כיבוי"
+                            : "הפעלה"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={loadingProfileOrgId === row.organization_id}
+                        onClick={() =>
+                          void handleEditFieldReportProfile(
+                            row.organization_id
+                          )
+                        }
+                      >
+                        {loadingProfileOrgId === row.organization_id
+                          ? "טוען..."
+                          : "פרופיל דוח"}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {row.is_enabled ? (
-                      <Badge variant="success">מופעל</Badge>
-                    ) : (
-                      <Badge variant="neutral">כבוי</Badge>
-                    )}
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      disabled={
-                        !fieldReportStorageAvailable
-                        || togglingModuleOrgId === row.organization_id
-                      }
-                      onClick={() =>
-                        void handleToggleFieldReportModule(
-                          row.organization_id,
-                          !row.is_enabled
-                        )
-                      }
-                    >
-                      {togglingModuleOrgId === row.organization_id
-                        ? "מעדכן..."
-                        : row.is_enabled
-                          ? "כיבוי"
-                          : "הפעלה"}
-                    </Button>
-                  </div>
+
+                  {editingProfileOrgId === row.organization_id ? (
+                    <div className="mt-4 grid gap-3 border-t border-zinc-200/80 pt-4 dark:border-zinc-800 md:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-xs font-medium text-zinc-500">
+                          טלפון בדוח
+                        </label>
+                        <input
+                          type="text"
+                          value={profileForm.report_phone}
+                          onChange={(e) =>
+                            setProfileForm((current) => ({
+                              ...current,
+                              report_phone: e.target.value,
+                            }))
+                          }
+                          className="of-input of-focus-ring w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-xs font-medium text-zinc-500">
+                          עיר
+                        </label>
+                        <input
+                          type="text"
+                          value={profileForm.report_city}
+                          onChange={(e) =>
+                            setProfileForm((current) => ({
+                              ...current,
+                              report_city: e.target.value,
+                            }))
+                          }
+                          className="of-input of-focus-ring w-full text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="mb-2 block text-xs font-medium text-zinc-500">
+                          כתובת לדוח
+                        </label>
+                        <input
+                          type="text"
+                          value={profileForm.report_address_line}
+                          onChange={(e) =>
+                            setProfileForm((current) => ({
+                              ...current,
+                              report_address_line: e.target.value,
+                            }))
+                          }
+                          className="of-input of-focus-ring w-full text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="mb-2 block text-xs font-medium text-zinc-500">
+                          סלוגן/כותרת משנה
+                        </label>
+                        <input
+                          type="text"
+                          value={profileForm.report_tagline}
+                          onChange={(e) =>
+                            setProfileForm((current) => ({
+                              ...current,
+                              report_tagline: e.target.value,
+                            }))
+                          }
+                          className="of-input of-focus-ring w-full text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="mb-2 block text-xs font-medium text-zinc-500">
+                          לוגו (URL או נתיב storage)
+                        </label>
+                        <input
+                          type="text"
+                          value={profileForm.logo_storage_path}
+                          onChange={(e) =>
+                            setProfileForm((current) => ({
+                              ...current,
+                              logo_storage_path: e.target.value,
+                            }))
+                          }
+                          className="of-input of-focus-ring w-full text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="accent"
+                          size="sm"
+                          disabled={savingProfileOrgId === row.organization_id}
+                          onClick={() =>
+                            void handleSaveFieldReportProfile(
+                              row.organization_id
+                            )
+                          }
+                        >
+                          {savingProfileOrgId === row.organization_id
+                            ? "שומר..."
+                            : "שמירה"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={savingProfileOrgId === row.organization_id}
+                          onClick={() => {
+                            setEditingProfileOrgId(null);
+                            resetProfileForm();
+                          }}
+                        >
+                          ביטול
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>

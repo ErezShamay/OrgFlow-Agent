@@ -1,9 +1,17 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { createPortal } from "react-dom";
 
 import Button from "@/components/ui/Button";
 import LinePhotoCapture from "@/components/field-reports/LinePhotoCapture";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
+import {
+  FR_TOUCH_BUTTON,
+  FR_TOUCH_INPUT,
+  FR_TOUCH_NOTES,
+  FR_TOUCH_TEXTAREA,
+} from "@/lib/field-reports/touch-input-class";
 
 export type EditableReportLine = {
   id: string;
@@ -52,6 +60,18 @@ export default function ReportLineEditor({
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(() => lineToDraft(line));
 
+  useLockBodyScroll(expanded);
+
+  function closeEditor() {
+    setDraft(lineToDraft(line));
+    setExpanded(false);
+  }
+
+  function openEditor() {
+    setDraft(lineToDraft(line));
+    setExpanded(true);
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!draft.description.trim()) {
@@ -69,10 +89,169 @@ export default function ReportLineEditor({
     setExpanded(false);
   }
 
+  const photoCapture = (
+    <LinePhotoCapture
+      reportId={reportId}
+      lineId={line.id}
+      hasServerPhoto={Boolean(line.has_photo)}
+      photoUrl={line.photo_url}
+      disabled={!editable}
+      onPhotoChange={(hasPhoto) => onPhotoChange(line.id, hasPhoto)}
+    />
+  );
+
+  const editForm = (
+    <form
+      onSubmit={(event) => void handleSubmit(event)}
+      className="space-y-3 md:space-y-4"
+    >
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Field
+          label="מיקום"
+          value={draft.location}
+          onChange={(value) =>
+            setDraft((current) => ({ ...current, location: value }))
+          }
+        />
+        <Field
+          label="מלאכה"
+          value={draft.trade}
+          onChange={(value) =>
+            setDraft((current) => ({ ...current, trade: value }))
+          }
+        />
+        <label className="block space-y-1.5 text-sm">
+          <span className="font-medium">סטטוס</span>
+          <select
+            className={FR_TOUCH_INPUT}
+            value={draft.status}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                status: event.target.value,
+              }))
+            }
+          >
+            {LINE_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {!line.has_catalog_issue ? (
+          <Field
+            label="חומרה"
+            value={draft.severity}
+            onChange={(value) =>
+              setDraft((current) => ({
+                ...current,
+                severity: value,
+              }))
+            }
+          />
+        ) : null}
+      </div>
+      <label className="block space-y-1.5 text-sm">
+        <span className="font-medium">תיאור *</span>
+        <textarea
+          className={FR_TOUCH_TEXTAREA}
+          value={draft.description}
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              description: event.target.value,
+            }))
+          }
+          required
+        />
+      </label>
+      <label className="block space-y-1.5 text-sm">
+        <span className="font-medium">הערות / פעולת תיקון</span>
+        <textarea
+          className={FR_TOUCH_NOTES}
+          value={draft.notes}
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              notes: event.target.value,
+            }))
+          }
+        />
+      </label>
+      {line.has_catalog_issue ? (
+        <Button
+          variant="secondary"
+          size="lg"
+          className={FR_TOUCH_BUTTON}
+          type="button"
+          disabled={saving}
+          onClick={() => void onConvertToFreeText(line.id)}
+        >
+          המר לתיאור חופשי (בלי ממצא במפרט)
+        </Button>
+      ) : null}
+      <Button
+        type="submit"
+        size="lg"
+        className={`w-full sm:w-auto ${FR_TOUCH_BUTTON}`}
+        disabled={saving}
+      >
+        {saving ? "שומר..." : "שמור שורה"}
+      </Button>
+    </form>
+  );
+
+  const tabletSheet =
+    expanded && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[60] flex flex-col bg-zinc-50 dark:bg-zinc-950 lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="עריכת שורת ממצא"
+          >
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="min-w-0">
+                <p className="text-xs text-zinc-500">עריכת שורה</p>
+                <p className="truncate font-semibold">
+                  {line.trade || "ללא מלאכה"}
+                  {line.location ? ` · ${line.location}` : ""}
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="lg"
+                className={FR_TOUCH_BUTTON}
+                type="button"
+                disabled={saving}
+                onClick={closeEditor}
+              >
+                סגור
+              </Button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              {editForm}
+              {photoCapture}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
-    <li className="rounded-xl border border-zinc-200 p-4 text-sm">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
+    <li className="rounded-xl border border-zinc-200 p-4 text-sm md:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-2.5">
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-right touch-manipulation disabled:cursor-default"
+          disabled={!editable}
+          onClick={() => {
+            if (editable && !expanded) {
+              openEditor();
+            }
+          }}
+        >
           <p className="font-medium">
             {line.trade || "ללא מלאכה"}
             {line.location ? ` · ${line.location}` : ""}
@@ -91,22 +270,29 @@ export default function ReportLineEditor({
               {line.catalog_warning}
             </p>
           ) : null}
-        </div>
+        </button>
         {editable ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button
               variant="secondary"
+              size="lg"
+              className={`flex-1 sm:flex-none ${FR_TOUCH_BUTTON}`}
               type="button"
               disabled={saving}
               onClick={() => {
-                setDraft(lineToDraft(line));
-                setExpanded((current) => !current);
+                if (expanded) {
+                  closeEditor();
+                } else {
+                  openEditor();
+                }
               }}
             >
               {expanded ? "סגור" : "ערוך"}
             </Button>
             <Button
               variant="secondary"
+              size="lg"
+              className={`flex-1 sm:flex-none ${FR_TOUCH_BUTTON}`}
               type="button"
               disabled={saving}
               onClick={() => void onDelete(line.id)}
@@ -125,110 +311,16 @@ export default function ReportLineEditor({
           {line.notes ? (
             <p className="mt-1 text-zinc-600">הערות: {line.notes}</p>
           ) : null}
+          {photoCapture}
         </>
       ) : (
-        <form
-          onSubmit={(event) => void handleSubmit(event)}
-          className="mt-3 space-y-3"
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field
-              label="מיקום"
-              value={draft.location}
-              onChange={(value) =>
-                setDraft((current) => ({ ...current, location: value }))
-              }
-            />
-            <Field
-              label="מלאכה"
-              value={draft.trade}
-              onChange={(value) =>
-                setDraft((current) => ({ ...current, trade: value }))
-              }
-            />
-            <label className="block space-y-1 text-sm">
-              <span>סטטוס</span>
-              <select
-                className="of-input w-full"
-                value={draft.status}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    status: event.target.value,
-                  }))
-                }
-              >
-                {LINE_STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {!line.has_catalog_issue ? (
-              <Field
-                label="חומרה"
-                value={draft.severity}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    severity: value,
-                  }))
-                }
-              />
-            ) : null}
-          </div>
-          <label className="block space-y-1 text-sm">
-            <span>תיאור *</span>
-            <textarea
-              className="of-input min-h-24 w-full"
-              value={draft.description}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  description: event.target.value,
-                }))
-              }
-              required
-            />
-          </label>
-          <label className="block space-y-1 text-sm">
-            <span>הערות / פעולת תיקון</span>
-            <textarea
-              className="of-input min-h-20 w-full"
-              value={draft.notes}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  notes: event.target.value,
-                }))
-              }
-            />
-          </label>
-          {line.has_catalog_issue ? (
-            <Button
-              variant="secondary"
-              type="button"
-              disabled={saving}
-              onClick={() => void onConvertToFreeText(line.id)}
-            >
-              המר לתיאור חופשי (בלי ממצא במפרט)
-            </Button>
-          ) : null}
-          <Button type="submit" disabled={saving}>
-            {saving ? "שומר..." : "שמור שורה"}
-          </Button>
-        </form>
+        <div className="mt-3 hidden lg:block">
+          {editForm}
+          {photoCapture}
+        </div>
       )}
 
-      <LinePhotoCapture
-        reportId={reportId}
-        lineId={line.id}
-        hasServerPhoto={Boolean(line.has_photo)}
-        photoUrl={line.photo_url}
-        disabled={!editable}
-        onPhotoChange={(hasPhoto) => onPhotoChange(line.id, hasPhoto)}
-      />
+      {tabletSheet}
     </li>
   );
 }
@@ -243,10 +335,10 @@ function Field({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block space-y-1 text-sm">
-      <span>{label}</span>
+    <label className="block space-y-1.5 text-sm">
+      <span className="font-medium">{label}</span>
       <input
-        className="of-input w-full"
+        className={FR_TOUCH_INPUT}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />

@@ -61,3 +61,10 @@ export function isEditingReport(
 ): boolean {
   return readEditSession(organizationId)?.reportId === reportId;
 }
+
+export function clearEditSession(organizationId: string) {
+  if (typeof window === "undefined" || !organizationId) {
+    return;
+  }
+  localStorage.removeItem(storageKey(organizationId));
+}

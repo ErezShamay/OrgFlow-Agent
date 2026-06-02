@@ -124,6 +124,7 @@ from app.schemas.organization import (
 )
 
 from app.schemas.field_reports import (
+    FieldReportOrganizationProfileUpdateRequest,
     FieldReportModuleToggleRequest,
     FieldVisitReportClosePreview,
     FieldVisitReportCreateRequest,
@@ -1421,6 +1422,41 @@ def get_field_report_organization_profile(
 ):
     return field_report_organization_profile_service.get_profile(
         auth.org_id
+    )
+
+
+@app.patch(
+    "/admin/field-reports/organizations/{organization_id}/profile"
+)
+def update_field_report_organization_profile(
+    organization_id: str,
+    request: FieldReportOrganizationProfileUpdateRequest,
+    _: object = Depends(
+        require_permission("field_reports:admin")
+    ),
+):
+    return field_report_organization_profile_service.update_profile(
+        organization_id,
+        report_phone=request.report_phone,
+        report_address_line=request.report_address_line,
+        report_city=request.report_city,
+        report_tagline=request.report_tagline,
+        logo_storage_path=request.logo_storage_path,
+    )
+
+
+@app.get(
+    "/admin/field-reports/organizations/{organization_id}/profile"
+)
+def get_admin_field_report_organization_profile(
+    organization_id: str,
+    _: object = Depends(
+        require_permission("field_reports:admin")
+    ),
+):
+    return field_report_organization_profile_service.get_profile(
+        organization_id,
+        require_module=False,
     )
 
 

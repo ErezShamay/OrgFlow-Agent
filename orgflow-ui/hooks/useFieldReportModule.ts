@@ -3,6 +3,9 @@
 import { startTransition, useCallback, useEffect, useState } from "react";
 
 import { apiFetch } from "@/lib/api/client";
+import {
+  clearFieldReportLocalState,
+} from "@/lib/field-reports/module-local-state";
 
 type ModuleStatus = {
   organization_id: string;
@@ -44,6 +47,16 @@ export function useFieldReportModule() {
       void load();
     });
   }, [load]);
+
+  useEffect(() => {
+    if (!status?.organization_id || status.is_enabled) {
+      return;
+    }
+
+    // Keep re-enable flow clean (5.4): don't restore local drafts/state
+    // after module was disabled by the supplier.
+    clearFieldReportLocalState(status.organization_id);
+  }, [status]);
 
   return {
     status,

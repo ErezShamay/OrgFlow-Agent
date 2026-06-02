@@ -5,6 +5,7 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api/client";
+import { FR_TOUCH_BUTTON } from "@/lib/field-reports/touch-input-class";
 import { useFieldReportModule } from "@/hooks/useFieldReportModule";
 import { useFieldReportOfflinePrep } from "@/hooks/useFieldReportOfflinePrep";
 import { useCallback, useEffect, useState } from "react";
@@ -146,7 +147,7 @@ export default function FieldReportsPage() {
   }
 
   return (
-    <div className="of-container mx-auto max-w-3xl space-y-6 p-8">
+    <div className="of-container mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="of-page-title text-2xl">הפקת דוחות</h1>
@@ -156,6 +157,8 @@ export default function FieldReportsPage() {
           <Badge>מודול פעיל</Badge>
           <Button
             variant="secondary"
+            size="lg"
+            className={FR_TOUCH_BUTTON}
             disabled={offlinePrep.loading}
             onClick={() => void offlinePrep.prepare()}
           >
@@ -165,7 +168,7 @@ export default function FieldReportsPage() {
           </Button>
           <Link
             href="/field-reports/new"
-            className="of-focus-ring inline-flex items-center justify-center rounded-2xl bg-brand px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-dark dark:bg-brand-light dark:text-brand-dark"
+            className="of-focus-ring inline-flex min-h-12 touch-manipulation items-center justify-center rounded-2xl bg-brand px-5 py-2.5 text-base font-semibold text-white transition-all hover:bg-brand-dark dark:bg-brand-light dark:text-brand-dark lg:min-h-0 lg:px-4 lg:py-2 lg:text-sm"
           >
             דוח ביקור חדש
           </Link>
@@ -210,8 +213,8 @@ export default function FieldReportsPage() {
               type="button"
               className={
                 isActive
-                  ? "rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-white"
-                  : "rounded-full border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 hover:border-brand dark:border-zinc-700 dark:text-zinc-200"
+                  ? "min-h-11 touch-manipulation rounded-full bg-brand px-4 py-2 text-sm font-medium text-white lg:min-h-0 lg:px-3 lg:py-1.5"
+                  : "min-h-11 touch-manipulation rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:border-brand dark:border-zinc-700 dark:text-zinc-200 lg:min-h-0 lg:px-3 lg:py-1.5"
               }
               onClick={() => setStatusFilter(filter.value)}
             >
@@ -257,7 +260,7 @@ export default function FieldReportsPage() {
             <li key={report.id}>
               <Link
                 href={`/field-reports/${report.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                className="flex min-h-14 touch-manipulation flex-wrap items-center justify-between gap-3 px-4 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
               >
                 <div>
                   <p className="font-medium">

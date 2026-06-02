@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  clearAllPendingSendRequests,
   enqueuePendingSendRequest,
   loadPendingSendRequests,
   pendingSendPhaseLabelHe,
@@ -74,6 +75,17 @@ describe("send-queue", () => {
     const remaining = loadPendingSendRequests("org-1");
     expect(remaining).toHaveLength(1);
     expect(remaining[0].reportId).toBe("report-b");
+  });
+
+  it("clears all pending sends for an organization", () => {
+    enqueuePendingSendRequest("org-1", "report-a");
+    enqueuePendingSendRequest("org-1", "report-b");
+    enqueuePendingSendRequest("org-2", "report-c");
+
+    clearAllPendingSendRequests("org-1");
+
+    expect(loadPendingSendRequests("org-1")).toHaveLength(0);
+    expect(loadPendingSendRequests("org-2")).toHaveLength(1);
   });
 });
 
@@ -228,5 +240,76 @@ describe("process-send-queue", () => {
     expect(entry.reportId).toBe("report-a");
     expect(entry.syncPhase).toBe("request_send");
     expect(entry.lastError).toContain("CORE_PIPELINE_FAILED");
+  });
+
+  it("retries after failure without changing idempotency key", async () => {
+    const { apiFetch } = await import("@/lib/api/client");
+    let requestSendCalls = 0;
+    vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
+      if (path.endsWith("/request-send") && init?.method === "POST") {
+        requestSendCalls += 1;
+        const headers = init?.headers as Record<string, string>;
+        const idempotencyKey = headers?.["X-Idempotency-Key"];
+
+        if (requestSendCalls === 1) {
+          return {
+            ok: false,
+            json: async () => ({
+              error: {
+                message: "שליחה לליבה נכשלה",
+                details: {
+                  error_code: "TRANSIENT_CORE_ERROR",
+                },
+              },
+              // Ensure mock uses the same idempotency key (helps catch regressions).
+              idempotencyKey,
+            }),
+          } as Response;
+        }
+
+        return {
+          ok: true,
+          json: async () => ({ id: "report-a", status: "LOCKED" }),
+        } as Response;
+      }
+
+      return { ok: true, json: async () => ({}) } as Response;
+    });
+
+    const { processPendingSendRequest } = await import(
+      "@/lib/field-reports/process-send-queue"
+    );
+
+    enqueuePendingSendRequest("org-1", "report-a");
+    const [firstEntry] = loadPendingSendRequests("org-1");
+    const firstKey = firstEntry.idempotencyKey;
+
+    const result1 = await processPendingSendRequest(firstEntry);
+    expect(result1.success).toBe(false);
+
+    const [afterFail] = loadPendingSendRequests("org-1");
+    expect(afterFail.idempotencyKey).toBe(firstKey);
+    expect(afterFail.lastError).toContain("TRANSIENT_CORE_ERROR");
+
+    const result2 = await processPendingSendRequest(afterFail);
+    expect(result2.success).toBe(true);
+    expect(loadPendingSendRequests("org-1")).toHaveLength(0);
+
+    const requestSendCallsArgs = vi.mocked(apiFetch).mock.calls.filter(
+      (call) =>
+        typeof call[0] === "string" && call[0].endsWith("/request-send")
+    );
+
+    const key1 = (requestSendCallsArgs[0][1]?.headers as Record<
+      string,
+      string
+    >)?.["X-Idempotency-Key"];
+    const key2 = (requestSendCallsArgs[1][1]?.headers as Record<
+      string,
+      string
+    >)?.["X-Idempotency-Key"];
+
+    expect(key1).toBe(firstKey);
+    expect(key2).toBe(firstKey);
   });
 });

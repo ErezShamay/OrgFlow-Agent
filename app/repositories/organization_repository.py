@@ -261,3 +261,34 @@ class OrganizationRepository:
         )
 
         return self.attach_projects(organizations)
+
+    def update_report_profile(
+        self,
+        *,
+        organization_id: str,
+        report_phone: str | None,
+        report_address_line: str | None,
+        report_city: str | None,
+        report_tagline: str | None,
+        logo_storage_path: str | None,
+    ) -> dict | None:
+
+        payload = {
+            "report_phone": report_phone,
+            "report_address_line": report_address_line,
+            "report_city": report_city,
+            "report_tagline": report_tagline,
+            "logo_storage_path": logo_storage_path,
+        }
+        response = (
+            self.client
+            .table("organizations")
+            .update(payload)
+            .eq("id", organization_id)
+            .execute()
+        )
+
+        if not response.data:
+            return None
+
+        return response.data[0]

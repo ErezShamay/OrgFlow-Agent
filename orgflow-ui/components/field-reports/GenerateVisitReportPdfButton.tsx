@@ -15,6 +15,7 @@ type GenerateVisitReportPdfButtonProps = {
   report: PdfVisitReport;
   variant?: "primary" | "secondary";
   label?: string;
+  className?: string;
   /** Regenerate from current report data and replace the single cached copy. */
   forceRegenerate?: boolean;
   onComplete?: (source: VisitReportPdfDownloadSource) => void;
@@ -26,6 +27,7 @@ export default function GenerateVisitReportPdfButton({
   report,
   variant = "primary",
   label,
+  className = "",
   forceRegenerate = false,
   onComplete,
   onError,
@@ -86,6 +88,7 @@ export default function GenerateVisitReportPdfButton({
     <Button
       type="button"
       variant={variant}
+      className={className}
       disabled={loading}
       onClick={() => void handleGenerate()}
     >

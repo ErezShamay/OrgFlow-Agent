@@ -127,6 +127,13 @@ export function removePendingSendRequest(
   }
 }
 
+export function clearAllPendingSendRequests(organizationId: string) {
+  if (typeof window === "undefined" || !organizationId) {
+    return;
+  }
+  localStorage.removeItem(storageKey(organizationId));
+}
+
 export function pendingSendPhaseLabelHe(
   phase?: PendingSendSyncPhase
 ): string {

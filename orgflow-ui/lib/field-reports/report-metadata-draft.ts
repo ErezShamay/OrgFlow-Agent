@@ -119,3 +119,10 @@ export function clearReportMetadataDraft(
     localStorage.removeItem(storageKey(organizationId));
   }
 }
+
+export function clearAllReportMetadataDrafts(organizationId: string) {
+  if (typeof window === "undefined" || !organizationId) {
+    return;
+  }
+  localStorage.removeItem(storageKey(organizationId));
+}

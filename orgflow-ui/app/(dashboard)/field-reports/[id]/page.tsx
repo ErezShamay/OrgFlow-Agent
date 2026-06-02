@@ -21,20 +21,18 @@ import { useFieldReportEditSession } from "@/hooks/useFieldReportEditSession";
 import { useFieldReportModule } from "@/hooks/useFieldReportModule";
 import { apiFetch } from "@/lib/api/client";
 import { buildClosePreview } from "@/lib/field-reports/close-preview";
+import { processPendingSendRequest } from "@/lib/field-reports/process-send-queue";
 import { downloadVisitReportPdf } from "@/lib/field-reports/pdf/generate-visit-report-pdf";
 import {
   hasVisitReportPdfLocally,
-  loadVisitReportPdfLocally,
 } from "@/lib/field-reports/pdf/visit-report-pdf-store";
 import type { OrganizationProfileSnapshot } from "@/lib/field-reports/pdf/types";
-import { flushReportMetadataDraft } from "@/lib/field-reports/report-metadata-draft";
 import {
   enqueuePendingSendRequest,
   loadPendingSendRequests,
   pendingSendPhaseLabelHe,
   removePendingSendRequest,
 } from "@/lib/field-reports/send-queue";
-import { syncPendingLinePhotosForReport } from "@/lib/field-reports/sync-pending-line-photos";
 import { useOffline } from "@/providers/OfflineProvider";
 
 type VisitReportLine = {
@@ -72,27 +70,6 @@ type VisitReport = {
   can_send_to_core?: boolean;
   was_closed?: boolean;
 };
-
-function buildRequestSendErrorMessage(payload: unknown): string {
-  const apiPayload = (payload || {}) as {
-    error?: {
-      message?: string;
-      details?: {
-        error_code?: string;
-      };
-    };
-    message?: string;
-  };
-  const apiMessage =
-    apiPayload.error?.message
-    || apiPayload.message
-    || "שליחה לליבה נכשלה";
-  const apiErrorCode = apiPayload.error?.details?.error_code;
-  if (!apiErrorCode) {
-    return apiMessage;
-  }
-  return `${apiMessage} (${apiErrorCode})`;
-}
 
 export default function FieldVisitReportPage() {
   const params = useParams();
@@ -384,59 +361,31 @@ export default function FieldVisitReportPage() {
         return;
       }
 
-      if (organizationId) {
-        await flushReportMetadataDraft(organizationId, report.id);
+      const result = await processPendingSendRequest(pendingRequest);
+
+      // Keep UI lock/editability consistent with server state.
+      try {
+        const response = await apiFetch(
+          `/field-reports/visits/${report.id}`
+        );
+        if (response.ok) {
+          setReport(await response.json());
+        }
+      } catch {
+        // If refresh fails, keep current UI state. The pending-send header is still correct via localStorage.
       }
 
-      const photoResult = await syncPendingLinePhotosForReport(report.id);
-      if (photoResult.failed.length) {
-        throw new Error(
-          `העלאת ${photoResult.failed.length} תמונות נכשלה — נסה שוב`
+      if (result.success) {
+        setSendOpen(false);
+        setSendError("");
+        setSendNotice("הדוח נשלח לליבה וננעל בהצלחה.");
+      } else {
+        setSendOpen(false);
+        setSendError("");
+        setSendNotice(
+          "השליחה לא הושלמה. הדוח נשאר סגור וניתן לעריכה מחדש או לניסיון שליחה חוזר."
         );
       }
-
-      const hasPdf = await hasVisitReportPdfLocally(report.id);
-      if (!hasPdf) {
-        throw new Error("יש להפיק PDF במכשיר לפני שליחה לליבה");
-      }
-      const storedPdf = await loadVisitReportPdfLocally(report.id);
-      if (!storedPdf?.blob) {
-        throw new Error("יש להפיק PDF במכשיר לפני שליחה לליבה");
-      }
-
-      const formData = new FormData();
-      formData.set(
-        "file",
-        storedPdf.blob,
-        storedPdf.filename || `${report.id}.pdf`
-      );
-
-      const response = await apiFetch(
-        `/field-reports/visits/${report.id}/request-send`,
-        {
-          method: "POST",
-          headers: {
-            "X-Idempotency-Key": pendingRequest.idempotencyKey,
-          },
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(buildRequestSendErrorMessage(payload));
-      }
-
-      const pending = (await response.json()) as VisitReport;
-      if (pending.status !== "LOCKED") {
-        throw new Error("השרת לא אישר נעילת דוח לאחר שליחה לליבה");
-      }
-      setReport(pending);
-      removePendingSendRequest(organizationId, report.id);
-      setSendOpen(false);
-      setSendNotice(
-        "הדוח נשלח לליבה וננעל בהצלחה."
-      );
     } catch (err: unknown) {
       setSendError(
         err instanceof Error ? err.message : "שליחה לליבה נכשלה"
@@ -461,7 +410,7 @@ export default function FieldVisitReportPage() {
 
   if (loading) {
     return (
-      <div className="of-container mx-auto max-w-3xl p-8 text-sm text-zinc-500">
+      <div className="of-container mx-auto w-full max-w-5xl p-4 text-sm text-zinc-500 md:p-6 lg:p-8">
         טוען דוח...
       </div>
     );
@@ -469,7 +418,7 @@ export default function FieldVisitReportPage() {
 
   if (error || !report) {
     return (
-      <div className="of-container mx-auto max-w-3xl space-y-4 p-8">
+      <div className="of-container mx-auto w-full max-w-5xl space-y-4 p-4 md:p-6 lg:p-8">
         <p className="text-sm text-red-600">{error || "דוח לא נמצא"}</p>
         <Button variant="secondary" onClick={() => void loadReport()}>
           נסה שוב
@@ -482,7 +431,7 @@ export default function FieldVisitReportPage() {
   }
 
   return (
-    <div className="of-container mx-auto max-w-3xl space-y-6 p-8">
+    <div className="of-container mx-auto w-full max-w-5xl space-y-6 p-4 md:space-y-7 md:p-6 lg:space-y-8 lg:p-8">
       <header className="space-y-3">
         <Link
           href="/field-reports"
@@ -504,8 +453,10 @@ export default function FieldVisitReportPage() {
           </span>
         </p>
         {report.is_editable && !editSession.blockingSession ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
             <Button
+              size="lg"
+              className="min-h-12"
               onClick={() => void openFinishDialog()}
               disabled={!isOnline}
             >
@@ -515,6 +466,7 @@ export default function FieldVisitReportPage() {
               <GenerateVisitReportPdfButton
                 report={report}
                 variant="secondary"
+                className="min-h-12"
                 forceRegenerate
                 onCacheChange={setHasLocalPdf}
                 onComplete={() => {
@@ -543,8 +495,10 @@ export default function FieldVisitReportPage() {
           </div>
         ) : null}
         {!report.is_editable && report.can_reopen ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
             <Button
+              size="lg"
+              className="min-h-12"
               onClick={() => void confirmReopenReport()}
               disabled={!isOnline || reopenLoading}
             >
@@ -553,6 +507,8 @@ export default function FieldVisitReportPage() {
             {report.can_send_to_core ? (
               <Button
                 variant="secondary"
+                size="lg"
+                className="min-h-12"
                 onClick={() => openSendDialog()}
                 disabled={!hasLocalPdf}
               >
@@ -576,9 +532,10 @@ export default function FieldVisitReportPage() {
           || report.status === "PENDING_UPLOAD"
           || report.status === "LOCKED"
           || showPendingSendState) ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
             <GenerateVisitReportPdfButton
               report={report}
+              className="min-h-12"
               onCacheChange={setHasLocalPdf}
               onComplete={(source) => {
                 setHasLocalPdf(true);
@@ -641,6 +598,8 @@ export default function FieldVisitReportPage() {
               <div className="pt-1">
                 <Button
                   variant="secondary"
+                  size="lg"
+                  className="min-h-12"
                   onClick={cancelPendingSend}
                 >
                   בטל המתנה לשליחה
@@ -659,6 +618,8 @@ export default function FieldVisitReportPage() {
               <div className="pt-1">
                 <Button
                   variant="secondary"
+                  size="lg"
+                  className="min-h-12"
                   onClick={() => openSendDialog()}
                 >
                   נסה שליחה מחדש
@@ -699,19 +660,21 @@ export default function FieldVisitReportPage() {
       />
 
       {editSession.blockingSession ? (
-        <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+        <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100 md:px-5 md:py-5">
           <p>
             דוח אחר נפתח לעריכה במכשיר זה. ניתן לערוך דוח אחד בכל רגע.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             <Link
               href={`/field-reports/${editSession.blockingSession.reportId}`}
-              className="of-focus-ring inline-flex items-center justify-center rounded-2xl border border-amber-400 px-4 py-2 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40"
+              className="of-focus-ring inline-flex min-h-12 items-center justify-center rounded-2xl border border-amber-400 px-5 py-2.5 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40"
             >
               חזור לדוח הפעיל
             </Link>
             <Button
               variant="secondary"
+              size="lg"
+              className="min-h-12"
               onClick={() => editSession.claim()}
             >
               ערוך דוח זה במקום

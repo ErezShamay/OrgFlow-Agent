@@ -14,12 +14,13 @@ import { useFieldReportModule } from "@/hooks/useFieldReportModule";
 export function useFieldReportOfflinePrep() {
   const { status } = useFieldReportModule();
   const organizationId = status?.organization_id || "";
+  const isModuleEnabled = Boolean(status?.is_enabled);
   const storedBundle = useMemo(
     () =>
-      organizationId
+      organizationId && isModuleEnabled
         ? loadOfflinePrepBundle(organizationId)
         : null,
-    [organizationId]
+    [organizationId, isModuleEnabled]
   );
   const [preparedBundle, setPreparedBundle] = useState<{
     organizationId: string;
@@ -29,12 +30,13 @@ export function useFieldReportOfflinePrep() {
   const [error, setError] = useState("");
 
   const bundle =
-    preparedBundle?.organizationId === organizationId
+    isModuleEnabled
+    && preparedBundle?.organizationId === organizationId
       ? preparedBundle.bundle
       : storedBundle;
 
   const prepare = useCallback(async () => {
-    if (!organizationId) {
+    if (!organizationId || !isModuleEnabled) {
       return null;
     }
 
@@ -70,7 +72,7 @@ export function useFieldReportOfflinePrep() {
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, isModuleEnabled]);
 
   return {
     bundle,

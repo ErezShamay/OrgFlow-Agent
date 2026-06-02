@@ -21,6 +21,12 @@ import {
   serializeHeaderFieldsForApi,
 } from "@/lib/field-reports/header-fields";
 import { saveReportMetadataDraft } from "@/lib/field-reports/report-metadata-draft";
+import {
+  FR_TOUCH_BUTTON,
+  FR_TOUCH_INPUT,
+  FR_TOUCH_NOTES,
+  FR_TOUCH_TEXTAREA,
+} from "@/lib/field-reports/touch-input-class";
 import { useOffline } from "@/providers/OfflineProvider";
 
 type ReportLine = {
@@ -444,8 +450,8 @@ export default function VisitReportEditor({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-600">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-wrap items-center gap-2.5 text-sm text-zinc-600">
         <Badge>{report.status_label_he}</Badge>
         {!isOnline ? (
           <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900">
@@ -481,9 +487,9 @@ export default function VisitReportEditor({
         </p>
       ) : null}
 
-      <section className="space-y-4 rounded-xl border border-zinc-200 p-4">
+      <section className="space-y-4 rounded-xl border border-zinc-200 p-4 md:p-5">
         <h2 className="text-lg font-semibold">פרטי כותרת הדוח</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <HeaderField
             label="כתובת אתר"
             value={headerFields.site_address}
@@ -543,6 +549,8 @@ export default function VisitReportEditor({
         {report.is_editable ? (
           <Button
             variant="secondary"
+            size="lg"
+            className={FR_TOUCH_BUTTON}
             disabled={saving || !isOnline}
             onClick={() => void saveHeaderFields()}
           >
@@ -578,6 +586,8 @@ export default function VisitReportEditor({
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="secondary"
+                size="lg"
+                className={`w-full sm:w-auto ${FR_TOUCH_BUTTON}`}
                 disabled={catalogLoading || lineSaving}
                 onClick={() => void loadCatalog()}
               >
@@ -621,14 +631,14 @@ export default function VisitReportEditor({
         {report.is_editable ? (
           <form
             onSubmit={(event) => void addFreeLine(event)}
-            className="space-y-3 rounded-xl border border-dashed border-zinc-300 p-4"
+            className="space-y-3 rounded-xl border border-dashed border-zinc-300 p-4 md:space-y-4 md:p-5"
           >
             <h3 className="font-medium">שורה חופשית</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               <label className="block space-y-1 text-sm">
                 <span>מיקום</span>
                 <input
-                  className="of-input w-full"
+                  className={FR_TOUCH_INPUT}
                   value={newLine.location}
                   onChange={(event) =>
                     setNewLine((current) => ({
@@ -641,7 +651,7 @@ export default function VisitReportEditor({
               <label className="block space-y-1 text-sm">
                 <span>מלאכה</span>
                 <input
-                  className="of-input w-full"
+                  className={FR_TOUCH_INPUT}
                   value={newLine.trade}
                   onChange={(event) =>
                     setNewLine((current) => ({
@@ -654,7 +664,7 @@ export default function VisitReportEditor({
               <label className="block space-y-1 text-sm">
                 <span>סטטוס</span>
                 <select
-                  className="of-input w-full"
+                  className={FR_TOUCH_INPUT}
                   value={newLine.status}
                   onChange={(event) =>
                     setNewLine((current) => ({
@@ -674,7 +684,7 @@ export default function VisitReportEditor({
             <label className="block space-y-1 text-sm">
               <span>תיאור *</span>
               <textarea
-                className="of-input min-h-24 w-full"
+                className={FR_TOUCH_TEXTAREA}
                 value={newLine.description}
                 onChange={(event) =>
                   setNewLine((current) => ({
@@ -688,7 +698,7 @@ export default function VisitReportEditor({
             <label className="block space-y-1 text-sm">
               <span>הערות / פעולת תיקון</span>
               <textarea
-                className="of-input min-h-20 w-full"
+                className={FR_TOUCH_NOTES}
                 value={newLine.notes}
                 onChange={(event) =>
                   setNewLine((current) => ({
@@ -698,7 +708,12 @@ export default function VisitReportEditor({
                 }
               />
             </label>
-            <Button type="submit" disabled={lineSaving}>
+            <Button
+              type="submit"
+              size="lg"
+              className={`w-full sm:w-auto ${FR_TOUCH_BUTTON}`}
+              disabled={lineSaving}
+            >
               {lineSaving ? "שומר..." : "הוסף שורה חופשית"}
             </Button>
           </form>
@@ -725,7 +740,7 @@ function HeaderField({
     <label className="block space-y-1 text-sm">
       <span className="font-medium">{label}</span>
       <input
-        className="of-input w-full"
+        className={FR_TOUCH_INPUT}
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}

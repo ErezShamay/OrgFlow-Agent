@@ -28,6 +28,20 @@ class FieldReportOrganizationProfile(BaseModel):
     logo_url: str | None = None
 
 
+class FieldReportOrganizationProfileUpdateRequest(BaseModel):
+    report_phone: str | None = Field(default=None, max_length=100)
+    report_address_line: str | None = Field(
+        default=None,
+        max_length=255,
+    )
+    report_city: str | None = Field(default=None, max_length=120)
+    report_tagline: str | None = Field(default=None, max_length=255)
+    logo_storage_path: str | None = Field(
+        default=None,
+        max_length=1024,
+    )
+
+
 class FieldVisitReportCreateRequest(BaseModel):
     project_id: str
     visit_type: str = Field(

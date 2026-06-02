@@ -242,9 +242,13 @@ def _setup_client(
     monkeypatch,
     *,
     report_processing_service: FakeReportProcessingService | None = None,
+    module_enabled: bool = True,
 ) -> TestClient:
+    module_repository = FakeModuleRepository()
+    module_repository.records["org-1"]["is_enabled"] = module_enabled
+
     module_service = FieldReportModuleService(
-        module_repository=FakeModuleRepository(),
+        module_repository=module_repository,
         organization_repository=FakeOrganizationRepository(),
     )
     organization_profile_service = FieldReportOrganizationProfileService(
@@ -339,6 +343,22 @@ def test_visit_types_and_create_list(monkeypatch):
 def test_viewer_cannot_create_visit_report(monkeypatch):
     client = _setup_client(monkeypatch)
     token = _token(role="VIEWER")
+
+    response = client.post(
+        "/field-reports/visits",
+        headers=_headers(token),
+        json={
+            "project_id": "project-1",
+            "visit_type": "STRUCTURE_SITE",
+            "visit_date": "2026-06-01",
+        },
+    )
+    assert response.status_code == 403
+
+
+def test_cannot_create_visit_report_when_module_disabled(monkeypatch):
+    client = _setup_client(monkeypatch, module_enabled=False)
+    token = _token()
 
     response = client.post(
         "/field-reports/visits",
