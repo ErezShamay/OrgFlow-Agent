@@ -15,6 +15,8 @@ from app.services.unit_tests_service import UnitTestsService
 
 
 class TestingDashboardService:
+    __test__ = False
+
     def __init__(
         self,
         unit_tests_service: UnitTestsService | None = None,

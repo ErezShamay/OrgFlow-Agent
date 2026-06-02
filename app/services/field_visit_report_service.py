@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from app.config.field_report_visit_types import (
     allowed_top_families,
@@ -29,6 +31,9 @@ from app.services.field_report_organization_profile_service import (
 )
 from app.services.field_visit_report_photo_service import (
     FieldVisitReportPhotoService,
+)
+from app.services.report_processing_service import (
+    ReportProcessingService,
 )
 
 VISIT_STATUS_LABELS_HE: dict[str, str] = {
@@ -59,6 +64,8 @@ class FieldVisitReportService:
             FieldReportCatalogService | None = None,
         photo_service:
             FieldVisitReportPhotoService | None = None,
+        report_processing_service:
+            ReportProcessingService | None = None,
     ) -> None:
         self.report_repository = (
             report_repository or FieldVisitReportRepository()
@@ -78,6 +85,9 @@ class FieldVisitReportService:
         )
         self.photo_service = (
             photo_service or FieldVisitReportPhotoService()
+        )
+        self.report_processing_service = (
+            report_processing_service or ReportProcessingService()
         )
 
     def is_storage_available(self) -> bool:
@@ -465,6 +475,8 @@ class FieldVisitReportService:
         *,
         organization_id: str,
         report_id: str,
+        source_filename: str,
+        source_content: bytes,
     ) -> dict:
         record = self._get_org_report(
             organization_id=organization_id,
@@ -492,6 +504,25 @@ class FieldVisitReportService:
             raise ConflictError(
                 message="ניתן לשלוח לליבה רק דוח במצב סגור",
                 details={"status": status},
+            )
+
+        core_result = self._send_to_core_pipeline(
+            record,
+            source_filename=source_filename,
+            source_content=source_content,
+        )
+        if not core_result.get("success"):
+            raise ConflictError(
+                message=(
+                    core_result.get("error_message")
+                    or "שליחה לליבה נכשלה"
+                ),
+                details={
+                    "error_code": core_result.get(
+                        "error_code",
+                        "FIELD_VISIT_REPORT_CORE_SEND_FAILED",
+                    ),
+                },
             )
 
         # 3D.3: on successful network send request, lock the report.
@@ -1190,6 +1221,49 @@ class FieldVisitReportService:
             "created_at": record.get("created_at"),
             "updated_at": record.get("updated_at"),
         }
+
+    def _send_to_core_pipeline(
+        self,
+        record: dict,
+        *,
+        source_filename: str,
+        source_content: bytes,
+    ) -> dict:
+        if not source_content:
+            return {
+                "success": False,
+                "error_code": "FIELD_VISIT_REPORT_EMPTY_FILE",
+                "error_message": "קובץ הדוח ריק",
+            }
+
+        filename = (
+            source_filename.strip()
+            if source_filename and source_filename.strip()
+            else self._build_core_upload_filename(record)
+        )
+        suffix = Path(filename).suffix or ".pdf"
+        with NamedTemporaryFile(
+            mode="wb",
+            suffix=suffix,
+            delete=False,
+        ) as temp_file:
+            temp_file.write(source_content)
+            temp_path = Path(temp_file.name)
+
+        try:
+            return self.report_processing_service.process_uploaded_report(
+                project_id=str(record["project_id"]),
+                filename=filename,
+                file_path=str(temp_path),
+            )
+        finally:
+            temp_path.unlink(missing_ok=True)
+
+    @staticmethod
+    def _build_core_upload_filename(record: dict) -> str:
+        report_id = str(record["id"])
+        visit_date = str(record.get("visit_date") or "unknown-date")
+        return f"field-visit-{visit_date}-{report_id}.pdf"
 
 
 def _line_is_empty(line: dict) -> bool:

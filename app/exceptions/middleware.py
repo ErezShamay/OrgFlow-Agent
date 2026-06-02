@@ -5,7 +5,7 @@ Global exception handler middleware for OrgFlow Agent
 import traceback
 import logging
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Callable
 
 from fastapi import Request, status
@@ -149,7 +149,7 @@ class GlobalExceptionHandler(BaseHTTPMiddleware):
             message=exc.message,
             status_code=exc.status_code,
             request_id=request_id,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             path=request.url.path,
             method=request.method,
             details=exc.details,
@@ -189,7 +189,7 @@ class GlobalExceptionHandler(BaseHTTPMiddleware):
             message=str(exc),
             status_code=status.HTTP_400_BAD_REQUEST,
             request_id=request_id,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             path=request.url.path,
             method=request.method,
             trace_id=trace_id,
@@ -232,7 +232,7 @@ class GlobalExceptionHandler(BaseHTTPMiddleware):
             message="An unexpected error occurred. Please contact support if the problem persists.",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             request_id=request_id,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             path=request.url.path,
             method=request.method,
             trace_id=trace_id,
@@ -278,13 +278,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             },
         )
 
-        start_time = datetime.utcnow()
+        start_time = datetime.now(UTC)
 
         try:
             response = await call_next(request)
         except Exception:
             elapsed_ms = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
+                (datetime.now(UTC) - start_time).total_seconds() * 1000
             )
             logger.error(
                 "Request failed",
@@ -299,7 +299,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             raise
 
         elapsed_ms = int(
-            (datetime.utcnow() - start_time).total_seconds() * 1000
+            (datetime.now(UTC) - start_time).total_seconds() * 1000
         )
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Trace-ID"] = trace_id

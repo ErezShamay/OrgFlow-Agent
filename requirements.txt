@@ -65,7 +65,7 @@ google-auth-oauthlib==1.0.0
 google-api-python-client==2.100.0
 python-dotenv==1.2.2
 resend==2.30.1
-PyPDF2==3.0.1
+pypdf==6.11.0
 ollama==0.6.2
 APScheduler==3.11.2
 python-multipart==0.0.29

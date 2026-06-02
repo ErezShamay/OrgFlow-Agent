@@ -11,9 +11,22 @@ export type PendingSendRequest = {
   reportId: string;
   organizationId: string;
   requestedAt: string;
+  idempotencyKey: string;
   syncPhase?: PendingSendSyncPhase;
   lastError?: string;
 };
+
+function createIdempotencyKey(reportId: string): string {
+  if (
+    typeof globalThis.crypto !== "undefined"
+    && typeof globalThis.crypto.randomUUID === "function"
+  ) {
+    return `field-report-send:${reportId}:${globalThis.crypto.randomUUID()}`;
+  }
+  return `field-report-send:${reportId}:${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
+}
 
 function storageKey(organizationId: string) {
   return `${STORAGE_PREFIX}:${organizationId}`;
@@ -52,13 +65,19 @@ export function enqueuePendingSendRequest(
   organizationId: string,
   reportId: string
 ): PendingSendRequest {
-  const existing = loadPendingSendRequests(organizationId).filter(
+  const existingEntries = loadPendingSendRequests(organizationId);
+  const existingForReport = existingEntries.find(
+    (entry) => entry.reportId === reportId
+  );
+  const existing = existingEntries.filter(
     (entry) => entry.reportId !== reportId
   );
   const request: PendingSendRequest = {
     reportId,
     organizationId,
     requestedAt: new Date().toISOString(),
+    idempotencyKey:
+      existingForReport?.idempotencyKey || createIdempotencyKey(reportId),
     syncPhase: "queued",
   };
 
@@ -73,7 +92,9 @@ export function enqueuePendingSendRequest(
 export function updatePendingSendRequest(
   organizationId: string,
   reportId: string,
-  patch: Partial<Pick<PendingSendRequest, "syncPhase" | "lastError">>
+  patch: Partial<
+    Pick<PendingSendRequest, "syncPhase" | "lastError" | "idempotencyKey">
+  >
 ) {
   const requests = loadPendingSendRequests(organizationId);
   const index = requests.findIndex((entry) => entry.reportId === reportId);

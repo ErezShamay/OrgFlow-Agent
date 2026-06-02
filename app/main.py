@@ -1,5 +1,6 @@
 import shutil
 
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -395,7 +396,16 @@ FRONTEND_URLS = [
 # APP
 # ==========================================
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    startup_event()
+    try:
+        yield
+    finally:
+        shutdown_event()
+
+
+app = FastAPI(lifespan=lifespan)
 app.state.startup_complete = False
 
 DEMO_ORGANIZATION_ID = (
@@ -668,7 +678,6 @@ notification_connection_manager = (
 # AUTOMATION ENGINE
 # ==========================================
 
-@app.on_event("startup")
 def startup_event():
     if IS_AUTOMATION_ENABLED:
         register_automation_jobs()
@@ -689,7 +698,6 @@ def startup_event():
     app.state.startup_complete = True
 
 
-@app.on_event("shutdown")
 def shutdown_event():
     app.state.startup_complete = False
 
@@ -1561,16 +1569,20 @@ def reopen_field_visit_report(
 
 
 @app.post("/field-reports/visits/{report_id}/request-send")
-def request_send_field_visit_report(
+async def request_send_field_visit_report(
     report_id: str,
+    file: UploadFile = File(...),
     auth=Depends(
         require_permission("field_reports:write")
     ),
     _module=Depends(require_field_report_module),
 ):
+    file_content = await file.read()
     return field_visit_report_service.request_send_to_core(
         organization_id=auth.org_id,
         report_id=report_id,
+        source_filename=file.filename or f"{report_id}.pdf",
+        source_content=file_content,
     )
 
 

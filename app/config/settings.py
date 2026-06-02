@@ -82,7 +82,7 @@ class Settings(BaseModel):
     DB_RETRY_MAX_ATTEMPTS: int = 3
     DB_RETRY_BASE_DELAY_SECONDS: float = 0.1
     DB_OPERATION_TIMEOUT_SECONDS: float = 5.0
-    AUTH_JWT_SECRET: str = "dev-secret"
+    AUTH_JWT_SECRET: str = "dev-secret-change-me-at-least-32-chars"
     AUTH_JWT_ALGORITHM: str = "HS256"
     AUTH_SESSION_TIMEOUT_MINUTES: int = 60
     AUTH_REFRESH_TOKEN_TTL_MINUTES: int = 1440
@@ -241,7 +241,10 @@ def load_settings() -> Settings:
             "DB_OPERATION_TIMEOUT_SECONDS": float(
                 os.getenv("DB_OPERATION_TIMEOUT_SECONDS", "5.0")
             ),
-            "AUTH_JWT_SECRET": os.getenv("AUTH_JWT_SECRET", "dev-secret"),
+            "AUTH_JWT_SECRET": os.getenv(
+                "AUTH_JWT_SECRET",
+                "dev-secret-change-me-at-least-32-chars",
+            ),
             "AUTH_JWT_ALGORITHM": os.getenv("AUTH_JWT_ALGORITHM", "HS256"),
             "AUTH_SESSION_TIMEOUT_MINUTES": int(
                 os.getenv("AUTH_SESSION_TIMEOUT_MINUTES", "60")

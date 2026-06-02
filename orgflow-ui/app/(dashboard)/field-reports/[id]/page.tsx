@@ -22,7 +22,10 @@ import { useFieldReportModule } from "@/hooks/useFieldReportModule";
 import { apiFetch } from "@/lib/api/client";
 import { buildClosePreview } from "@/lib/field-reports/close-preview";
 import { downloadVisitReportPdf } from "@/lib/field-reports/pdf/generate-visit-report-pdf";
-import { hasVisitReportPdfLocally } from "@/lib/field-reports/pdf/visit-report-pdf-store";
+import {
+  hasVisitReportPdfLocally,
+  loadVisitReportPdfLocally,
+} from "@/lib/field-reports/pdf/visit-report-pdf-store";
 import type { OrganizationProfileSnapshot } from "@/lib/field-reports/pdf/types";
 import { flushReportMetadataDraft } from "@/lib/field-reports/report-metadata-draft";
 import {
@@ -343,9 +346,12 @@ export default function FieldVisitReportPage() {
     try {
       setSendLoading(true);
       setSendError("");
+      const pendingRequest = enqueuePendingSendRequest(
+        organizationId,
+        report.id
+      );
 
       if (!isOnline) {
-        enqueuePendingSendRequest(organizationId, report.id);
         setSendOpen(false);
         setSendNotice(
           "הדוח סומן כממתין לשליחה. מטא־דאטה, תמונות ו-PDF יסונכרנו כשתחזור הרשת."
@@ -368,10 +374,27 @@ export default function FieldVisitReportPage() {
       if (!hasPdf) {
         throw new Error("יש להפיק PDF במכשיר לפני שליחה לליבה");
       }
+      const storedPdf = await loadVisitReportPdfLocally(report.id);
+      if (!storedPdf?.blob) {
+        throw new Error("יש להפיק PDF במכשיר לפני שליחה לליבה");
+      }
+
+      const formData = new FormData();
+      formData.set(
+        "file",
+        storedPdf.blob,
+        storedPdf.filename || `${report.id}.pdf`
+      );
 
       const response = await apiFetch(
         `/field-reports/visits/${report.id}/request-send`,
-        { method: "POST" }
+        {
+          method: "POST",
+          headers: {
+            "X-Idempotency-Key": pendingRequest.idempotencyKey,
+          },
+          body: formData,
+        }
       );
 
       if (!response.ok) {

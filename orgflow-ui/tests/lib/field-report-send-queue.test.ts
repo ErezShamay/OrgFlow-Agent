@@ -47,7 +47,7 @@ describe("send-queue", () => {
   });
 
   it("replaces an existing queue entry for the same report", () => {
-    enqueuePendingSendRequest("org-1", "report-a");
+    const first = enqueuePendingSendRequest("org-1", "report-a");
     updatePendingSendRequest("org-1", "report-a", {
       syncPhase: "photos",
       lastError: "retry",
@@ -57,6 +57,7 @@ describe("send-queue", () => {
     const [entry] = loadPendingSendRequests("org-1");
     expect(entry.syncPhase).toBe("queued");
     expect(entry.lastError).toBeUndefined();
+    expect(entry.idempotencyKey).toBe(first.idempotencyKey);
   });
 
   it("maps sync phases to Hebrew labels", () => {
@@ -82,6 +83,12 @@ vi.mock("@/lib/field-reports/sync-pending-line-photos", () => ({
 
 vi.mock("@/lib/field-reports/pdf/visit-report-pdf-store", () => ({
   hasVisitReportPdfLocally: vi.fn(async () => true),
+  loadVisitReportPdfLocally: vi.fn(async () => ({
+    reportId: "report-a",
+    blob: new Blob(["pdf-content"], { type: "application/pdf" }),
+    filename: "report-a.pdf",
+    generatedAt: new Date().toISOString(),
+  })),
 }));
 
 describe("process-send-queue", () => {
@@ -117,6 +124,7 @@ describe("process-send-queue", () => {
       reportId: "report-a",
       organizationId: "org-1",
       requestedAt: new Date().toISOString(),
+      idempotencyKey: "idem-report-a",
       syncPhase: "queued",
     });
 
@@ -124,8 +132,16 @@ describe("process-send-queue", () => {
     expect(loadPendingSendRequests("org-1")).toHaveLength(0);
     expect(apiFetch).toHaveBeenCalledWith(
       "/field-reports/visits/report-a/request-send",
-      { method: "POST" }
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          "X-Idempotency-Key": "idem-report-a",
+        },
+      })
     );
+
+    const callArgs = vi.mocked(apiFetch).mock.calls[0]?.[1];
+    expect(callArgs?.body).toBeInstanceOf(FormData);
   });
 
   it("keeps queue entry when server does not return LOCKED", async () => {
@@ -149,6 +165,7 @@ describe("process-send-queue", () => {
       reportId: "report-a",
       organizationId: "org-1",
       requestedAt: new Date().toISOString(),
+      idempotencyKey: "idem-report-a",
       syncPhase: "queued",
     });
 

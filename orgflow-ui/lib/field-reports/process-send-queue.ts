@@ -1,5 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
-import { hasVisitReportPdfLocally } from "@/lib/field-reports/pdf/visit-report-pdf-store";
+import {
+  loadVisitReportPdfLocally,
+} from "@/lib/field-reports/pdf/visit-report-pdf-store";
 import { flushReportMetadataDraft } from "@/lib/field-reports/report-metadata-draft";
 import {
   loadPendingSendRequests,
@@ -20,10 +22,22 @@ export type ProcessSendQueueResult = {
   processed: SendQueueItemResult[];
 };
 
-async function requestSendToCore(reportId: string) {
+async function requestSendToCore(
+  reportId: string,
+  idempotencyKey: string,
+  pdf: { blob: Blob; filename: string }
+) {
+  const formData = new FormData();
+  formData.set("file", pdf.blob, pdf.filename || `${reportId}.pdf`);
   const response = await apiFetch(
     `/field-reports/visits/${reportId}/request-send`,
-    { method: "POST" }
+    {
+      method: "POST",
+      headers: {
+        "X-Idempotency-Key": idempotencyKey,
+      },
+      body: formData,
+    }
   );
 
   if (!response.ok) {
@@ -46,6 +60,9 @@ export async function processPendingSendRequest(
   request: PendingSendRequest
 ): Promise<SendQueueItemResult> {
   const { organizationId, reportId } = request;
+  const idempotencyKey =
+    request.idempotencyKey
+    || `field-report-send:${reportId}:${request.requestedAt}`;
   let currentPhase: PendingSendSyncPhase = request.syncPhase ?? "queued";
 
   const setPhase = (phase: PendingSendSyncPhase, lastError?: string) => {
@@ -55,6 +72,12 @@ export async function processPendingSendRequest(
       lastError,
     });
   };
+
+  if (request.idempotencyKey !== idempotencyKey) {
+    updatePendingSendRequest(organizationId, reportId, {
+      idempotencyKey,
+    });
+  }
 
   try {
     setPhase("metadata");
@@ -69,13 +92,16 @@ export async function processPendingSendRequest(
     }
 
     setPhase("pdf");
-    const hasPdf = await hasVisitReportPdfLocally(reportId);
-    if (!hasPdf) {
+    const storedPdf = await loadVisitReportPdfLocally(reportId);
+    if (!storedPdf?.blob) {
       throw new Error("PDF לא נמצא במכשיר — יש להפיק מחדש לפני שליחה");
     }
 
     setPhase("request_send");
-    await requestSendToCore(reportId);
+    await requestSendToCore(reportId, idempotencyKey, {
+      blob: storedPdf.blob,
+      filename: storedPdf.filename || `${reportId}.pdf`,
+    });
 
     removePendingSendRequest(organizationId, reportId);
 

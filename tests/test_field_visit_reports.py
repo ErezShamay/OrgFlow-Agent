@@ -178,6 +178,34 @@ class FakeProjectRepository:
         ]
 
 
+class FakeReportProcessingService:
+    def __init__(self, *, should_succeed: bool = True) -> None:
+        self.should_succeed = should_succeed
+        self.calls: list[dict] = []
+
+    def process_uploaded_report(
+        self,
+        *,
+        project_id: str,
+        filename: str,
+        file_path: str,
+    ) -> dict:
+        self.calls.append(
+            {
+                "project_id": project_id,
+                "filename": filename,
+                "file_path": file_path,
+            }
+        )
+        if self.should_succeed:
+            return {"success": True}
+        return {
+            "success": False,
+            "error_code": "CORE_PIPELINE_FAILED",
+            "error_message": "core failed",
+        }
+
+
 class FakeModuleRepository:
     def __init__(self) -> None:
         self.records: dict[str, dict] = {
@@ -210,7 +238,11 @@ class FakeOrganizationRepository:
         }
 
 
-def _setup_client(monkeypatch) -> TestClient:
+def _setup_client(
+    monkeypatch,
+    *,
+    report_processing_service: FakeReportProcessingService | None = None,
+) -> TestClient:
     module_service = FieldReportModuleService(
         module_repository=FakeModuleRepository(),
         organization_repository=FakeOrganizationRepository(),
@@ -224,6 +256,10 @@ def _setup_client(monkeypatch) -> TestClient:
         line_repository=FakeVisitReportLineRepository(),
         project_repository=FakeProjectRepository(),
         organization_profile_service=organization_profile_service,
+        report_processing_service=(
+            report_processing_service
+            or FakeReportProcessingService()
+        ),
     )
 
     monkeypatch.setattr(
@@ -587,7 +623,11 @@ def test_reopen_rejects_non_closed_report(monkeypatch):
 
 
 def test_request_send_to_core_from_closed_report(monkeypatch):
-    client = _setup_client(monkeypatch)
+    fake_processing = FakeReportProcessingService()
+    client = _setup_client(
+        monkeypatch,
+        report_processing_service=fake_processing,
+    )
     token = _token()
 
     create_response = client.post(
@@ -612,6 +652,13 @@ def test_request_send_to_core_from_closed_report(monkeypatch):
     send_response = client.post(
         f"/field-reports/visits/{report_id}/request-send",
         headers=_headers(token),
+        files={
+            "file": (
+                f"{report_id}.pdf",
+                b"%PDF-1.4\nfake-pdf\n%%EOF\n",
+                "application/pdf",
+            ),
+        },
     )
     assert send_response.status_code == 200
     pending = send_response.json()
@@ -621,21 +668,77 @@ def test_request_send_to_core_from_closed_report(monkeypatch):
     assert pending["is_editable"] is False
     assert pending["can_reopen"] is False
     assert pending["can_send_to_core"] is False
+    assert len(fake_processing.calls) == 1
+    assert fake_processing.calls[0]["project_id"] == "project-1"
 
     second_send = client.post(
         f"/field-reports/visits/{report_id}/request-send",
         headers=_headers(token),
+        files={
+            "file": (
+                f"{report_id}.pdf",
+                b"%PDF-1.4\nfake-pdf\n%%EOF\n",
+                "application/pdf",
+            ),
+        },
     )
     assert second_send.status_code == 200
     second_pending = second_send.json()
     assert second_pending["status"] == "LOCKED"
     assert second_pending["status_label_he"] == "נעול"
+    assert len(fake_processing.calls) == 1
 
     reopen_response = client.post(
         f"/field-reports/visits/{report_id}/reopen",
         headers=_headers(token),
     )
     assert reopen_response.status_code == 409
+
+
+def test_request_send_to_core_returns_conflict_when_core_pipeline_fails(monkeypatch):
+    fake_processing = FakeReportProcessingService(should_succeed=False)
+    client = _setup_client(
+        monkeypatch,
+        report_processing_service=fake_processing,
+    )
+    token = _token()
+
+    create_response = client.post(
+        "/field-reports/visits",
+        headers=_headers(token),
+        json={
+            "project_id": "project-1",
+            "visit_type": "STRUCTURE_SITE",
+            "visit_date": "2026-06-01",
+        },
+    )
+    report_id = create_response.json()["id"]
+
+    close_response = client.post(
+        f"/field-reports/visits/{report_id}/close",
+        headers=_headers(token),
+    )
+    assert close_response.status_code == 200
+
+    send_response = client.post(
+        f"/field-reports/visits/{report_id}/request-send",
+        headers=_headers(token),
+        files={
+            "file": (
+                f"{report_id}.pdf",
+                b"%PDF-1.4\nfake-pdf\n%%EOF\n",
+                "application/pdf",
+            ),
+        },
+    )
+    assert send_response.status_code == 409
+
+    report_response = client.get(
+        f"/field-reports/visits/{report_id}",
+        headers=_headers(token),
+    )
+    assert report_response.status_code == 200
+    assert report_response.json()["status"] == "CLOSED"
 
 
 def test_request_send_rejects_in_progress_report(monkeypatch):
@@ -656,6 +759,13 @@ def test_request_send_rejects_in_progress_report(monkeypatch):
     send_response = client.post(
         f"/field-reports/visits/{report_id}/request-send",
         headers=_headers(token),
+        files={
+            "file": (
+                f"{report_id}.pdf",
+                b"%PDF-1.4\nfake-pdf\n%%EOF\n",
+                "application/pdf",
+            ),
+        },
     )
     assert send_response.status_code == 409
 
