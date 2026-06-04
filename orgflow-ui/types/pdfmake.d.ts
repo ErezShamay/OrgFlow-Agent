@@ -6,6 +6,7 @@ declare module "pdfmake/interfaces" {
     width?: number;
     alignment?: Alignment;
     margin?: number | [number, number, number, number];
+    pageBreak?: "before" | "after";
   }
 
   export interface ContentText {
@@ -19,6 +20,7 @@ declare module "pdfmake/interfaces" {
     color?: string;
     bold?: boolean;
     fillColor?: string;
+    pageBreak?: "before" | "after";
   }
 
   export interface ContentColumn {
@@ -26,34 +28,42 @@ declare module "pdfmake/interfaces" {
     stack?: Content[];
     text?: string;
     alignment?: Alignment;
+    font?: string;
+    direction?: "ltr" | "rtl";
+    fontSize?: number;
+    margin?: number | [number, number, number, number];
   }
 
   export interface ContentColumns {
     columns: ContentColumn[];
     margin?: number | [number, number, number, number];
+    pageBreak?: "before" | "after";
   }
 
   export interface ContentStack {
     stack: Content[];
     alignment?: Alignment;
     margin?: number | [number, number, number, number];
+    pageBreak?: "before" | "after";
   }
 
   export interface ContentTable {
     table: {
       headerRows?: number;
       widths?: Array<string | number>;
-      body: string[][];
+      body: (string | Content)[][];
     };
     layout?: string;
     margin?: number | [number, number, number, number];
+    pageBreak?: "before" | "after";
   }
 
   export interface ContentList {
-    ul?: string[];
-    ol?: string[];
+    ul?: (string | Content)[];
+    ol?: (string | Content)[];
     alignment?: Alignment;
     margin?: number | [number, number, number, number];
+    pageBreak?: "before" | "after";
   }
 
   export type Content =
@@ -67,9 +77,13 @@ declare module "pdfmake/interfaces" {
 
   export interface StyleDictionary {
     [key: string]: {
+      font?: string;
       fontSize?: number;
       bold?: boolean;
       color?: string;
+      alignment?: Alignment;
+      direction?: "ltr" | "rtl";
+      fillColor?: string;
     };
   }
 
@@ -86,6 +100,12 @@ declare module "pdfmake/interfaces" {
       lineHeight?: number;
     };
     styles?: StyleDictionary;
+    header?:
+      | Content
+      | ((
+          currentPage: number,
+          pageCount: number
+        ) => Content | ContentColumns);
     footer?:
       | Content
       | ((

@@ -83,7 +83,7 @@ export function mirrorTableRowsForRtl<T>(rows: T[][]): T[][] {
 
 export function pdfText(
   text: string,
-  extra: Partial<Content> = {}
+  extra: Partial<Exclude<Content, string>> = {}
 ): Content {
   return {
     text,
