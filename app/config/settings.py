@@ -95,7 +95,10 @@ class Settings(BaseModel):
     @classmethod
     def normalize_frontend_url(cls, value: object) -> object:
         if isinstance(value, str):
-            return value.rstrip("/")
+            normalized = value.strip().rstrip("/")
+            if normalized and not normalized.startswith(("http://", "https://")):
+                normalized = f"https://{normalized}"
+            return normalized
         return value
 
     @field_validator("DEFAULT_AI_MODEL", "OPENAI_MODEL")
@@ -294,8 +297,14 @@ def load_settings() -> Settings:
     except ValidationError as exc:
         from app.exceptions.exceptions import ConfigurationError
 
+        error_parts = [
+            f"{'.'.join(str(part) for part in err.get('loc', ()))}: {err.get('msg')}"
+            for err in exc.errors()
+        ]
+        summary = "; ".join(error_parts) if error_parts else "unknown"
+
         raise ConfigurationError(
-            message="Configuration validation failed",
+            message=f"Configuration validation failed: {summary}",
             details={"errors": exc.errors()},
         )
 
