@@ -1,7 +1,7 @@
-import { capacitorStaticExportParams } from "@/lib/capacitor/build-mode";
+import { dashboardDynamicSegmentParams } from "@/lib/capacitor/static-export-params";
 
 export function generateStaticParams() {
-  return capacitorStaticExportParams();
+  return dashboardDynamicSegmentParams();
 }
 
 export default function ProjectIdLayout({
