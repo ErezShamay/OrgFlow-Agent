@@ -36,11 +36,23 @@ describe("line-photo-picker (FR-031)", () => {
     vi.mocked(Capacitor.getPlatform).mockReturnValue("web");
   });
 
-  it("useNativeLinePhotoPicker is false on web", async () => {
-    const { useNativeLinePhotoPicker, takeLinePhotoWithNativeCamera } =
+  it("useNativeLinePhotoCamera is false even on native (WebView file input)", async () => {
+    const { Capacitor } = await import("@capacitor/core");
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+    vi.mocked(Capacitor.getPlatform).mockReturnValue("android");
+
+    const { useNativeLinePhotoCamera, useNativeLinePhotoGallery } =
       await import("@/lib/capacitor/line-photo-picker");
 
-    expect(useNativeLinePhotoPicker()).toBe(false);
+    expect(useNativeLinePhotoCamera()).toBe(false);
+    expect(useNativeLinePhotoGallery()).toBe(true);
+  });
+
+  it("takeLinePhotoWithNativeCamera is no-op on web", async () => {
+    const { takeLinePhotoWithNativeCamera } = await import(
+      "@/lib/capacitor/line-photo-picker"
+    );
+
     await expect(takeLinePhotoWithNativeCamera()).resolves.toBeNull();
     expect(takePhoto).not.toHaveBeenCalled();
   });

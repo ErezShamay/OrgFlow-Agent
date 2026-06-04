@@ -5,8 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import {
   pickLinePhotoFromNativeGallery,
-  takeLinePhotoWithNativeCamera,
-  useNativeLinePhotoPicker,
+  useNativeLinePhotoGallery,
 } from "@/lib/capacitor/line-photo-picker";
 import { apiFetch } from "@/lib/api/client";
 import { MAX_LINE_PHOTOS } from "@/lib/field-reports/line-photo-constants";
@@ -19,17 +18,6 @@ import {
   saveLinePhotoLocally,
 } from "@/lib/field-reports/line-photo-store";
 import { persistCapacitorRouteNow } from "@/components/capacitor/CapacitorRoutePersistence";
-import {
-  clearLinePhotoCaptureContext,
-  linePhotoCaptureResumeMessage,
-  readLinePhotoCaptureContext,
-  writeLinePhotoCaptureContext,
-} from "@/lib/capacitor/line-photo-capture-context";
-import {
-  currentDocumentPath,
-  isBootstrapCapacitorPath,
-  resolveCapacitorRestoreTarget,
-} from "@/lib/capacitor/route-persistence";
 import { FR_TOUCH_BUTTON } from "@/lib/field-reports/touch-input-class";
 import { useOffline } from "@/providers/OfflineProvider";
 
@@ -71,39 +59,13 @@ export default function LinePhotoCapture({
   onPhotosChange,
 }: LinePhotoCaptureProps) {
   const { isOnline } = useOffline();
-  const nativeLinePhotoPicker = useNativeLinePhotoPicker();
+  const nativeGalleryPicker = useNativeLinePhotoGallery();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<PreviewItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    void (async () => {
-      const pending = readLinePhotoCaptureContext();
-      if (!pending) {
-        return;
-      }
-
-      const resumeMessage = linePhotoCaptureResumeMessage(
-        pending,
-        reportId,
-        lineId
-      );
-      if (!resumeMessage) {
-        return;
-      }
-
-      const locals = await listLinePhotosForLine(reportId, lineId);
-      clearLinePhotoCaptureContext();
-      if (locals.length > 0) {
-        return;
-      }
-
-      setError(resumeMessage);
-    })();
-  }, [lineId, reportId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,52 +239,6 @@ export default function LinePhotoCapture({
     }
   }
 
-  /**
-   * אחרי מצלמה native: אם WebView חזר לדף הבית — שומרים תמונה ל-IndexedDB ואז
-   * מחזירים לדוח (התמונה תיטען מהאחסון המקומי).
-   */
-  async function attachNativePickerResult(file: File) {
-    if (!isBootstrapCapacitorPath(window.location.pathname)) {
-      await handleFileSelected(file);
-      return;
-    }
-
-    const remoteCount =
-      photos.length > 0
-        ? photos.length
-        : hasServerPhoto
-          ? 1
-          : 0;
-    const localCount = await countLinePhotosLocally(reportId, lineId);
-    const totalCount = Math.max(localCount, remoteCount);
-    if (!canAddLinePhoto(totalCount)) {
-      setError(`ניתן לצרף עד ${MAX_LINE_PHOTOS} תמונות לשורה`);
-      return;
-    }
-
-    setError("");
-    setUploading(true);
-
-    try {
-      await saveLinePhotoLocally(reportId, lineId, file, {
-        pendingUpload: !isOnline,
-      });
-      clearLinePhotoCaptureContext();
-
-      const target = resolveCapacitorRestoreTarget();
-      if (target && currentDocumentPath() !== target) {
-        window.location.replace(target);
-        return;
-      }
-
-      await handleFileSelected(file);
-    } catch (err: unknown) {
-      setError(getPhotoActionErrorMessage(err, "save"));
-    } finally {
-      setUploading(false);
-    }
-  }
-
   async function removePhoto(photoId: string) {
     if (disabled) {
       return;
@@ -380,29 +296,6 @@ export default function LinePhotoCapture({
     setError("");
     setCameraBlocked(false);
 
-    if (nativeLinePhotoPicker) {
-      persistCapacitorRouteNow();
-      writeLinePhotoCaptureContext({
-        returnPath: currentDocumentPath(),
-        reportId,
-        lineId,
-      });
-      try {
-        const file = await takeLinePhotoWithNativeCamera();
-        persistCapacitorRouteNow();
-        if (file) {
-          await attachNativePickerResult(file);
-        } else {
-          clearLinePhotoCaptureContext();
-        }
-      } catch (err: unknown) {
-        clearLinePhotoCaptureContext();
-        setError(getPhotoActionErrorMessage(err, "save"));
-      }
-
-      return;
-    }
-
     const permissionState = await checkCameraPermission();
 
     if (permissionState === "denied") {
@@ -423,23 +316,14 @@ export default function LinePhotoCapture({
 
     setError("");
 
-    if (nativeLinePhotoPicker) {
+    if (nativeGalleryPicker) {
       persistCapacitorRouteNow();
-      writeLinePhotoCaptureContext({
-        returnPath: currentDocumentPath(),
-        reportId,
-        lineId,
-      });
       try {
         const file = await pickLinePhotoFromNativeGallery();
-        persistCapacitorRouteNow();
         if (file) {
-          await attachNativePickerResult(file);
-        } else {
-          clearLinePhotoCaptureContext();
+          await handleFileSelected(file);
         }
       } catch (err: unknown) {
-        clearLinePhotoCaptureContext();
         setError(getPhotoActionErrorMessage(err, "save"));
       }
 
