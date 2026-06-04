@@ -23,3 +23,22 @@ export function getCapacitorPlatform(): ElayoAiCapacitorPlatform {
 export function isCapacitorAndroid(): boolean {
   return Capacitor.getPlatform() === "android";
 }
+
+/** WebView של APK (static export) — `https://localhost` / `http://localhost`. */
+export function isCapacitorWebViewShell(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const { hostname, protocol } = window.location;
+  if (hostname !== "localhost") {
+    return false;
+  }
+
+  return protocol === "https:" || protocol === "http:";
+}
+
+/** שמירה/שחזור נתיב ומצלמה — native או WebView shell (גם לפני טעינת bridge). */
+export function canUseCapacitorWebStorage(): boolean {
+  return isCapacitorNativePlatform() || isCapacitorWebViewShell();
+}

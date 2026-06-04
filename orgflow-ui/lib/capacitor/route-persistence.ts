@@ -1,9 +1,10 @@
-import { isCapacitorNativePlatform } from "@/lib/capacitor/platform";
+import { readLinePhotoCaptureContext } from "@/lib/capacitor/line-photo-capture-context";
+import { canUseCapacitorWebStorage } from "@/lib/capacitor/platform";
 
-const STORAGE_KEY = "elayoai-capacitor-last-route";
+export const CAPACITOR_LAST_ROUTE_STORAGE_KEY = "elayoai-capacitor-last-route";
 
 function routeStorage(): Storage | null {
-  if (!isCapacitorNativePlatform() || typeof window === "undefined") {
+  if (!canUseCapacitorWebStorage()) {
     return null;
   }
 
@@ -17,7 +18,7 @@ export function readCapacitorPersistedRoute(): string | null {
     return null;
   }
 
-  const raw = storage.getItem(STORAGE_KEY)?.trim();
+  const raw = storage.getItem(CAPACITOR_LAST_ROUTE_STORAGE_KEY)?.trim();
   if (!raw || raw === "/") {
     return null;
   }
@@ -36,7 +37,7 @@ export function writeCapacitorPersistedRoute(path: string): void {
     return;
   }
 
-  storage.setItem(STORAGE_KEY, normalized);
+  storage.setItem(CAPACITOR_LAST_ROUTE_STORAGE_KEY, normalized);
 }
 
 export function clearCapacitorPersistedRoute(): void {
@@ -45,7 +46,7 @@ export function clearCapacitorPersistedRoute(): void {
     return;
   }
 
-  storage.removeItem(STORAGE_KEY);
+  storage.removeItem(CAPACITOR_LAST_ROUTE_STORAGE_KEY);
 }
 
 export function currentDocumentPath(): string {
@@ -56,26 +57,39 @@ export function currentDocumentPath(): string {
   return `${window.location.pathname}${window.location.search}`;
 }
 
+export function isBootstrapCapacitorPath(pathname: string): boolean {
+  const normalized = pathname.replace(/\/index\.html$/i, "") || "/";
+  return normalized === "/" || normalized === "";
+}
+
+function isRestorableCapacitorTarget(target: string): boolean {
+  return (
+    target.startsWith("/field-reports")
+    || target.startsWith("/portfolio")
+    || target.startsWith("/projects")
+  );
+}
+
+export function resolveCapacitorRestoreTarget(): string | null {
+  const saved = readCapacitorPersistedRoute();
+  if (saved) {
+    return saved;
+  }
+
+  const pendingPhoto = readLinePhotoCaptureContext();
+  return pendingPhoto?.returnPath?.trim() || null;
+}
+
 /** האם לשחזר נתיב שמור במקום להישאר בדף הבית הציבורי. */
 export function shouldRestoreCapacitorRoute(pathname: string): boolean {
   if (!routeStorage()) {
     return false;
   }
 
-  const saved = readCapacitorPersistedRoute();
-  if (!saved) {
+  const target = resolveCapacitorRestoreTarget();
+  if (!target || !isRestorableCapacitorTarget(target)) {
     return false;
   }
 
-  const normalizedPath = pathname.replace(/\/index\.html$/i, "") || "/";
-
-  if (normalizedPath !== "/" && normalizedPath !== "") {
-    return false;
-  }
-
-  return (
-    saved.startsWith("/field-reports")
-    || saved.startsWith("/portfolio")
-    || saved.startsWith("/projects")
-  );
+  return isBootstrapCapacitorPath(pathname);
 }

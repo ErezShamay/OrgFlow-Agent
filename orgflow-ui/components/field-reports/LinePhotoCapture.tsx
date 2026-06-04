@@ -25,7 +25,11 @@ import {
   readLinePhotoCaptureContext,
   writeLinePhotoCaptureContext,
 } from "@/lib/capacitor/line-photo-capture-context";
-import { currentDocumentPath } from "@/lib/capacitor/route-persistence";
+import {
+  currentDocumentPath,
+  isBootstrapCapacitorPath,
+  resolveCapacitorRestoreTarget,
+} from "@/lib/capacitor/route-persistence";
 import { FR_TOUCH_BUTTON } from "@/lib/field-reports/touch-input-class";
 import { useOffline } from "@/providers/OfflineProvider";
 
@@ -76,20 +80,29 @@ export default function LinePhotoCapture({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const pending = readLinePhotoCaptureContext();
-    if (!pending) {
-      return;
-    }
+    void (async () => {
+      const pending = readLinePhotoCaptureContext();
+      if (!pending) {
+        return;
+      }
 
-    const resumeMessage = linePhotoCaptureResumeMessage(
-      pending,
-      reportId,
-      lineId
-    );
-    if (resumeMessage) {
-      setError(resumeMessage);
+      const resumeMessage = linePhotoCaptureResumeMessage(
+        pending,
+        reportId,
+        lineId
+      );
+      if (!resumeMessage) {
+        return;
+      }
+
+      const locals = await listLinePhotosForLine(reportId, lineId);
       clearLinePhotoCaptureContext();
-    }
+      if (locals.length > 0) {
+        return;
+      }
+
+      setError(resumeMessage);
+    })();
   }, [lineId, reportId]);
 
   useEffect(() => {
@@ -264,6 +277,52 @@ export default function LinePhotoCapture({
     }
   }
 
+  /**
+   * אחרי מצלמה native: אם WebView חזר לדף הבית — שומרים תמונה ל-IndexedDB ואז
+   * מחזירים לדוח (התמונה תיטען מהאחסון המקומי).
+   */
+  async function attachNativePickerResult(file: File) {
+    if (!isBootstrapCapacitorPath(window.location.pathname)) {
+      await handleFileSelected(file);
+      return;
+    }
+
+    const remoteCount =
+      photos.length > 0
+        ? photos.length
+        : hasServerPhoto
+          ? 1
+          : 0;
+    const localCount = await countLinePhotosLocally(reportId, lineId);
+    const totalCount = Math.max(localCount, remoteCount);
+    if (!canAddLinePhoto(totalCount)) {
+      setError(`ניתן לצרף עד ${MAX_LINE_PHOTOS} תמונות לשורה`);
+      return;
+    }
+
+    setError("");
+    setUploading(true);
+
+    try {
+      await saveLinePhotoLocally(reportId, lineId, file, {
+        pendingUpload: !isOnline,
+      });
+      clearLinePhotoCaptureContext();
+
+      const target = resolveCapacitorRestoreTarget();
+      if (target && currentDocumentPath() !== target) {
+        window.location.replace(target);
+        return;
+      }
+
+      await handleFileSelected(file);
+    } catch (err: unknown) {
+      setError(getPhotoActionErrorMessage(err, "save"));
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function removePhoto(photoId: string) {
     if (disabled) {
       return;
@@ -330,9 +389,11 @@ export default function LinePhotoCapture({
       });
       try {
         const file = await takeLinePhotoWithNativeCamera();
-        clearLinePhotoCaptureContext();
+        persistCapacitorRouteNow();
         if (file) {
-          await handleFileSelected(file);
+          await attachNativePickerResult(file);
+        } else {
+          clearLinePhotoCaptureContext();
         }
       } catch (err: unknown) {
         clearLinePhotoCaptureContext();
@@ -371,9 +432,11 @@ export default function LinePhotoCapture({
       });
       try {
         const file = await pickLinePhotoFromNativeGallery();
-        clearLinePhotoCaptureContext();
+        persistCapacitorRouteNow();
         if (file) {
-          await handleFileSelected(file);
+          await attachNativePickerResult(file);
+        } else {
+          clearLinePhotoCaptureContext();
         }
       } catch (err: unknown) {
         clearLinePhotoCaptureContext();

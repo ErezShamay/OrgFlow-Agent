@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { App } from "@capacitor/app";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { readLinePhotoCaptureContext } from "@/lib/capacitor/line-photo-capture-context";
-import { isCapacitorNativePlatform } from "@/lib/capacitor/platform";
+import {
+  canUseCapacitorWebStorage,
+  isCapacitorNativePlatform,
+} from "@/lib/capacitor/platform";
 import {
   currentDocumentPath,
-  readCapacitorPersistedRoute,
+  resolveCapacitorRestoreTarget,
   shouldRestoreCapacitorRoute,
   writeCapacitorPersistedRoute,
 } from "@/lib/capacitor/route-persistence";
@@ -23,23 +25,16 @@ function buildPersistedPath(
   return query ? `${pathname}?${query}` : pathname;
 }
 
-function resolveRestoreTarget(): string | null {
-  const saved = readCapacitorPersistedRoute();
-  if (saved) {
-    return saved;
-  }
-
-  const pendingPhoto = readLinePhotoCaptureContext();
-  return pendingPhoto?.returnPath?.trim() || null;
-}
-
-function navigateToRestoreTarget(target: string, router: ReturnType<typeof useRouter>) {
+function navigateToRestoreTarget(
+  target: string,
+  router: ReturnType<typeof useRouter>
+) {
   if (currentDocumentPath() === target) {
     return;
   }
 
-  if (isCapacitorNativePlatform()) {
-    window.location.assign(target);
+  if (canUseCapacitorWebStorage()) {
+    window.location.replace(target);
     return;
   }
 
@@ -54,7 +49,7 @@ function tryRestoreRoute(
     return false;
   }
 
-  const target = resolveRestoreTarget();
+  const target = resolveCapacitorRestoreTarget();
   if (!target) {
     return false;
   }
@@ -73,8 +68,16 @@ export default function CapacitorRoutePersistence() {
   const { user, loading } = useAuth();
   const restoredRef = useRef(false);
 
+  useLayoutEffect(() => {
+    if (!canUseCapacitorWebStorage() || !pathname) {
+      return;
+    }
+
+    tryRestoreRoute(pathname, router);
+  }, [pathname, router]);
+
   useEffect(() => {
-    if (!isCapacitorNativePlatform() || !pathname) {
+    if (!canUseCapacitorWebStorage() || !pathname) {
       return;
     }
 
@@ -88,22 +91,40 @@ export default function CapacitorRoutePersistence() {
       return;
     }
 
-    const listener = App.addListener("appStateChange", ({ isActive }) => {
-      if (!isActive) {
-        return;
-      }
+    const attachResumeRestore = async () => {
+      const handles = await Promise.all([
+        App.addListener("appStateChange", ({ isActive }) => {
+          if (!isActive) {
+            return;
+          }
 
-      tryRestoreRoute(window.location.pathname, router);
+          tryRestoreRoute(window.location.pathname, router);
+        }),
+        App.addListener("resume", () => {
+          tryRestoreRoute(window.location.pathname, router);
+        }),
+      ]);
+
+      return () => {
+        for (const handle of handles) {
+          void handle.remove();
+        }
+      };
+    };
+
+    let cleanup: (() => void) | undefined;
+    void attachResumeRestore().then((dispose) => {
+      cleanup = dispose;
     });
 
     return () => {
-      void listener.then((handle) => handle.remove());
+      cleanup?.();
     };
   }, [router]);
 
   useEffect(() => {
     if (
-      !isCapacitorNativePlatform()
+      !canUseCapacitorWebStorage()
       || loading
       || !user
       || restoredRef.current
@@ -115,7 +136,7 @@ export default function CapacitorRoutePersistence() {
       return;
     }
 
-    const target = resolveRestoreTarget();
+    const target = resolveCapacitorRestoreTarget();
     if (!target) {
       return;
     }
@@ -129,7 +150,7 @@ export default function CapacitorRoutePersistence() {
 
 /** לפני פתיחת מצלמה/גלריה — מבטיח שיש נתיב לשחזור. */
 export function persistCapacitorRouteNow(): void {
-  if (!isCapacitorNativePlatform() || typeof window === "undefined") {
+  if (!canUseCapacitorWebStorage()) {
     return;
   }
 

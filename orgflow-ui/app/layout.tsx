@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Suspense } from "react";
 
 import { ELAYOAI_APP_NAME } from "@/lib/elayoai/keys";
+import { CAPACITOR_ROUTE_RESTORE_SCRIPT } from "@/lib/capacitor/route-restore-script";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme-init-script";
 import { Toaster } from "sonner";
 
@@ -60,6 +61,9 @@ export default function RootLayout({
       >
         <Script id="elayoai-theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
+        </Script>
+        <Script id="elayoai-capacitor-route-restore" strategy="beforeInteractive">
+          {CAPACITOR_ROUTE_RESTORE_SCRIPT}
         </Script>
 
         <AppProviders>

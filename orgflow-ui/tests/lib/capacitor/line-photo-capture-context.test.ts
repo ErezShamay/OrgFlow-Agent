@@ -8,7 +8,9 @@ import {
 } from "@/lib/capacitor/line-photo-capture-context";
 
 vi.mock("@/lib/capacitor/platform", () => ({
-  isCapacitorNativePlatform: vi.fn(() => true),
+  isCapacitorNativePlatform: vi.fn(() => false),
+  isCapacitorWebViewShell: vi.fn(() => true),
+  canUseCapacitorWebStorage: vi.fn(() => true),
 }));
 
 function createLocalStorageMock() {
@@ -36,7 +38,12 @@ describe("line photo capture context", () => {
   it("persists return path and line ids for resume after camera", () => {
     vi.stubGlobal("window", {
       localStorage: createLocalStorageMock(),
-      location: { pathname: "/", search: "" },
+      location: {
+        pathname: "/",
+        search: "",
+        protocol: "https:",
+        hostname: "localhost",
+      },
     });
 
     writeLinePhotoCaptureContext({
@@ -54,7 +61,12 @@ describe("line photo capture context", () => {
   it("linePhotoCaptureResumeMessage matches same line only", () => {
     vi.stubGlobal("window", {
       localStorage: createLocalStorageMock(),
-      location: { pathname: "/", search: "" },
+      location: {
+        pathname: "/",
+        search: "",
+        protocol: "https:",
+        hostname: "localhost",
+      },
     });
 
     writeLinePhotoCaptureContext({

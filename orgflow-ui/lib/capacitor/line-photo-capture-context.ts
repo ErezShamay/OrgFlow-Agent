@@ -1,6 +1,7 @@
-import { isCapacitorNativePlatform } from "@/lib/capacitor/platform";
+import { canUseCapacitorWebStorage } from "@/lib/capacitor/platform";
 
-const STORAGE_KEY = "elayoai-line-photo-capture-context";
+export const LINE_PHOTO_CAPTURE_CONTEXT_KEY =
+  "elayoai-line-photo-capture-context";
 const MAX_AGE_MS = 10 * 60 * 1000;
 
 export type LinePhotoCaptureContext = {
@@ -12,8 +13,7 @@ export type LinePhotoCaptureContext = {
 
 function canPersist(): boolean {
   return (
-    isCapacitorNativePlatform()
-    && typeof window !== "undefined"
+    canUseCapacitorWebStorage()
     && typeof window.localStorage !== "undefined"
   );
 }
@@ -30,7 +30,10 @@ export function writeLinePhotoCaptureContext(
     startedAt: Date.now(),
   };
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  window.localStorage.setItem(
+    LINE_PHOTO_CAPTURE_CONTEXT_KEY,
+    JSON.stringify(payload)
+  );
   return;
 }
 
@@ -39,7 +42,7 @@ export function readLinePhotoCaptureContext(): LinePhotoCaptureContext | null {
     return null;
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  const raw = window.localStorage.getItem(LINE_PHOTO_CAPTURE_CONTEXT_KEY);
   if (!raw) {
     return null;
   }
@@ -72,7 +75,7 @@ export function clearLinePhotoCaptureContext(): void {
     return;
   }
 
-  window.localStorage.removeItem(STORAGE_KEY);
+  window.localStorage.removeItem(LINE_PHOTO_CAPTURE_CONTEXT_KEY);
 }
 
 export function linePhotoCaptureResumeMessage(
