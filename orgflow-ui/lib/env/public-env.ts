@@ -1,10 +1,25 @@
 import { isCapacitorAndroid } from "@/lib/capacitor/platform";
 
+/**
+ * Supabase ל-UI (anon בלבד).
+ *
+ * - בדפדפן Next.js חושף רק `NEXT_PUBLIC_*`.
+ * - `SUPABASE_URL` / `SUPABASE_ANON_KEY` (בלי NEXT_PUBLIC) — fallback ל-SSR/build בלבד;
+ *   לא מחליף את הצורך ב-NEXT_PUBLIC_* ב-Vercel ל-login בדפדפן.
+ * - לעולם לא להשתמש ב-`SUPABASE_KEY` (service_role) כאן.
+ */
 export function getSupabasePublicConfig() {
-  return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "",
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || "",
-  };
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+    || process.env.SUPABASE_URL?.trim()
+    || "";
+
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+    || process.env.SUPABASE_ANON_KEY?.trim()
+    || "";
+
+  return { url, anonKey };
 }
 
 export function isSupabaseConfigured(): boolean {
@@ -36,7 +51,7 @@ export function describeMobileAuthConfig(): string | null {
 
   if (!isSupabaseConfigured()) {
     problems.push(
-      "חסרים NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY ב-build"
+      "חסרים NEXT_PUBLIC_SUPABASE_URL ו-NEXT_PUBLIC_SUPABASE_ANON_KEY (או SUPABASE_URL + SUPABASE_ANON_KEY ל-build)"
     );
   }
 
