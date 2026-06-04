@@ -397,6 +397,7 @@ FRONTEND_URLS = list(
     dict.fromkeys(
         [
             FRONTEND_URL,
+            *settings.get_cors_extra_origins(),
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "https://localhost:3000",
@@ -516,6 +517,7 @@ app.add_middleware(
     APIAuthorizationMiddleware,
     public_paths={
         "/",
+        "/health",
         "/healthcheck",
         "/readiness",
         "/liveness",
@@ -1150,6 +1152,7 @@ def root():
 
 
 @app.get("/healthcheck")
+@app.get("/health")
 def healthcheck():
 
     return {

@@ -15,6 +15,10 @@ Internal organizational workflow agent MVP.
 - FastAPI endpoints
 - Pytest coverage
 
+## Deploy to cloud (preview, ~$0/month)
+
+See [docs/deploy-preview-cloud.md](docs/deploy-preview-cloud.md) — Vercel (UI) + Render (API) + Supabase (DB).
+
 ## Run locally
 
 ```bash

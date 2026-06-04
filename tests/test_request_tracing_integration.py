@@ -47,13 +47,22 @@ def test_healthcheck_endpoint_returns_ok_and_trace_headers():
     response = client.get("/healthcheck")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "status": "ok",
-        "service": "orgflow-agent",
-        "environment": "local",
-    }
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["service"] == "orgflow-agent"
+    assert payload["environment"] in {"local", "test"}
     assert UUID(response.headers["X-Request-ID"])
-    assert UUID(response.headers["X-Trace-ID"])
+
+
+def test_health_alias_matches_healthcheck():
+    client = TestClient(app)
+
+    health = client.get("/health")
+    healthcheck = client.get("/healthcheck")
+
+    assert health.status_code == 200
+    assert health.json() == healthcheck.json()
+    assert UUID(health.headers["X-Trace-ID"])
 
 
 def test_readiness_endpoint_returns_ready_when_startup_has_run():

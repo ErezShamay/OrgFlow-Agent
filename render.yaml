@@ -1,0 +1,49 @@
+# Render Blueprint — OrgFlow API (חינמי / preview)
+# https://render.com/docs/blueprint-spec
+#
+# פריסה: Dashboard → New → Blueprint → בחר repo זה.
+# אחרי ה-URL של Vercel: עדכן FRONTEND_URL + CORS_EXTRA_ORIGINS (אופציונלי).
+
+services:
+  - type: web
+    name: orgflow-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+    healthCheckPath: /healthcheck
+    envVars:
+      - key: ENVIRONMENT
+        value: staging
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_EXTRA_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: AUTH_JWT_SECRET
+        generateValue: true
+      - key: ORG_FLOW_LLM_MODE
+        value: mock
+      - key: AI_PROVIDER
+        value: openai
+      - key: DEFAULT_AI_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: AI_MAX_RETRIES
+        value: "2"
+      - key: LOG_LEVEL
+        value: WARNING
+      - key: EMAIL_PROVIDER
+        value: gmail
+      - key: FEATURE_AI_REVIEW
+        value: "false"
+      - key: FEATURE_AUTOMATION
+        value: "false"
+      - key: FEATURE_EMAIL_DELIVERY
+        value: "false"
+      - key: FEATURE_NOTIFICATIONS
+        value: "false"

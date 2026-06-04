@@ -88,6 +88,7 @@ class Settings(BaseModel):
     AUTH_JWT_ALGORITHM: str = "HS256"
     AUTH_SESSION_TIMEOUT_MINUTES: int = 60
     AUTH_REFRESH_TOKEN_TTL_MINUTES: int = 1440
+    CORS_EXTRA_ORIGINS: Optional[str] = None
     FEATURE_FLAGS: FeatureFlags
 
     @field_validator("FRONTEND_URL", mode="before")
@@ -219,6 +220,16 @@ class Settings(BaseModel):
                 deduplicated.append(provider)
         return deduplicated
 
+    def get_cors_extra_origins(self) -> list[str]:
+        if not self.CORS_EXTRA_ORIGINS:
+            return []
+        origins: list[str] = []
+        for part in self.CORS_EXTRA_ORIGINS.split(","):
+            normalized = part.strip().rstrip("/")
+            if normalized:
+                origins.append(normalized)
+        return origins
+
 
 def _env(name: str, default: str | None = None) -> str | None:
     raw = os.getenv(name)
@@ -275,6 +286,7 @@ def load_settings() -> Settings:
             "AUTH_REFRESH_TOKEN_TTL_MINUTES": int(
                 os.getenv("AUTH_REFRESH_TOKEN_TTL_MINUTES", "1440")
             ),
+            "CORS_EXTRA_ORIGINS": os.getenv("CORS_EXTRA_ORIGINS"),
             "FEATURE_FLAGS": FeatureFlags.from_env(),
         }
 

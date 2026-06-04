@@ -59,3 +59,26 @@ def test_load_settings_parses_feature_flags_from_environment(monkeypatch):
     assert settings.FEATURE_FLAGS.enable_automation is False
     assert settings.FEATURE_FLAGS.enable_ai_review is True
     assert settings.FEATURE_FLAGS.enable_email_delivery is True
+
+
+def test_load_settings_parses_cors_extra_origins(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "local")
+    monkeypatch.setenv("FRONTEND_URL", "http://localhost:3000")
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setenv("DEFAULT_AI_MODEL", "mistral")
+    monkeypatch.setenv("AI_MAX_RETRIES", "2")
+    monkeypatch.setenv("ORG_FLOW_LLM_MODE", "mock")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.5")
+    monkeypatch.setenv("LOG_LEVEL", "INFO")
+    monkeypatch.setenv("EMAIL_PROVIDER", "gmail")
+    monkeypatch.setenv(
+        "CORS_EXTRA_ORIGINS",
+        "https://app.vercel.app/, https://preview.vercel.app",
+    )
+
+    settings = load_settings()
+
+    assert settings.get_cors_extra_origins() == [
+        "https://app.vercel.app",
+        "https://preview.vercel.app",
+    ]
