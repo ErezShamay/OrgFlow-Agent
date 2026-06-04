@@ -2,6 +2,7 @@ import Sidebar from "@/app/components/sidebar";
 
 import UserMenu from "@/components/auth/UserMenu";
 import OrgSwitcher from "@/components/admin/OrgSwitcher";
+import DashboardProviders from "@/components/dashboard/DashboardProviders";
 
 export default function DashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <DashboardProviders>
     <div className="of-app-bg flex min-h-screen flex-col lg:flex-row">
       <Sidebar />
 
@@ -42,5 +44,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </DashboardProviders>
   );
 }

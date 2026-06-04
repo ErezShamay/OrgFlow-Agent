@@ -5,6 +5,7 @@ import Link from "next/link";
 import FieldReportsOfflineGuide from "@/components/field-reports/FieldReportsOfflineGuide";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import LoadingState from "@/components/ui/LoadingState";
 import { apiFetch } from "@/lib/api/client";
 import { fieldReportDetailPath } from "@/lib/field-reports/routes";
 import { isFieldReportVisibleInList } from "@/lib/field-reports/field-report-list";
@@ -43,6 +44,7 @@ export default function FieldReportsPage() {
   const [inProgressCount, setInProgressCount] = useState(0);
   const [statusFilter, setStatusFilter] = useState("");
   const [reportsLoading, setReportsLoading] = useState(false);
+  const [initialReportsReady, setInitialReportsReady] = useState(false);
   const [reportsError, setReportsError] = useState("");
   const [showOfflineGuide, setShowOfflineGuide] = useState(true);
   const importedInProgressCount = offlinePrep.importSummary
@@ -155,24 +157,26 @@ export default function FieldReportsPage() {
       );
     } finally {
       setReportsLoading(false);
+      setInitialReportsReady(true);
     }
   }, [statusFilter]);
+
+  useEffect(() => {
+    setInitialReportsReady(false);
+    setReports([]);
+    setInProgressCount(0);
+    setReportsError("");
+  }, [organizationId]);
 
   useEffect(() => {
     if (!isEnabled) {
       return;
     }
 
-    const timer = window.setTimeout(() => {
-      void loadReports(statusFilter);
-      if (statusFilter !== "IN_PROGRESS") {
-        void loadInProgressCount();
-      }
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
+    void loadReports(statusFilter);
+    if (statusFilter !== "IN_PROGRESS") {
+      void loadInProgressCount();
+    }
   }, [isEnabled, statusFilter, loadReports, loadInProgressCount]);
 
   useEffect(() => {
@@ -200,10 +204,14 @@ export default function FieldReportsPage() {
     };
   }, [isEnabled, statusFilter, loadReports, loadInProgressCount]);
 
-  if (loading && !isEnabled && !status) {
+  const bootstrapping =
+    (loading && !status && !error)
+    || (isEnabled && !initialReportsReady && !reportsError);
+
+  if (bootstrapping) {
     return (
-      <div className="of-container mx-auto max-w-3xl p-8 text-sm text-zinc-500">
-        טוען מודול הפקת דוחות...
+      <div className="of-container mx-auto max-w-3xl p-8">
+        <LoadingState message="טוען הפקת דוחות..." variant="spinner" />
       </div>
     );
   }
