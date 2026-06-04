@@ -42,7 +42,22 @@ class TableSchema:
     audited: bool = True
 
 
-SCHEMA_VERSION = "2026052901"
+SCHEMA_VERSION = "2026060401"
+
+# Matches deploy/sql/20260604_enable_rls_best_practice.sql (authenticated SELECT + service_role bypass).
+ORGFLOW_TENANT_ISOLATION = (
+    "organization_id = public.orgflow_jwt_organization_id()"
+)
+ORGFLOW_ORGANIZATION_ISOLATION = (
+    "id = public.orgflow_jwt_organization_id()"
+)
+ORGFLOW_PROFILE_SELF = "id = auth.uid()"
+ORGFLOW_PROJECT_SCOPE = (
+    "project_id IN ("
+    "SELECT p.id FROM public.projects AS p "
+    "WHERE p.organization_id = public.orgflow_jwt_organization_id()"
+    ")"
+)
 
 TABLES: dict[str, TableSchema] = {
     "organizations": TableSchema(
@@ -55,9 +70,9 @@ TABLES: dict[str, TableSchema] = {
         ),
         rls_policies=(
             RlsPolicyDef(
-                name="organizations_tenant_select",
+                name="organizations_authenticated_select",
                 command="SELECT",
-                using_expression="auth.uid() IS NOT NULL",
+                using_expression=ORGFLOW_ORGANIZATION_ISOLATION,
             ),
         ),
     ),
@@ -75,8 +90,8 @@ TABLES: dict[str, TableSchema] = {
         rls_policies=(
             RlsPolicyDef(
                 name="projects_tenant_isolation",
-                command="ALL",
-                using_expression="organization_id = current_setting('app.organization_id')::uuid",
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
             ),
         ),
     ),
@@ -92,35 +107,33 @@ TABLES: dict[str, TableSchema] = {
         ),
         rls_policies=(
             RlsPolicyDef(
-                name="profiles_tenant_isolation",
-                command="ALL",
-                using_expression="organization_id = current_setting('app.organization_id')::uuid",
+                name="profiles_authenticated_select",
+                command="SELECT",
+                using_expression=ORGFLOW_PROFILE_SELF,
             ),
         ),
     ),
     "weekly_reports": TableSchema(
         name="weekly_reports",
-        tenant_column="organization_id",
+        tenant_column=None,
         foreign_keys=(
             ForeignKeyDef("project_id", "projects"),
-            ForeignKeyDef("organization_id", "organizations"),
         ),
         indexes=(
             IndexDef("weekly_reports_pkey", ("id",), unique=True),
             IndexDef("weekly_reports_project_idx", ("project_id",)),
-            IndexDef("weekly_reports_org_created_idx", ("organization_id", "created_at")),
         ),
         rls_policies=(
             RlsPolicyDef(
-                name="weekly_reports_tenant_isolation",
-                command="ALL",
-                using_expression="organization_id = current_setting('app.organization_id')::uuid",
+                name="weekly_reports_authenticated_select",
+                command="SELECT",
+                using_expression=ORGFLOW_PROJECT_SCOPE,
             ),
         ),
     ),
     "ai_interpretations": TableSchema(
         name="ai_interpretations",
-        tenant_column="organization_id",
+        tenant_column=None,
         foreign_keys=(
             ForeignKeyDef("report_id", "weekly_reports"),
             ForeignKeyDef("project_id", "projects"),
@@ -131,9 +144,14 @@ TABLES: dict[str, TableSchema] = {
         ),
         rls_policies=(
             RlsPolicyDef(
-                name="ai_interpretations_tenant_isolation",
-                command="ALL",
-                using_expression="organization_id = current_setting('app.organization_id')::uuid",
+                name="ai_interpretations_authenticated_select",
+                command="SELECT",
+                using_expression=(
+                    "report_id IN ("
+                    "SELECT wr.id FROM public.weekly_reports AS wr "
+                    "INNER JOIN public.projects AS p ON p.id = wr.project_id "
+                    "WHERE p.organization_id = public.orgflow_jwt_organization_id())"
+                ),
             ),
         ),
     ),
@@ -150,8 +168,8 @@ TABLES: dict[str, TableSchema] = {
         rls_policies=(
             RlsPolicyDef(
                 name="operational_actions_tenant_isolation",
-                command="ALL",
-                using_expression="organization_id = current_setting('app.organization_id')::uuid",
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
             ),
         ),
     ),
@@ -168,8 +186,8 @@ TABLES: dict[str, TableSchema] = {
         rls_policies=(
             RlsPolicyDef(
                 name="automation_runs_tenant_isolation",
-                command="ALL",
-                using_expression="organization_id = current_setting('app.organization_id')::uuid",
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
             ),
         ),
     ),
@@ -195,7 +213,7 @@ TABLES: dict[str, TableSchema] = {
             RlsPolicyDef(
                 name="ai_execution_logs_tenant_isolation",
                 command="SELECT",
-                using_expression="organization_id = current_setting('app.organization_id')::uuid",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
             ),
         ),
     ),
@@ -215,11 +233,8 @@ TABLES: dict[str, TableSchema] = {
         rls_policies=(
             RlsPolicyDef(
                 name="organization_field_report_modules_tenant_isolation",
-                command="ALL",
-                using_expression=(
-                    "organization_id = "
-                    "current_setting('app.organization_id')::uuid"
-                ),
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
             ),
         ),
         audited=False,
@@ -248,11 +263,8 @@ TABLES: dict[str, TableSchema] = {
         rls_policies=(
             RlsPolicyDef(
                 name="field_visit_reports_tenant_isolation",
-                command="ALL",
-                using_expression=(
-                    "organization_id = "
-                    "current_setting('app.organization_id')::uuid"
-                ),
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
             ),
         ),
     ),
@@ -286,11 +298,8 @@ TABLES: dict[str, TableSchema] = {
         rls_policies=(
             RlsPolicyDef(
                 name="field_visit_report_lines_tenant_isolation",
-                command="ALL",
-                using_expression=(
-                    "organization_id = "
-                    "current_setting('app.organization_id')::uuid"
-                ),
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
             ),
         ),
     ),
@@ -320,13 +329,120 @@ TABLES: dict[str, TableSchema] = {
         rls_policies=(
             RlsPolicyDef(
                 name="field_visit_report_line_photos_tenant_isolation",
-                command="ALL",
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
+            ),
+        ),
+    ),
+    "notifications": TableSchema(
+        name="notifications",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(
+            RlsPolicyDef(
+                name="notifications_authenticated_select",
+                command="SELECT",
+                using_expression="profile_id = auth.uid()",
+            ),
+        ),
+        audited=False,
+    ),
+    "action_comments": TableSchema(
+        name="action_comments",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(
+            RlsPolicyDef(
+                name="action_comments_authenticated_select",
+                command="SELECT",
                 using_expression=(
-                    "organization_id = "
-                    "current_setting('app.organization_id')::uuid"
+                    "EXISTS (SELECT 1 FROM operational_actions o "
+                    "JOIN projects p ON p.id = o.project_id "
+                    "WHERE o.id = action_comments.action_id "
+                    "AND p.organization_id = public.orgflow_jwt_organization_id())"
                 ),
             ),
         ),
+        audited=False,
+    ),
+    "workspace_activity": TableSchema(
+        name="workspace_activity",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(
+            RlsPolicyDef(
+                name="workspace_activity_authenticated_select",
+                command="SELECT",
+                using_expression=ORGFLOW_PROJECT_SCOPE,
+            ),
+        ),
+        audited=False,
+    ),
+    "reports": TableSchema(
+        name="reports",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(
+            RlsPolicyDef(
+                name="reports_authenticated_select",
+                command="SELECT",
+                using_expression=ORGFLOW_PROJECT_SCOPE,
+            ),
+        ),
+        audited=False,
+    ),
+    "findings": TableSchema(
+        name="findings",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(
+            RlsPolicyDef(
+                name="findings_authenticated_select",
+                command="SELECT",
+                using_expression=ORGFLOW_PROJECT_SCOPE,
+            ),
+        ),
+        audited=False,
+    ),
+    "automation_locks": TableSchema(
+        name="automation_locks",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(),
+        audited=False,
+    ),
+    "approval_requests": TableSchema(
+        name="approval_requests",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(),
+        audited=False,
+    ),
+    "workflow_runs": TableSchema(
+        name="workflow_runs",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(),
+        audited=False,
+    ),
+    "ai_logs": TableSchema(
+        name="ai_logs",
+        tenant_column=None,
+        soft_delete_column=None,
+        rls_policies=(),
+        audited=False,
+    ),
+    "ai_operation_fingerprints": TableSchema(
+        name="ai_operation_fingerprints",
+        tenant_column="organization_id",
+        rls_policies=(
+            RlsPolicyDef(
+                name="ai_operation_fingerprints_authenticated_select",
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
+            ),
+        ),
+        audited=False,
     ),
 }
 
@@ -430,6 +546,15 @@ MIGRATION_SCRIPTS: list[dict] = [
             "field_visit_reports",
             "field_visit_report_lines",
         ],
+    },
+    {
+        "version": "2026060401",
+        "name": "enable_rls_best_practice",
+        "description": (
+            "Enable RLS on public tables; authenticated SELECT only; "
+            "service_role backend unchanged"
+        ),
+        "tables": list(TABLES.keys()),
     },
 ]
 

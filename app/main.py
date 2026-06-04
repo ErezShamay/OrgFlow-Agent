@@ -25,6 +25,9 @@ from pydantic import BaseModel, Field
 from postgrest.exceptions import APIError
 
 from app.auth.password_policy import get_password_policy
+from app.auth.supabase_session_metadata import (
+    sync_active_organization_metadata,
+)
 from app.config.settings import settings
 from app.config import config_manager
 from app.auth import (
@@ -1348,6 +1351,12 @@ def exchange_supabase_session(request: ExchangeTokenRequest):
                 "Run tenant migration in Supabase."
             ),
         )
+
+    sync_active_organization_metadata(
+        user_id=user_id,
+        organization_id=org_id,
+        role=role,
+    )
 
     access_token = jwt_service.issue_access_token(
         user_id=request.user_id,

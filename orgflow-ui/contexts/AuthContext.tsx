@@ -196,6 +196,18 @@ export function AuthProvider({
         nextSession.user.id,
         organizationId,
       );
+
+      const { data: refreshed, error: refreshError } =
+        await supabase.auth.refreshSession();
+      if (refreshError) {
+        logAuthWarn("bootstrap:refresh_session_failed", {
+          userId: nextSession.user.id,
+          message: refreshError.message,
+        });
+      } else if (refreshed.session) {
+        nextSession = refreshed.session;
+      }
+
       setSessionRole(exchangeData.role || null);
       setCurrentOrgId(exchangeData.org_id || null);
       await loadProfile(nextSession.user.id);

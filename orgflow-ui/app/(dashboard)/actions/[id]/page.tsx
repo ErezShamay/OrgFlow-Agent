@@ -202,7 +202,7 @@ export default function ActionDetailsPage() {
       `timeline-${actionId}`,
 
     table:
-      "workspace_activities",
+      "workspace_activity",
 
     onChange: () => {
 
