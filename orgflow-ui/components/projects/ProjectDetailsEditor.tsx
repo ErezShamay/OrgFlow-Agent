@@ -156,9 +156,18 @@ export default function ProjectDetailsEditor({
 
   if (!editing) {
     return (
-      <div>
-        {canEdit ? (
-          <div className="mb-6 flex justify-end">
+      <div className="mt-8 border-t border-zinc-200 pt-8 dark:border-zinc-700">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">פרטי הפרויקט</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              {canEdit
+                ? "יזם, קבלן, עורכי דין, מפקח ושאר אנשי הקשר בפרויקט"
+                : "צפייה בלבד — לעריכה נדרשת הרשאת מנהל, מפקח או מנהל תפעול"}
+            </p>
+          </div>
+
+          {canEdit ? (
             <Button
               type="button"
               variant="secondary"
@@ -167,8 +176,8 @@ export default function ProjectDetailsEditor({
             >
               עריכת פרטים
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <InfoCard title="שם היזם" value={displayValue(project.developer_name)} />
@@ -207,7 +216,17 @@ export default function ProjectDetailsEditor({
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6">
+    <form
+      onSubmit={handleSave}
+      className="mt-8 space-y-6 border-t border-zinc-200 pt-8 dark:border-zinc-700"
+    >
+      <div>
+        <h2 className="text-2xl font-bold">עריכת פרטי הפרויקט</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          עדכון יזם, קבלן, עורכי דין, מפקח ושאר אנשי הקשר
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <Field
           label="שם הפרויקט"

@@ -345,6 +345,28 @@ body {
   font-weight: 700;
 }
 
+.of-info-card {
+  border-radius: 1rem;
+  background: rgb(244 244 245 / 0.8);
+  padding: 1.5rem;
+}
+
+.dark .of-info-card {
+  background: rgb(39 39 42 / 0.5);
+}
+
+.of-info-card-label {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--of-color-text-muted);
+}
+
+.of-info-card-value {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .of-page-title {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 900;
