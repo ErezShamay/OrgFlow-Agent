@@ -14,7 +14,11 @@ import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeli
 
 import ProjectDetailsEditor from "@/components/projects/ProjectDetailsEditor";
 import ProjectInsightsPanel from "@/components/projects/ProjectInsightsPanel";
-import ProjectReportsArchive from "@/components/projects/ProjectReportsArchive";
+import ProjectDocumentsArchive from "@/components/projects/ProjectDocumentsArchive";
+import {
+  AI_REVIEWS_KPI_LABEL,
+  normalizeRtlOperationalSummary,
+} from "@/lib/ui/bidi-text";
 import { canEditProjects } from "@/lib/auth/permissions";
 
 export default function ProjectDetailsPage() {
@@ -208,7 +212,7 @@ export default function ProjectDetailsPage() {
       >
 
         <KpiCard
-          title="ביקורות AI"
+          title={AI_REVIEWS_KPI_LABEL}
           value={summary.reviews_count}
         />
 
@@ -386,11 +390,16 @@ export default function ProjectDetailsPage() {
             text-zinc-700
             dark:text-zinc-300
           "
+          dir="rtl"
         >
           {
             operationalSummaryLoading
               ? "מייצר סיכום תפעולי..."
               : operationalSummary?.summary
+                ? normalizeRtlOperationalSummary(
+                    operationalSummary.summary
+                  )
+                : null
           }
         </div>
 
@@ -406,7 +415,7 @@ export default function ProjectDetailsPage() {
 
       </div>
 
-      <ProjectReportsArchive projectId={projectId} />
+      <ProjectDocumentsArchive projectId={projectId} />
 
       {/* TIMELINE */}
 
@@ -818,6 +827,7 @@ function KpiCard({
       <p
         className={`
           mb-3
+          [unicode-bidi:plaintext]
 
           ${
             danger
@@ -825,6 +835,7 @@ function KpiCard({
               : "text-zinc-500"
           }
         `}
+        dir="rtl"
       >
         {title}
       </p>
@@ -833,6 +844,7 @@ function KpiCard({
         className={`
           text-5xl
           font-black
+          [unicode-bidi:isolate]
 
           ${
             danger
@@ -840,6 +852,7 @@ function KpiCard({
               : ""
           }
         `}
+        dir="ltr"
       >
         {value}
       </h2>

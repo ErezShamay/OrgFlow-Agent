@@ -5,6 +5,10 @@ import { useEffect, useRef, useState } from "react";
 
 import Button from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api/client";
+import {
+  normalizeProjectList,
+  readApiErrorMessage,
+} from "@/lib/api/read-error-message";
 import { showToast } from "@/lib/ui/toast";
 
 type Project = {
@@ -24,10 +28,15 @@ export default function UploadPage() {
     async function loadProjects() {
       try {
         const response = await apiFetch("/projects");
+        if (!response.ok) {
+          throw new Error("Failed to load projects");
+        }
+
         const data = await response.json();
-        setProjects(data);
+        setProjects(normalizeProjectList(data));
       } catch (error) {
         console.error(error);
+        showToast("שגיאה בטעינת רשימת הפרויקטים", "error");
       }
     }
 
@@ -69,14 +78,22 @@ export default function UploadPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Upload failed");
+        const message = await readApiErrorMessage(
+          response,
+          "שגיאה בהעלאת הדוח"
+        );
+        showToast(message, "error");
+        return;
       }
 
-      showToast("הדוח הועלה בהצלחה", "success");
+      showToast("הדוח הועלה בהצלחה — הוא יופיע בארכיון מסמכי הפרויקט", "success");
       setSelectedFile(null);
     } catch (error) {
       console.error(error);
-      showToast("שגיאה בהעלאת הדוח", "error");
+      showToast(
+        error instanceof Error ? error.message : "שגיאה בהעלאת הדוח",
+        "error"
+      );
     } finally {
       setUploading(false);
     }

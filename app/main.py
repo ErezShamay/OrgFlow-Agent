@@ -2976,8 +2976,12 @@ def add_project_comment(project_id: str, request: ProjectCommentRequest):
 async def upload_report(
     project_id: str = Form(...),
     file: UploadFile = File(...),
+    auth=Depends(require_permission("reports:write")),
 ):
-    project = project_repository.get_project_by_id(project_id)
+    project = tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    )
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -2995,6 +2999,18 @@ async def upload_report(
             filename=file.filename or target_path.name,
             file_path=str(target_path),
         )
+    except Exception:
+        logger.exception(
+            "Report upload processing failed",
+            extra={"project_id": project_id},
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error_code": "REPORT_PROCESSING_FAILED",
+                "message": "Report processing failed",
+            },
+        ) from None
     finally:
         if target_path.exists():
             target_path.unlink()
@@ -3057,6 +3073,20 @@ def get_reports_bulk_upload_progress(project_id: str, job_id: str):
     if not progress:
         raise HTTPException(status_code=404, detail="Bulk upload job not found")
     return progress
+
+
+@app.get("/projects/{project_id}/reports/uploads")
+def list_project_uploaded_reports(
+    project_id: str,
+    auth=Depends(require_permission("reports:read")),
+):
+    if not tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    ):
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return report_processing_service.list_project_uploaded_reports(project_id)
 
 
 @app.get("/projects/{project_id}/reports/timeline")

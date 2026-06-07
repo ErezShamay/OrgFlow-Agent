@@ -73,7 +73,7 @@ class OperationalSummaryService:
 פעולות פתוחות:
 {len(actions)}
 
-ביקורות AI:
+ביקורות בינה מלאכותית:
 {len(reviews)}
 
 רשימת פעולות:
@@ -83,6 +83,8 @@ class OperationalSummaryService:
 {reviews}
 
 החזר תשובה בעברית בלבד.
+אל תשתמש בקיצור «AI» באנגלית — כתוב «בינה מלאכותית».
+כשמציג מספרים ליד תווית, כתוב למשל: «מספר ביקורות בינה מלאכותית: 3».
 
 המבנה:
 
@@ -103,9 +105,9 @@ class OperationalSummaryService:
             )
         except Exception:
             summary = (
-                "סיכום AI אינו זמין כרגע.\n\n"
+                "סיכום בינה מלאכותית אינו זמין כרגע.\n\n"
                 f"פעולות פתוחות: {len(actions)}\n"
-                f"ביקורות AI: {len(reviews)}"
+                f"מספר ביקורות בינה מלאכותית: {len(reviews)}"
             )
 
         payload = {

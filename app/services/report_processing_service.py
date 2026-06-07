@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import re
 from uuid import uuid4
 from datetime import UTC, datetime
@@ -10,7 +11,9 @@ from app.services.report_text_extraction_service import ReportTextExtractionServ
 
 
 class ReportProcessingService:
-    ALLOWED_REPORT_EXTENSIONS = {"pdf", "doc", "docx", "xls", "xlsx", "csv", "txt"}
+    ALLOWED_REPORT_EXTENSIONS = {
+        "pdf", "doc", "docx", "xls", "xlsx", "csv", "txt", "png", "jpg", "jpeg",
+    }
     MAX_REPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
     def __init__(self):
@@ -138,22 +141,16 @@ class ReportProcessingService:
             email_subject=versioned_subject,
         )
 
-        interpretation_response = (
-            supabase.table("ai_interpretations")
-            .insert(
-                {
-                    "project_id": project_id,
-                    "business_impact": text_preview,
-                    "tenant_risk": "MEDIUM",
-                    "recommended_action": classification["recommended_action"],
-                    "review_status": "PENDING",
-                    "metadata": metadata,
-                }
-            )
-            .execute()
+        interpretation = self._persist_upload_interpretation(
+            project_id=project_id,
+            report_id=str(created_report.get("id")),
+            filename=filename,
+            text_preview=text_preview,
+            extracted_text=extracted_text,
+            classification=classification,
+            metadata=metadata,
+            ai_insights=ai_insights,
         )
-
-        interpretation = interpretation_response.data[0] if interpretation_response.data else None
         index_entry = self.index_report(
             project_id=project_id,
             report_id=created_report.get("id"),
@@ -462,6 +459,191 @@ class ReportProcessingService:
             if isinstance(preview, str) and preview.strip():
                 previews.append(preview)
         return previews
+
+    def _get_interpretations_by_report_ids(
+        self,
+        report_ids: list[str],
+    ) -> dict[str, dict]:
+        if not report_ids:
+            return {}
+
+        try:
+            findings_response = (
+                supabase.table("findings")
+                .select("id, report_id, metadata, created_at")
+                .in_("report_id", report_ids)
+                .order("created_at", desc=True)
+                .execute()
+            )
+        except Exception:
+            return {}
+
+        findings_by_report: dict[str, dict] = {}
+        finding_ids: list[str] = []
+        for row in findings_response.data or []:
+            report_id = row.get("report_id")
+            finding_id = row.get("id")
+            if not report_id or not finding_id:
+                continue
+
+            report_id_str = str(report_id)
+            if report_id_str in findings_by_report:
+                continue
+
+            findings_by_report[report_id_str] = row
+            finding_ids.append(str(finding_id))
+
+        if not finding_ids:
+            return {}
+
+        try:
+            response = (
+                supabase.table("ai_interpretations")
+                .select(
+                    "finding_id, business_impact, recommended_action, "
+                    "tenant_risk, review_status"
+                )
+                .in_("finding_id", finding_ids)
+                .execute()
+            )
+        except Exception:
+            return {}
+
+        interpretations_by_finding = {
+            str(row["finding_id"]): row
+            for row in response.data or []
+            if row.get("finding_id")
+        }
+
+        interpretations: dict[str, dict] = {}
+        for report_id, finding in findings_by_report.items():
+            interpretation = interpretations_by_finding.get(str(finding["id"]))
+            if not interpretation:
+                continue
+
+            interpretations[report_id] = {
+                **interpretation,
+                "metadata": finding.get("metadata") or {},
+            }
+
+        return interpretations
+
+    def _persist_upload_interpretation(
+        self,
+        *,
+        project_id: str,
+        report_id: str,
+        filename: str,
+        text_preview: str,
+        extracted_text: str,
+        classification: dict,
+        metadata: dict,
+        ai_insights: dict,
+    ) -> dict | None:
+        severity_by_category = {
+            "SAFETY": "high",
+            "DELAY": "medium",
+            "BUDGET": "medium",
+            "QUALITY": "medium",
+            "GENERAL": "medium",
+        }
+        category = classification.get("category", "GENERAL")
+
+        finding_response = (
+            supabase.table("findings")
+            .insert(
+                {
+                    "report_id": report_id,
+                    "project_id": project_id,
+                    "finding_type": category,
+                    "severity": severity_by_category.get(category, "medium"),
+                    "title": filename,
+                    "summary": text_preview,
+                    "source_text": extracted_text[:5000],
+                    "metadata": metadata,
+                }
+            )
+            .execute()
+        )
+        created_finding = finding_response.data[0] if finding_response.data else None
+        if not created_finding:
+            return None
+
+        interpretation_response = (
+            supabase.table("ai_interpretations")
+            .insert(
+                {
+                    "finding_id": created_finding.get("id"),
+                    "project_id": project_id,
+                    "model_name": "upload-pipeline",
+                    "business_impact": text_preview,
+                    "tenant_risk": "MEDIUM",
+                    "recommended_action": classification["recommended_action"],
+                    "raw_response": json.dumps(
+                        {
+                            "metadata": metadata,
+                            "ai_insights": ai_insights,
+                            "classification": classification,
+                        },
+                        ensure_ascii=False,
+                    ),
+                    "review_status": "PENDING",
+                }
+            )
+            .execute()
+        )
+
+        return (
+            interpretation_response.data[0]
+            if interpretation_response.data
+            else None
+        )
+
+    def list_project_uploaded_reports(self, project_id: str) -> dict:
+        reports = self.report_repository.get_reports_by_project(project_id)
+        report_ids = [
+            str(report.get("id"))
+            for report in reports
+            if report.get("id")
+        ]
+        interpretations = self._get_interpretations_by_report_ids(report_ids)
+        entries: list[dict] = []
+
+        for report in reports:
+            report_id = report.get("id")
+            if not report_id:
+                continue
+
+            report_id_str = str(report_id)
+            interpretation = interpretations.get(report_id_str, {})
+            metadata = interpretation.get("metadata") or {}
+            text_preview = (interpretation.get("business_impact") or "").strip()
+
+            entries.append(
+                {
+                    "id": report_id_str,
+                    "title": report.get("email_subject") or "דוח ללא שם",
+                    "report_source": report.get("report_source") or "UNKNOWN",
+                    "created_at": report.get("created_at"),
+                    "text_preview": text_preview or None,
+                    "recommended_action": interpretation.get("recommended_action"),
+                    "tenant_risk": interpretation.get("tenant_risk"),
+                    "review_status": interpretation.get("review_status"),
+                    "original_filename": metadata.get("file_name"),
+                    "has_original_file": False,
+                }
+            )
+
+        entries.sort(
+            key=lambda item: item.get("created_at") or "",
+            reverse=True,
+        )
+
+        return {
+            "project_id": project_id,
+            "reports": entries,
+            "total_reports": len(entries),
+        }
 
     def get_project_report_timeline(self, project_id: str) -> dict:
         reports = self.report_repository.get_reports_by_project(project_id)

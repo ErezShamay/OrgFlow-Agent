@@ -8,11 +8,30 @@ from app.main import app
 class FakeProjectRepository:
     def __init__(self):
         self.projects = {
-            "p1": {"id": "p1", "project_name": "Alpha Tower"},
+            "p1": {
+                "id": "p1",
+                "project_name": "Alpha Tower",
+                "organization_id": "org-1",
+            },
         }
 
     def get_project_by_id(self, project_id: str):
         return self.projects.get(project_id)
+
+
+class FakeWeeklyReportRepository:
+    def get_reports_by_project(self, project_id: str):
+        if project_id != "p1":
+            return []
+
+        return [
+            {
+                "id": "wr-1",
+                "email_subject": "weekly-report.pdf (v2)",
+                "report_source": "DELAY",
+                "created_at": "2026-01-01T00:00:00+00:00",
+            }
+        ]
 
 
 class FakeReportProcessingService:
@@ -303,9 +322,51 @@ def _auth_headers():
     return {"Authorization": f"Bearer {token}", "X-Organization-ID": "org-1"}
 
 
+def _patch_report_dependencies(monkeypatch, report_processing_service):
+    project_repository = FakeProjectRepository()
+    monkeypatch.setattr(main_module, "project_repository", project_repository)
+    monkeypatch.setattr(
+        main_module.tenant_scope_service,
+        "project_repository",
+        project_repository,
+    )
+    monkeypatch.setattr(
+        main_module,
+        "report_processing_service",
+        report_processing_service,
+    )
+
+
+def test_list_project_uploaded_reports(monkeypatch):
+    project_repository = FakeProjectRepository()
+    monkeypatch.setattr(main_module, "project_repository", project_repository)
+    monkeypatch.setattr(
+        main_module.tenant_scope_service,
+        "project_repository",
+        project_repository,
+    )
+    monkeypatch.setattr(
+        main_module.report_processing_service,
+        "report_repository",
+        FakeWeeklyReportRepository(),
+    )
+    client = TestClient(app)
+
+    response = client.get(
+        "/projects/p1/reports/uploads",
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["project_id"] == "p1"
+    assert payload["total_reports"] == 1
+    assert payload["reports"][0]["title"] == "weekly-report.pdf (v2)"
+    assert payload["reports"][0]["report_source"] == "DELAY"
+
+
 def test_reports_ocr_pipeline_upload(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.post(
@@ -331,8 +392,7 @@ def test_reports_ocr_pipeline_upload(monkeypatch):
 
 
 def test_reports_ocr_pipeline_upload_project_not_found(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.post(
@@ -347,8 +407,7 @@ def test_reports_ocr_pipeline_upload_project_not_found(monkeypatch):
 
 
 def test_reports_upload_corrupted_file_returns_422(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeCorruptedReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeCorruptedReportProcessingService())
     client = TestClient(app)
 
     response = client.post(
@@ -363,8 +422,7 @@ def test_reports_upload_corrupted_file_returns_422(monkeypatch):
 
 
 def test_reports_upload_malware_file_returns_422(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeMalwareReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeMalwareReportProcessingService())
     client = TestClient(app)
 
     response = client.post(

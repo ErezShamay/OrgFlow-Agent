@@ -69,7 +69,13 @@ function displayValue(value?: string | null) {
 }
 
 const inputClassName =
-  "rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700";
+  "w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-base dark:border-zinc-700 dark:bg-zinc-900/50";
+
+const sectionClassName =
+  "rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-6 dark:border-zinc-700/80 dark:bg-zinc-900/30";
+
+const sectionGridClassName =
+  "grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3";
 
 export default function ProjectDetailsEditor({
   project,
@@ -156,11 +162,11 @@ export default function ProjectDetailsEditor({
 
   if (!editing) {
     return (
-      <div className="mt-8 border-t border-zinc-200 pt-8 dark:border-zinc-700">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="mt-10 border-t border-zinc-200 pt-10 dark:border-zinc-700">
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold">פרטי הפרויקט</h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-2 text-sm leading-relaxed text-zinc-500">
               {canEdit
                 ? "יזם, קבלן, עורכי דין, מפקח ושאר אנשי הקשר בפרויקט"
                 : "צפייה בלבד — לעריכה נדרשת הרשאת מנהל, מפקח או מנהל תפעול"}
@@ -179,37 +185,49 @@ export default function ProjectDetailsEditor({
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <InfoCard title="שם היזם" value={displayValue(project.developer_name)} />
-          <InfoCard title="שם הקבלן" value={displayValue(project.contractor_name)} />
-          <InfoCard title="עו״ד מלווה" value={displayValue(project.lawyer_name)} />
-          <InfoCard title="מפקח מלווה" value={displayValue(project.supervisor_name)} />
-          <InfoCard
-            title="אימייל מפקח מלווה"
-            value={project.supervisor_email?.trim() || "—"}
-          />
-          <InfoCard
-            title="מנהל פרויקט מטעם יזם"
-            value={displayValue(project.developer_pm_name)}
-          />
-          <InfoCard
-            title="עו״ד מלווה (נוסף)"
-            value={displayValue(project.accompanying_lawyer)}
-          />
-          <InfoCard title="אדריכל" value={displayValue(project.architect_name)} />
-          <InfoCard
-            title="מנהל עבודה"
-            value={displayValue(project.site_manager_name)}
-          />
-          <InfoCard title="עיר" value={displayValue(project.city)} />
-          <InfoCard
-            title="יחידות דיור"
-            value={
-              project.housing_units_count != null
-                ? String(project.housing_units_count)
-                : "לא צוין"
-            }
-          />
+        <div className="space-y-8">
+          <DetailsSection title="פרטים כלליים">
+            <InfoCard title="שם הפרויקט" value={displayValue(project.project_name)} />
+            <InfoCard title="עיר" value={displayValue(project.city)} />
+            <InfoCard
+              title="יחידות דיור"
+              value={
+                project.housing_units_count != null
+                  ? String(project.housing_units_count)
+                  : "לא צוין"
+              }
+            />
+          </DetailsSection>
+
+          <DetailsSection title="יזם וקבלן">
+            <InfoCard title="שם היזם" value={displayValue(project.developer_name)} />
+            <InfoCard title="שם הקבלן" value={displayValue(project.contractor_name)} />
+            <InfoCard
+              title="מנהל פרויקט מטעם יזם"
+              value={displayValue(project.developer_pm_name)}
+            />
+          </DetailsSection>
+
+          <DetailsSection title="ייעוץ משפטי">
+            <InfoCard title="עו״ד מלווה" value={displayValue(project.lawyer_name)} />
+            <InfoCard
+              title="עו״ד מלווה (נוסף)"
+              value={displayValue(project.accompanying_lawyer)}
+            />
+          </DetailsSection>
+
+          <DetailsSection title="פיקוח וניהול">
+            <InfoCard title="מפקח מלווה" value={displayValue(project.supervisor_name)} />
+            <InfoCard
+              title="אימייל מפקח מלווה"
+              value={project.supervisor_email?.trim() || "—"}
+            />
+            <InfoCard title="אדריכל" value={displayValue(project.architect_name)} />
+            <InfoCard
+              title="מנהל עבודה"
+              value={displayValue(project.site_manager_name)}
+            />
+          </DetailsSection>
         </div>
       </div>
     );
@@ -218,111 +236,123 @@ export default function ProjectDetailsEditor({
   return (
     <form
       onSubmit={handleSave}
-      className="mt-8 space-y-6 border-t border-zinc-200 pt-8 dark:border-zinc-700"
+      className="mt-10 border-t border-zinc-200 pt-10 dark:border-zinc-700"
     >
-      <div>
+      <div className="mb-8">
         <h2 className="text-2xl font-bold">עריכת פרטי הפרויקט</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-2 text-sm leading-relaxed text-zinc-500">
           עדכון יזם, קבלן, עורכי דין, מפקח ושאר אנשי הקשר
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field
-          label="שם הפרויקט"
-          value={form.project_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, project_name: value }))
-          }
-          required
-        />
-        <Field
-          label="שם היזם"
-          value={form.developer_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, developer_name: value }))
-          }
-          required
-        />
-        <Field
-          label="שם הקבלן"
-          value={form.contractor_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, contractor_name: value }))
-          }
-          required
-        />
-        <Field
-          label="עו״ד מלווה"
-          value={form.lawyer_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, lawyer_name: value }))
-          }
-          required
-        />
-        <Field
-          label="מפקח מלווה"
-          value={form.supervisor_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, supervisor_name: value }))
-          }
-          required
-        />
-        <Field
-          label="אימייל מפקח מלווה"
-          value={form.supervisor_email}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, supervisor_email: value }))
-          }
-          type="email"
-        />
-        <Field
-          label="מנהל פרויקט מטעם יזם"
-          value={form.developer_pm_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, developer_pm_name: value }))
-          }
-        />
-        <Field
-          label="עו״ד מלווה (נוסף)"
-          value={form.accompanying_lawyer}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, accompanying_lawyer: value }))
-          }
-        />
-        <Field
-          label="אדריכל"
-          value={form.architect_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, architect_name: value }))
-          }
-        />
-        <Field
-          label="מנהל עבודה"
-          value={form.site_manager_name}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, site_manager_name: value }))
-          }
-        />
-        <Field
-          label="עיר"
-          value={form.city}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, city: value }))
-          }
-        />
-        <Field
-          label="יחידות דיור"
-          value={form.housing_units_count}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, housing_units_count: value }))
-          }
-          type="number"
-          min={0}
-        />
+      <div className="space-y-8">
+        <DetailsSection title="פרטים כלליים">
+          <Field
+            label="שם הפרויקט"
+            value={form.project_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, project_name: value }))
+            }
+            required
+            className="sm:col-span-2 xl:col-span-3"
+          />
+          <Field
+            label="עיר"
+            value={form.city}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, city: value }))
+            }
+          />
+          <Field
+            label="יחידות דיור"
+            value={form.housing_units_count}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, housing_units_count: value }))
+            }
+            type="number"
+            min={0}
+          />
+        </DetailsSection>
+
+        <DetailsSection title="יזם וקבלן">
+          <Field
+            label="שם היזם"
+            value={form.developer_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, developer_name: value }))
+            }
+            required
+          />
+          <Field
+            label="שם הקבלן"
+            value={form.contractor_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, contractor_name: value }))
+            }
+            required
+          />
+          <Field
+            label="מנהל פרויקט מטעם יזם"
+            value={form.developer_pm_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, developer_pm_name: value }))
+            }
+          />
+        </DetailsSection>
+
+        <DetailsSection title="ייעוץ משפטי">
+          <Field
+            label="עו״ד מלווה"
+            value={form.lawyer_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, lawyer_name: value }))
+            }
+            required
+          />
+          <Field
+            label="עו״ד מלווה (נוסף)"
+            value={form.accompanying_lawyer}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, accompanying_lawyer: value }))
+            }
+          />
+        </DetailsSection>
+
+        <DetailsSection title="פיקוח וניהול">
+          <Field
+            label="מפקח מלווה"
+            value={form.supervisor_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, supervisor_name: value }))
+            }
+            required
+          />
+          <Field
+            label="אימייל מפקח מלווה"
+            value={form.supervisor_email}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, supervisor_email: value }))
+            }
+            type="email"
+          />
+          <Field
+            label="אדריכל"
+            value={form.architect_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, architect_name: value }))
+            }
+          />
+          <Field
+            label="מנהל עבודה"
+            value={form.site_manager_name}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, site_manager_name: value }))
+            }
+          />
+        </DetailsSection>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="mt-10 flex flex-wrap gap-4 border-t border-zinc-200 pt-8 dark:border-zinc-700">
         <Button
           type="submit"
           variant="primary"
@@ -342,6 +372,27 @@ export default function ProjectDetailsEditor({
         </Button>
       </div>
     </form>
+  );
+}
+
+type DetailsSectionProps = {
+  title: string;
+  children: React.ReactNode;
+};
+
+function DetailsSection({
+  title,
+  children,
+}: DetailsSectionProps) {
+  return (
+    <section className={sectionClassName}>
+      <h3 className="mb-6 text-lg font-semibold text-zinc-800 dark:text-zinc-100">
+        {title}
+      </h3>
+      <div className={sectionGridClassName}>
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -366,6 +417,7 @@ type FieldProps = {
   required?: boolean;
   type?: string;
   min?: number;
+  className?: string;
 };
 
 function Field({
@@ -375,11 +427,17 @@ function Field({
   required,
   type = "text",
   min,
+  className = "",
 }: FieldProps) {
   return (
-    <label className="block space-y-2">
-      <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+    <label className={`block space-y-3 ${className}`}>
+      <span className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">
         {label}
+        {required ? (
+          <span className="ms-1 text-red-500" aria-hidden>
+            *
+          </span>
+        ) : null}
       </span>
       <input
         className={inputClassName}
