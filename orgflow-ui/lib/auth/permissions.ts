@@ -82,6 +82,8 @@ const OPERATIONAL_ROLES = [
   "MANAGER",
 ] as const;
 
+const PROJECT_WRITE_ROLES = OPERATIONAL_ROLES;
+
 export function isManager(
   role?: string | null
 ) {
@@ -115,5 +117,13 @@ export function canReviewAI(
 
   return OPERATIONAL_ROLES.includes(
     normalizeRole(role) as typeof OPERATIONAL_ROLES[number]
+  );
+}
+
+export function canEditProjects(
+  role?: string | null
+) {
+  return PROJECT_WRITE_ROLES.includes(
+    normalizeRole(role) as typeof PROJECT_WRITE_ROLES[number]
   );
 }

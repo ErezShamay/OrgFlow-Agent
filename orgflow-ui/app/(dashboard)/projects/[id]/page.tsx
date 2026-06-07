@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
 import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
+import { useEffectiveRole } from "@/hooks/useEffectiveRole";
 
 import Badge from "@/components/ui/Badge";
 import LoadingState from "@/components/ui/LoadingState";
@@ -11,7 +12,10 @@ import PageLoadingOverlay from "@/components/ui/PageLoadingOverlay";
 import ProjectFieldReportLink from "@/components/field-reports/ProjectFieldReportLink";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline";
 
+import ProjectDetailsEditor from "@/components/projects/ProjectDetailsEditor";
 import ProjectInsightsPanel from "@/components/projects/ProjectInsightsPanel";
+import ProjectReportsArchive from "@/components/projects/ProjectReportsArchive";
+import { canEditProjects } from "@/lib/auth/permissions";
 
 export default function ProjectDetailsPage() {
 
@@ -19,6 +23,8 @@ export default function ProjectDetailsPage() {
 
   const projectId =
     params.id as string;
+
+  const effectiveRole = useEffectiveRole();
 
   const {
     project,
@@ -34,6 +40,8 @@ export default function ProjectDetailsPage() {
 
     loading,
     isValidating,
+
+    reloadWorkspace,
 
     startAction,
     blockAction,
@@ -165,40 +173,13 @@ export default function ProjectDetailsPage() {
 
         </div>
 
-        <div
-          className="
-            grid
-            grid-cols-1
-            md:grid-cols-3
-            gap-6
-          "
-        >
+        <ProjectDetailsEditor
+          project={project}
+          canEdit={canEditProjects(effectiveRole)}
+          onSaved={() => reloadWorkspace({ silent: true })}
+        />
 
-          <InfoCard
-            title="שם היזם"
-            value={project.developer_name?.trim() || "לא צוין"}
-          />
-
-          <InfoCard
-            title="שם הקבלן"
-            value={project.contractor_name?.trim() || "לא צוין"}
-          />
-
-          <InfoCard
-            title="עו״ד מלווה"
-            value={project.lawyer_name?.trim() || "לא צוין"}
-          />
-
-          <InfoCard
-            title="מפקח מלווה"
-            value={project.supervisor_name}
-          />
-
-          <InfoCard
-            title="אימייל מפקח מלווה"
-            value={project.supervisor_email || "—"}
-          />
-
+        <div className="mt-6">
           <InfoCard
             title="תאריך יצירה"
             value={
@@ -209,7 +190,6 @@ export default function ProjectDetailsPage() {
               )
             }
           />
-
         </div>
 
       </div>
@@ -425,6 +405,8 @@ export default function ProjectDetailsPage() {
         />
 
       </div>
+
+      <ProjectReportsArchive projectId={projectId} />
 
       {/* TIMELINE */}
 

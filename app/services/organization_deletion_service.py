@@ -24,6 +24,9 @@ from app.repositories.profile_repository import (
 from app.repositories.project_repository import (
     ProjectRepository,
 )
+from app.services.field_visit_report_pdf_service import (
+    FieldVisitReportPdfService,
+)
 from app.services.field_visit_report_photo_service import (
     FieldVisitReportPhotoService,
 )
@@ -59,6 +62,7 @@ class OrganizationDeletionService:
         profile_repository: ProfileRepository | None = None,
         project_repository: ProjectRepository | None = None,
         photo_service: FieldVisitReportPhotoService | None = None,
+        pdf_service: FieldVisitReportPdfService | None = None,
         client=supabase,
     ) -> None:
         self.client = client
@@ -73,6 +77,9 @@ class OrganizationDeletionService:
         )
         self.photo_service = (
             photo_service or FieldVisitReportPhotoService()
+        )
+        self.pdf_service = (
+            pdf_service or FieldVisitReportPdfService()
         )
 
     def delete_organization(
@@ -118,6 +125,9 @@ class OrganizationDeletionService:
 
         deleted_counts["field_report_photos"] = (
             self._purge_field_report_photo_files(normalized_org_id)
+        )
+        deleted_counts["field_report_pdfs"] = (
+            self._purge_field_report_pdf_files(normalized_org_id)
         )
         deleted_counts["action_comments"] = (
             self._delete_action_comments_for_organization(
@@ -248,6 +258,51 @@ class OrganizationDeletionService:
         )
         if org_photo_dir.is_dir():
             shutil.rmtree(org_photo_dir, ignore_errors=True)
+
+        return removed
+
+    def _purge_field_report_pdf_files(
+        self,
+        organization_id: str,
+    ) -> int:
+        removed = 0
+
+        try:
+            response = (
+                self.client
+                .table("field_visit_reports")
+                .select("pdf_storage_path")
+                .eq("organization_id", organization_id)
+                .execute()
+            )
+        except APIError as error:
+            if is_missing_table_error(error, "field_visit_reports"):
+                return 0
+            if is_missing_column_error(error, "pdf_storage_path"):
+                return 0
+            raise
+
+        for row in response.data or []:
+            storage_path = str(row.get("pdf_storage_path") or "").strip()
+            if not storage_path:
+                continue
+
+            try:
+                self.pdf_service.delete_pdf(storage_path)
+                removed += 1
+            except Exception as error:
+                logger.warning(
+                    "Failed deleting field report PDF file",
+                    extra={
+                        "organization_id": organization_id,
+                        "storage_path": storage_path,
+                        "error": str(error),
+                    },
+                )
+
+        org_pdf_dir = self.pdf_service.pdfs_root / organization_id
+        if org_pdf_dir.is_dir():
+            shutil.rmtree(org_pdf_dir, ignore_errors=True)
 
         return removed
 

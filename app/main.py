@@ -1,4 +1,5 @@
 import shutil
+from urllib.parse import quote
 
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -163,6 +164,10 @@ from app.auth.field_report_dependencies import (
 
 from app.services.tenant_migration_service import (
     TenantMigrationService,
+)
+
+from app.services.tenant_scope_service import (
+    TenantScopeService,
 )
 
 from app.services.tenant_extraction_service import (
@@ -676,6 +681,8 @@ field_visit_report_service = FieldVisitReportService(
 )
 
 tenant_migration_service = TenantMigrationService()
+
+tenant_scope_service = TenantScopeService()
 
 tenant_extraction_service = TenantExtractionService()
 
@@ -1752,6 +1759,53 @@ async def request_send_field_visit_report(
     )
 
 
+@app.get("/field-reports/visits/{report_id}/pdf")
+def get_field_visit_report_pdf(
+    report_id: str,
+    auth=Depends(
+        require_permission("field_reports:read")
+    ),
+    _module=Depends(require_field_report_module),
+):
+    content, content_type, filename = (
+        field_visit_report_service.get_archived_report_pdf(
+            organization_id=auth.org_id,
+            report_id=report_id,
+        )
+    )
+    safe_filename = quote(filename)
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{safe_filename}"; '
+                f"filename*=UTF-8''{safe_filename}"
+            ),
+        },
+    )
+
+
+@app.get("/projects/{project_id}/field-reports/archive")
+def get_project_field_report_archive(
+    project_id: str,
+    auth=Depends(
+        require_permission("field_reports:read")
+    ),
+    _module=Depends(require_field_report_module),
+):
+    if not tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    ):
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return field_visit_report_service.get_project_field_report_archive(
+        organization_id=auth.org_id,
+        project_id=project_id,
+    )
+
+
 @app.get("/field-reports/catalog")
 def get_field_report_catalog(
     visit_type: str | None = None,
@@ -2742,7 +2796,17 @@ def create_project(
 
 
 @app.patch("/projects/{project_id}")
-def edit_project(project_id: str, request: EditProjectRequest):
+def edit_project(
+    project_id: str,
+    request: EditProjectRequest,
+    auth=Depends(require_permission("projects:write")),
+):
+    if not tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    ):
+        raise HTTPException(status_code=404, detail="Project not found")
+
     updated = project_service.edit_project(
         project_id,
         project_name=request.project_name,
@@ -3118,7 +3182,18 @@ def get_project_timeline(project_id: str):
     return timeline
 
 @app.get("/projects/{project_id}/workspace")
-def get_project_workspace(project_id: str):
+def get_project_workspace(
+    project_id: str,
+    auth=Depends(require_permission("projects:read")),
+):
+    if not tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found",
+        )
 
     workspace = (
         project_workspace_service

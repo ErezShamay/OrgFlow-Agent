@@ -24,7 +24,13 @@ type Project = {
   contractor_name?: string | null;
   lawyer_name?: string | null;
   supervisor_name: string;
-  supervisor_email: string;
+  supervisor_email?: string | null;
+  developer_pm_name?: string | null;
+  accompanying_lawyer?: string | null;
+  architect_name?: string | null;
+  site_manager_name?: string | null;
+  city?: string | null;
+  housing_units_count?: number | null;
   status: string;
   created_at: string;
 };

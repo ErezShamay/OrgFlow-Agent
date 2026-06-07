@@ -12,8 +12,11 @@ node_modules/
 md_files/
 example_reports/
 field_report_photos/
+field_report_pdfs/
 tmp_uploads/
 db/migrations/
 docs/
 field_report_photos/
+field_report_pdfs/
 sample_reports/
+deploy/sql/

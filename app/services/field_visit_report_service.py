@@ -35,8 +35,14 @@ from app.services.field_report_catalog_service import (
 from app.services.field_report_organization_profile_service import (
     FieldReportOrganizationProfileService,
 )
+from app.services.field_visit_report_archive_service import (
+    build_project_field_report_archive,
+)
 from app.services.field_visit_report_photo_service import (
     FieldVisitReportPhotoService,
+)
+from app.services.field_visit_report_pdf_service import (
+    FieldVisitReportPdfService,
 )
 from app.services.field_visit_report_core_adapter import (
     FieldVisitReportCoreAdapter,
@@ -90,6 +96,8 @@ class FieldVisitReportService:
             FieldReportCatalogService | None = None,
         photo_service:
             FieldVisitReportPhotoService | None = None,
+        pdf_service:
+            FieldVisitReportPdfService | None = None,
         core_adapter:
             FieldVisitReportCoreAdapter | None = None,
         report_processing_service:
@@ -116,6 +124,9 @@ class FieldVisitReportService:
         )
         self.photo_service = (
             photo_service or FieldVisitReportPhotoService()
+        )
+        self.pdf_service = (
+            pdf_service or FieldVisitReportPdfService()
         )
         self.core_adapter = core_adapter or FieldVisitReportCoreAdapter(
             report_processing_service=report_processing_service
@@ -597,6 +608,14 @@ class FieldVisitReportService:
                 },
             )
 
+        record = self._archive_report_pdf_if_needed(
+            organization_id=organization_id,
+            report_id=report_id,
+            record=record,
+            source_filename=source_filename,
+            source_content=source_content,
+        )
+
         core_result = self._send_to_core_pipeline(
             record,
             source_filename=source_filename,
@@ -618,14 +637,17 @@ class FieldVisitReportService:
                 },
             )
 
-        # 3D.3: on successful network send request, lock the report.
-        # (In this MVP implementation we treat the request as "server-approved".)
+        lock_payload: dict = {
+            "status": "LOCKED",
+            "locked_at": datetime.now(UTC).isoformat(),
+        }
+        core_report_id = core_result.get("report_id")
+        if core_report_id:
+            lock_payload["core_report_id"] = str(core_report_id)
+
         updated = self.report_repository.update(
             report_id,
-            {
-                "status": "LOCKED",
-                "locked_at": datetime.now(UTC).isoformat(),
-            },
+            lock_payload,
         )
 
         if not updated:
@@ -639,6 +661,112 @@ class FieldVisitReportService:
             updated,
             project_name=project_name,
         )
+
+    def get_project_field_report_archive(
+        self,
+        *,
+        organization_id: str,
+        project_id: str,
+    ) -> dict:
+        project = self.project_repository.get_project_by_id(project_id)
+        if not project:
+            raise NotFoundError(
+                message="Project not found",
+                resource_type="project",
+                resource_id=project_id,
+            )
+
+        if str(project.get("organization_id") or "") != organization_id:
+            raise NotFoundError(
+                message="Project not found",
+                resource_type="project",
+                resource_id=project_id,
+            )
+
+        records = self.report_repository.list_archived_by_project(
+            organization_id=organization_id,
+            project_id=project_id,
+        )
+
+        return build_project_field_report_archive(
+            records,
+            project_id=project_id,
+            project_name=project.get("project_name"),
+        )
+
+    def get_archived_report_pdf(
+        self,
+        *,
+        organization_id: str,
+        report_id: str,
+    ) -> tuple[bytes, str, str]:
+        record = self._get_org_report(
+            organization_id=organization_id,
+            report_id=report_id,
+        )
+        storage_path = str(record.get("pdf_storage_path") or "").strip()
+        if not storage_path:
+            raise NotFoundError(
+                message="Archived PDF not found",
+                resource_type="field_visit_report_pdf",
+                resource_id=report_id,
+            )
+
+        try:
+            content, content_type = self.pdf_service.read_pdf(
+                storage_path
+            )
+        except FileNotFoundError as error:
+            raise NotFoundError(
+                message="Archived PDF file missing on server",
+                resource_type="field_visit_report_pdf",
+                resource_id=report_id,
+            ) from error
+
+        filename = (
+            record.get("pdf_filename")
+            or self._build_core_upload_filename(record)
+        )
+        return content, content_type, str(filename)
+
+    def _archive_report_pdf_if_needed(
+        self,
+        *,
+        organization_id: str,
+        report_id: str,
+        record: dict,
+        source_filename: str,
+        source_content: bytes,
+    ) -> dict:
+        existing_path = str(record.get("pdf_storage_path") or "").strip()
+        if existing_path:
+            return record
+
+        filename = (
+            source_filename.strip()
+            if source_filename
+            else self._build_core_upload_filename(record)
+        )
+        storage_path, saved_filename = self.pdf_service.save_pdf(
+            organization_id=organization_id,
+            project_id=str(record["project_id"]),
+            report_id=report_id,
+            content=source_content,
+            filename=filename,
+        )
+
+        updated = self.report_repository.update(
+            report_id,
+            {
+                "pdf_storage_path": storage_path,
+                "pdf_filename": saved_filename,
+            },
+        )
+        return updated or {
+            **record,
+            "pdf_storage_path": storage_path,
+            "pdf_filename": saved_filename,
+        }
 
     def update_report(
         self,
@@ -1957,6 +2085,9 @@ class FieldVisitReportService:
             "organization_profile_snapshot": (
                 record.get("organization_profile_snapshot")
             ),
+            "pdf_filename": record.get("pdf_filename"),
+            "has_archived_pdf": bool(record.get("pdf_storage_path")),
+            "core_report_id": record.get("core_report_id"),
         }
 
     def _line_photo_url(

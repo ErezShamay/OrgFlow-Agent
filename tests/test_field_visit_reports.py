@@ -188,6 +188,26 @@ class FakeVisitReportRepository:
                 return record
         return None
 
+    def list_archived_by_project(
+        self,
+        *,
+        organization_id: str,
+        project_id: str,
+    ) -> list[dict]:
+        items = [
+            record
+            for record in self.records.values()
+            if record["organization_id"] == organization_id
+            and record["project_id"] == project_id
+            and record.get("status") == "LOCKED"
+            and record.get("pdf_storage_path")
+        ]
+        return sorted(
+            items,
+            key=lambda record: record.get("visit_date") or "",
+            reverse=True,
+        )
+
     def get_open_for_project(
         self,
         *,
@@ -316,6 +336,7 @@ def _setup_client(
     monkeypatch,
     *,
     report_processing_service: FakeReportProcessingService | None = None,
+    field_visit_report_service: FieldVisitReportService | None = None,
     module_enabled: bool = True,
 ) -> TestClient:
     module_repository = FakeModuleRepository()
@@ -329,7 +350,7 @@ def _setup_client(
         organization_repository=FakeOrganizationRepository(),
         module_service=module_service,
     )
-    visit_service = FieldVisitReportService(
+    visit_service = field_visit_report_service or FieldVisitReportService(
         report_repository=FakeVisitReportRepository(),
         line_repository=FakeVisitReportLineRepository(),
         project_repository=FakeProjectRepository(),

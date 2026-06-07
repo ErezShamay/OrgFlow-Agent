@@ -201,7 +201,18 @@ class FakeProjectService:
 
 
 def _client_with_fake_service(monkeypatch) -> TestClient:
-    monkeypatch.setattr(main_module, "project_service", FakeProjectService())
+    fake_service = FakeProjectService()
+    monkeypatch.setattr(main_module, "project_service", fake_service)
+
+    class FakeProjectRepository:
+        def get_project_by_id(self, project_id: str):
+            return fake_service.projects.get(project_id)
+
+    monkeypatch.setattr(
+        main_module.tenant_scope_service,
+        "project_repository",
+        FakeProjectRepository(),
+    )
     return TestClient(app)
 
 

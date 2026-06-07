@@ -83,3 +83,93 @@ def test_projects_list_requires_authentication(monkeypatch):
     response = client.get("/projects")
 
     assert response.status_code == 401
+
+
+class FakeProjectRepository:
+    def __init__(self):
+        self.projects = {
+            "client-project": {
+                "id": "client-project",
+                "project_name": "Client Site",
+                "organization_id": "org-client",
+            },
+            "demo-project": {
+                "id": "demo-project",
+                "project_name": "Demo Tower",
+                "organization_id": "org-demo",
+            },
+        }
+
+    def get_project_by_id(self, project_id: str):
+        return self.projects.get(project_id)
+
+
+class FakeEditableProjectService(FakeProjectService):
+    def edit_project(self, project_id: str, **updates):
+        project = self.projects.get(project_id)
+        if not project:
+            return None
+        for key, value in updates.items():
+            if value is not None:
+                project[key] = value
+        return project
+
+
+def _patch_tenant_scope(monkeypatch, repository: FakeProjectRepository):
+    monkeypatch.setattr(
+        main_module.tenant_scope_service,
+        "project_repository",
+        repository,
+    )
+
+
+def test_edit_project_is_scoped_to_token_organization(monkeypatch):
+    repository = FakeProjectRepository()
+    _patch_tenant_scope(monkeypatch, repository)
+    monkeypatch.setattr(
+        main_module,
+        "project_service",
+        FakeEditableProjectService(),
+    )
+    client = TestClient(app)
+
+    response = client.patch(
+        "/projects/client-project",
+        json={"developer_name": "יזם מעודכן"},
+        headers=_auth_headers("org-client"),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["developer_name"] == "יזם מעודכן"
+
+
+def test_edit_project_rejects_other_organization(monkeypatch):
+    repository = FakeProjectRepository()
+    _patch_tenant_scope(monkeypatch, repository)
+    monkeypatch.setattr(
+        main_module,
+        "project_service",
+        FakeEditableProjectService(),
+    )
+    client = TestClient(app)
+
+    response = client.patch(
+        "/projects/demo-project",
+        json={"developer_name": "Hacked"},
+        headers=_auth_headers("org-client"),
+    )
+
+    assert response.status_code == 404
+
+
+def test_project_workspace_rejects_other_organization(monkeypatch):
+    repository = FakeProjectRepository()
+    _patch_tenant_scope(monkeypatch, repository)
+    client = TestClient(app)
+
+    response = client.get(
+        "/projects/demo-project/workspace",
+        headers=_auth_headers("org-client"),
+    )
+
+    assert response.status_code == 404

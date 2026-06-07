@@ -42,7 +42,7 @@ class TableSchema:
     audited: bool = True
 
 
-SCHEMA_VERSION = "2026060701"
+SCHEMA_VERSION = "2026060702"
 
 # Matches deploy/sql/20260604_enable_rls_best_practice.sql (authenticated SELECT + service_role bypass).
 ORGFLOW_TENANT_ISOLATION = (
@@ -564,6 +564,14 @@ MIGRATION_SCRIPTS: list[dict] = [
             "(scheme, stakeholders, dates, city, housing units)"
         ),
         "tables": ["projects"],
+    },
+    {
+        "version": "2026060702",
+        "name": "field_visit_report_pdf_archive",
+        "description": (
+            "Permanent PDF archive pointers on field visit reports"
+        ),
+        "tables": ["field_visit_reports"],
     },
 ]
 

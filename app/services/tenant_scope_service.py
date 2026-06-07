@@ -15,6 +15,24 @@ class TenantScopeService:
         self.project_repository = ProjectRepository()
         self.finding_repository = FindingRepository()
 
+    def get_organization_scoped_project(
+        self,
+        project_id: str,
+        organization_id: str,
+    ) -> dict | None:
+        project = (
+            self.project_repository
+            .get_project_by_id(project_id)
+        )
+
+        if not project:
+            return None
+
+        if str(project.get("organization_id") or "") != organization_id:
+            return None
+
+        return project
+
     def get_organization_project_ids(
         self,
         organization_id: str,
