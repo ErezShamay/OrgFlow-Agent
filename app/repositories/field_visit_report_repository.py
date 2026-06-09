@@ -7,6 +7,11 @@ from postgrest.exceptions import APIError
 from app.db.supabase_client import supabase
 from app.repositories.postgrest_errors import (
     is_missing_table_error,
+    raise_if_missing_column_migration,
+)
+
+CLIENT_UUID_MIGRATION = (
+    "deploy/sql/2026060304_field_visit_report_client_uuids.sql"
 )
 
 
@@ -95,14 +100,21 @@ class FieldVisitReportRepository:
         if not self.is_storage_available() or not client_report_uuid:
             return None
 
-        response = (
-            self.client
-            .table(self.TABLE)
-            .select("*")
-            .eq("client_report_uuid", client_report_uuid)
-            .limit(1)
-            .execute()
-        )
+        try:
+            response = (
+                self.client
+                .table(self.TABLE)
+                .select("*")
+                .eq("client_report_uuid", client_report_uuid)
+                .limit(1)
+                .execute()
+            )
+        except APIError as error:
+            raise_if_missing_column_migration(
+                error,
+                column="client_report_uuid",
+                migration_file=CLIENT_UUID_MIGRATION,
+            )
 
         if not response.data:
             return None
@@ -223,12 +235,21 @@ class FieldVisitReportRepository:
         if client_report_uuid:
             payload["client_report_uuid"] = client_report_uuid
 
-        response = (
-            self.client
-            .table(self.TABLE)
-            .insert(payload)
-            .execute()
-        )
+        try:
+            response = (
+                self.client
+                .table(self.TABLE)
+                .insert(payload)
+                .execute()
+            )
+        except APIError as error:
+            if client_report_uuid:
+                raise_if_missing_column_migration(
+                    error,
+                    column="client_report_uuid",
+                    migration_file=CLIENT_UUID_MIGRATION,
+                )
+            raise
 
         return response.data[0]
 

@@ -87,10 +87,22 @@ describe("field-report-logout-block (FR-018)", () => {
 
     const block = await getFieldReportLogoutBlock(ORG_ID, USER_ID);
     expect(block?.summary.syncQueueCount).toBe(1);
-    expect(block?.summary.total).toBeGreaterThan(0);
+    expect(block?.summary.pendingLocalReportCount).toBe(1);
+    expect(block?.summary.pendingReportCount).toBe(1);
+    expect(block?.summary.total).toBe(1);
+    expect(block?.message).toMatch(/דוח אחד ממתין להעלאה/);
+    expect(block?.message).not.toMatch(/·/);
     await expect(
       assertFieldReportLogoutAllowed(ORG_ID, USER_ID)
     ).rejects.toThrow(/לא ניתן להתנתק/);
+  });
+
+  it("allows logout for in-progress draft with default pending sync_status", async () => {
+    const block = await getFieldReportLogoutBlock(ORG_ID, USER_ID);
+    expect(block).toBeNull();
+    await expect(
+      assertFieldReportLogoutAllowed(ORG_ID, USER_ID)
+    ).resolves.toBeUndefined();
   });
 
   it("blocks logout when pending send queue has entries", async () => {

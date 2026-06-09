@@ -1,5 +1,7 @@
 from postgrest.exceptions import APIError
 
+from app.exceptions.exceptions import ValidationError
+
 
 def is_missing_column_error(
     error: APIError,
@@ -13,10 +15,32 @@ def is_missing_column_error(
         return False
 
     return (
-        code == "PGRST204"
+        code in ("PGRST204", "42703")
         or "could not find" in message
         or "does not exist" in message
     )
+
+
+def raise_if_missing_column_migration(
+    error: APIError,
+    *,
+    column: str,
+    migration_file: str,
+) -> None:
+    """Map PostgREST missing-column errors to a Hebrew migration hint."""
+    if is_missing_column_error(error, column):
+        raise ValidationError(
+            message=(
+                f"עמודת {column} חסרה במסד הנתונים. "
+                f"יש להריץ את המיגרציה {migration_file}"
+            ),
+            details={
+                "column": column,
+                "migration_file": migration_file,
+            },
+        ) from error
+
+    raise error
 
 
 def is_invalid_uuid_error(error: APIError) -> bool:

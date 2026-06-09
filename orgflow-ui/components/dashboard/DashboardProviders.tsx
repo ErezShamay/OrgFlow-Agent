@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { FieldReportModuleProvider } from "@/contexts/FieldReportModuleContext";
+import { FieldReportSyncContextProvider } from "@/contexts/FieldReportSyncContext";
 
 export default function DashboardProviders({
   children,
@@ -10,6 +11,8 @@ export default function DashboardProviders({
   children: ReactNode;
 }) {
   return (
-    <FieldReportModuleProvider>{children}</FieldReportModuleProvider>
+    <FieldReportModuleProvider>
+      <FieldReportSyncContextProvider>{children}</FieldReportSyncContextProvider>
+    </FieldReportModuleProvider>
   );
 }

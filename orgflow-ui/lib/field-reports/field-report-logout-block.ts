@@ -1,10 +1,14 @@
-import { countSyncQueueForUser } from "@/lib/field-reports/repositories/sync-queue-repository";
+import {
+  listActiveSyncQueueForUser,
+} from "@/lib/field-reports/repositories/sync-queue-repository";
 import {
   listLocalReportsForOrganization,
   type LocalVisitReportRecord,
 } from "@/lib/field-reports/repositories/reports-repository";
 
 export type FieldReportLogoutBlockSummary = {
+  /** מספר דוחות ייחודיים שחוסמים יציאה. */
+  pendingReportCount: number;
   syncQueueCount: number;
   pendingSendCount: number;
   pendingLocalReportCount: number;
@@ -24,38 +28,83 @@ function matchesReportUser(
 }
 
 function isPendingLocalReport(report: LocalVisitReportRecord): boolean {
-  return (
-    report.sync_status === "pending"
-    || report.sync_status === "failed"
-    || report.sync_status === "syncing"
+  if (report.sync_status === "done") {
+    return false;
+  }
+
+  if (report.sync_status === "failed" || report.sync_status === "syncing") {
+    return true;
+  }
+
+  // טיוטה בעבודה — לא חוסמת יציאה; רק דוח סגור מקומית ממתין להעלאה.
+  return report.local_status === "LOCAL_CLOSED";
+}
+
+async function collectPendingLogoutReportUuids(
+  organizationId: string,
+  userId: string
+): Promise<{
+  uuids: Set<string>;
+  syncQueueCount: number;
+  pendingLocalReportCount: number;
+}> {
+  const queueRecords = await listActiveSyncQueueForUser(
+    organizationId,
+    userId
   );
+  const localReports = await listLocalReportsForOrganization(organizationId);
+
+  const uuids = new Set<string>();
+  for (const record of queueRecords) {
+    uuids.add(record.client_report_uuid);
+  }
+
+  let pendingLocalReportCount = 0;
+  for (const report of localReports) {
+    if (!matchesReportUser(report, userId)) {
+      continue;
+    }
+
+    if (!isPendingLocalReport(report)) {
+      continue;
+    }
+
+    pendingLocalReportCount += 1;
+    uuids.add(report.client_report_uuid);
+  }
+
+  return {
+    uuids,
+    syncQueueCount: queueRecords.length,
+    pendingLocalReportCount,
+  };
+}
+
+function buildLogoutBlockMessage(pendingReportCount: number): string {
+  const countLabel =
+    pendingReportCount === 1
+      ? "דוח אחד ממתין להעלאה"
+      : `${pendingReportCount} דוחות ממתינים להעלאה`;
+
+  return `לא ניתן להתנתק — ${countLabel}. סנכרן או שלח לליבה לפני יציאה.`;
 }
 
 export async function summarizeFieldReportLogoutBlock(
   organizationId: string,
   userId: string
 ): Promise<FieldReportLogoutBlockSummary> {
-  const syncQueueCount = await countSyncQueueForUser(
-    organizationId,
-    userId
-  );
+  const { uuids, syncQueueCount, pendingLocalReportCount } =
+    await collectPendingLogoutReportUuids(organizationId, userId);
   /** תור שליחה לליבה מאוחד ל-`sync_queue` (FR-024). */
   const pendingSendCount = 0;
-
-  const localReports = await listLocalReportsForOrganization(organizationId);
-  const pendingLocalReportCount = localReports.filter(
-    (report) =>
-      matchesReportUser(report, userId) && isPendingLocalReport(report)
-  ).length;
-
-  const total =
-    syncQueueCount + pendingSendCount + pendingLocalReportCount;
+  const pendingReportCount = uuids.size;
 
   return {
+    pendingReportCount,
     syncQueueCount,
     pendingSendCount,
     pendingLocalReportCount,
-    total,
+    total: pendingReportCount,
   };
 }
 
@@ -76,28 +125,8 @@ export async function getFieldReportLogoutBlock(
     return null;
   }
 
-  const parts: string[] = [];
-
-  if (summary.syncQueueCount > 0) {
-    parts.push(
-      `${summary.syncQueueCount} דוחות ממתינים בתור סנכרון`
-    );
-  }
-
-  if (summary.pendingSendCount > 0) {
-    parts.push(
-      `${summary.pendingSendCount} דוחות ממתינים לשליחה לליבה`
-    );
-  }
-
-  if (summary.pendingLocalReportCount > 0) {
-    parts.push(
-      `${summary.pendingLocalReportCount} דוחות מקומיים שלא הועלו`
-    );
-  }
-
   return {
-    message: `לא ניתן להתנתק — ${parts.join(" · ")}. סנכרן או שלח לליבה לפני יציאה.`,
+    message: buildLogoutBlockMessage(summary.pendingReportCount),
     summary,
   };
 }

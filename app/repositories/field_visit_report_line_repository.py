@@ -6,8 +6,25 @@ from postgrest.exceptions import APIError
 
 from app.db.supabase_client import supabase
 from app.repositories.postgrest_errors import (
+    is_missing_column_error,
     is_missing_table_error,
+    raise_if_missing_column_migration,
 )
+
+LINE_SYNC_MIGRATIONS = {
+    "client_line_uuid": (
+        "deploy/sql/2026060304_field_visit_report_client_uuids.sql"
+    ),
+    "group_key": (
+        "deploy/sql/2026060301_field_visit_report_line_grouping.sql"
+    ),
+    "group_label_he": (
+        "deploy/sql/2026060301_field_visit_report_line_grouping.sql"
+    ),
+    "block_id": (
+        "deploy/sql/2026060301_field_visit_report_line_grouping.sql"
+    ),
+}
 
 
 class FieldVisitReportLineRepository:
@@ -78,14 +95,21 @@ class FieldVisitReportLineRepository:
         if not self.is_storage_available() or not client_line_uuid:
             return None
 
-        response = (
-            self.client
-            .table(self.TABLE)
-            .select("*")
-            .eq("client_line_uuid", client_line_uuid)
-            .limit(1)
-            .execute()
-        )
+        try:
+            response = (
+                self.client
+                .table(self.TABLE)
+                .select("*")
+                .eq("client_line_uuid", client_line_uuid)
+                .limit(1)
+                .execute()
+            )
+        except APIError as error:
+            raise_if_missing_column_migration(
+                error,
+                column="client_line_uuid",
+                migration_file=LINE_SYNC_MIGRATIONS["client_line_uuid"],
+            )
 
         if not response.data:
             return None
@@ -98,6 +122,24 @@ class FieldVisitReportLineRepository:
             return 0
         return max(int(line.get("sort_order") or 0) for line in lines) + 1
 
+    def _raise_line_write_migration_error(
+        self,
+        error: APIError,
+        payload: dict,
+    ) -> None:
+        for column, migration_file in LINE_SYNC_MIGRATIONS.items():
+            if column in payload and is_missing_column_error(
+                error,
+                column,
+            ):
+                raise_if_missing_column_migration(
+                    error,
+                    column=column,
+                    migration_file=migration_file,
+                )
+
+        raise error
+
     def create(self, payload: dict) -> dict:
         if not self.is_storage_available():
             raise RuntimeError(
@@ -109,12 +151,16 @@ class FieldVisitReportLineRepository:
         payload.setdefault("created_at", now)
         payload.setdefault("updated_at", now)
 
-        response = (
-            self.client
-            .table(self.TABLE)
-            .insert(payload)
-            .execute()
-        )
+        try:
+            response = (
+                self.client
+                .table(self.TABLE)
+                .insert(payload)
+                .execute()
+            )
+        except APIError as error:
+            self._raise_line_write_migration_error(error, payload)
+
         return response.data[0]
 
     def update(self, line_id: str, payload: dict) -> dict | None:
@@ -126,13 +172,16 @@ class FieldVisitReportLineRepository:
 
         payload["updated_at"] = datetime.now(UTC).isoformat()
 
-        response = (
-            self.client
-            .table(self.TABLE)
-            .update(payload)
-            .eq("id", line_id)
-            .execute()
-        )
+        try:
+            response = (
+                self.client
+                .table(self.TABLE)
+                .update(payload)
+                .eq("id", line_id)
+                .execute()
+            )
+        except APIError as error:
+            self._raise_line_write_migration_error(error, payload)
 
         if not response.data:
             return None

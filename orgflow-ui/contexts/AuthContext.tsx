@@ -32,6 +32,7 @@ import {
   FieldReportLogoutBlockedError,
   type FieldReportLogoutBlock,
 } from "@/lib/field-reports/field-report-logout-block";
+import { flushPendingFieldReportSync } from "@/lib/field-reports/flush-pending-field-report-sync";
 import { useIdleSessionTimeout } from "@/hooks/useIdleSessionTimeout";
 import { clearQueryCache, invalidateOrgQueries } from "@/lib/ui/query-cache";
 import { invalidateWorkspaceCache } from "@/lib/ui/workspace-cache";
@@ -433,6 +434,7 @@ export function AuthProvider({
     const userId = profile?.id ?? user?.id ?? null;
 
     try {
+      await flushPendingFieldReportSync(organizationId, userId);
       await assertFieldReportLogoutAllowed(organizationId, userId);
     } catch (error: unknown) {
       if (error instanceof FieldReportLogoutBlockedError) {
