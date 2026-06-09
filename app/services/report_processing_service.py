@@ -208,9 +208,8 @@ class ReportProcessingService:
             },
         }
 
-    def process_bulk_uploaded_reports(self, project_id: str, uploads: list[dict]) -> dict:
+    def start_bulk_upload_job(self, project_id: str, total_files: int) -> str:
         job_id = f"bulk-{uuid4()}"
-        total_files = len(uploads)
         self.bulk_upload_jobs[job_id] = {
             "job_id": job_id,
             "project_id": project_id,
@@ -224,7 +223,15 @@ class ReportProcessingService:
             "started_at": datetime.now(UTC).isoformat(),
             "finished_at": None,
         }
+        return job_id
 
+    def run_bulk_upload_job(
+        self,
+        job_id: str,
+        project_id: str,
+        uploads: list[dict],
+    ) -> None:
+        total_files = len(uploads)
         results: list[dict] = []
         for index, upload in enumerate(uploads, start=1):
             filename = str(upload.get("filename") or "").strip()
@@ -267,14 +274,19 @@ class ReportProcessingService:
         job["failed_uploads"] = len(failed)
         job["results"] = results
 
+    def process_bulk_uploaded_reports(self, project_id: str, uploads: list[dict]) -> dict:
+        job_id = self.start_bulk_upload_job(project_id, len(uploads))
+        self.run_bulk_upload_job(job_id, project_id, uploads)
+        job = self.bulk_upload_jobs[job_id]
         return {
             "job_id": job_id,
             "project_id": project_id,
             "total_files": len(uploads),
-            "successful_uploads": len(successful),
-            "failed_uploads": len(failed),
-            "progress_percent": 100 if total_files > 0 else 0,
-            "results": results,
+            "successful_uploads": job.get("successful_uploads", 0),
+            "failed_uploads": job.get("failed_uploads", 0),
+            "progress_percent": job.get("progress_percent", 0),
+            "status": job.get("status"),
+            "results": job.get("results", []),
         }
 
     def get_bulk_upload_progress(self, project_id: str, job_id: str) -> dict | None:

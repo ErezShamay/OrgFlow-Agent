@@ -49,6 +49,7 @@ export default function ProjectsPage() {
   const { t } = useI18n();
   const { isOnline } = useOffline();
   const { profile, currentOrgId } = useAuth();
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newProject, setNewProject] = useState({
     project_name: "",
@@ -163,6 +164,7 @@ export default function ProjectsPage() {
       });
 
       showToast("הפרויקט נוצר בהצלחה", "success");
+      setShowCreateForm(false);
       await retry();
     } catch {
       showToast("שגיאה ביצירת הפרויקט", "error");
@@ -186,99 +188,118 @@ export default function ProjectsPage() {
     <PageShell
       title={t("projects.title")}
       description="ניהול פרויקטים הנדסיים במערכת"
-    >
-      <Card className="mb-8">
-        <h2 className="mb-6 text-2xl font-bold">
-          יצירת פרויקט חדש
-        </h2>
-
-        <form
-          onSubmit={handleCreateProject}
-          className="grid gap-4 md:grid-cols-2"
+      actions={
+        <Button
+          variant="primary"
+          size="lg"
+          type="button"
+          onClick={() => setShowCreateForm(true)}
         >
-          <input
-            className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
-            placeholder="שם הפרויקט"
-            value={newProject.project_name}
-            onChange={(event) =>
-              setNewProject({
-                ...newProject,
-                project_name: event.target.value,
-              })
-            }
-            required
-          />
-          <input
-            className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
-            placeholder="שם היזם"
-            value={newProject.developer_name}
-            onChange={(event) =>
-              setNewProject({
-                ...newProject,
-                developer_name: event.target.value,
-              })
-            }
-            required
-          />
-          <input
-            className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
-            placeholder="שם הקבלן"
-            value={newProject.contractor_name}
-            onChange={(event) =>
-              setNewProject({
-                ...newProject,
-                contractor_name: event.target.value,
-              })
-            }
-            required
-          />
-          <input
-            className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
-            placeholder="עו״ד מלווה"
-            value={newProject.lawyer_name}
-            onChange={(event) =>
-              setNewProject({
-                ...newProject,
-                lawyer_name: event.target.value,
-              })
-            }
-            required
-          />
-          <input
-            className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
-            placeholder="מפקח מלווה"
-            value={newProject.supervisor_name}
-            onChange={(event) =>
-              setNewProject({
-                ...newProject,
-                supervisor_name: event.target.value,
-              })
-            }
-            required
-          />
-          <input
-            className="rounded-2xl border border-zinc-200 bg-transparent p-4 md:col-span-2 dark:border-zinc-700"
-            placeholder="אימייל מפקח מלווה (אופציונלי)"
-            type="email"
-            value={newProject.supervisor_email}
-            onChange={(event) =>
-              setNewProject({
-                ...newProject,
-                supervisor_email: event.target.value,
-              })
-            }
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            disabled={creating}
-            className="md:col-span-2"
+          יצירת פרויקט חדש
+        </Button>
+      }
+    >
+      {showCreateForm ? (
+        <Card className="mb-8">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold">יצירת פרויקט חדש</h2>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => setShowCreateForm(false)}
+            >
+              ביטול
+            </Button>
+          </div>
+
+          <form
+            onSubmit={handleCreateProject}
+            className="grid gap-4 md:grid-cols-2"
           >
-            {creating ? "יוצר פרויקט..." : "צור פרויקט"}
-          </Button>
-        </form>
-      </Card>
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              placeholder="שם הפרויקט"
+              value={newProject.project_name}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  project_name: event.target.value,
+                })
+              }
+              required
+            />
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              placeholder="שם היזם"
+              value={newProject.developer_name}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  developer_name: event.target.value,
+                })
+              }
+              required
+            />
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              placeholder="שם הקבלן"
+              value={newProject.contractor_name}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  contractor_name: event.target.value,
+                })
+              }
+              required
+            />
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              placeholder="עו״ד מלווה"
+              value={newProject.lawyer_name}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  lawyer_name: event.target.value,
+                })
+              }
+              required
+            />
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              placeholder="מפקח מלווה"
+              value={newProject.supervisor_name}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  supervisor_name: event.target.value,
+                })
+              }
+              required
+            />
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 md:col-span-2 dark:border-zinc-700"
+              placeholder="אימייל מפקח מלווה (אופציונלי)"
+              type="email"
+              value={newProject.supervisor_email}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  supervisor_email: event.target.value,
+                })
+              }
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={creating}
+              className="md:col-span-2"
+            >
+              {creating ? "יוצר פרויקט..." : "צור פרויקט"}
+            </Button>
+          </form>
+        </Card>
+      ) : null}
 
       <div className="mb-6 grid items-end gap-4 md:grid-cols-2">
         <FilterBar

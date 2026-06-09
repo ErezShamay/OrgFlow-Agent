@@ -201,9 +201,9 @@ export default function PublicHomePage() {
                 md:text-xl
               "
             >
-              פלטפורמת AI לניהול תפעולי, בקרת פרויקטים,
-              ניתוח חריגות ונקודות סיכון
-              בפרויקטי התחדשות עירונית ובנייה.
+              פלטפורמת AI לתפעול פיקוח הנדסי — מדוחות וחריגות
+              ועד פעולות, מעקב והסלמות
+              בפרויקטי בנייה והתחדשות עירונית.
             </p>
 
             <div
@@ -795,20 +795,50 @@ export default function PublicHomePage() {
         <div
           className="
             of-container
+            relative
             overflow-hidden
             rounded-[2.5rem]
             border
             border-zinc-200/80
-            bg-zinc-900
+            bg-gradient-to-br
+            from-brand
+            to-brand-gold-dark
             px-8
             py-16
             text-center
-            dark:border-zinc-800
-            dark:bg-zinc-900/80
+            shadow-2xl
+            shadow-brand/20
+            dark:border-zinc-700
           "
         >
+          <div
+            className="
+              absolute
+              -right-10
+              -top-10
+              h-40
+              w-40
+              rounded-full
+              bg-white/10
+              blur-2xl
+            "
+          />
+          <div
+            className="
+              absolute
+              -bottom-10
+              -left-10
+              h-32
+              w-32
+              rounded-full
+              bg-white/10
+              blur-2xl
+            "
+          />
+
           <h2
             className="
+              relative
               text-3xl
               font-black
               tracking-tight
@@ -820,18 +850,22 @@ export default function PublicHomePage() {
           </h2>
           <p
             className="
+              relative
               mx-auto
               mt-4
               max-w-lg
               text-lg
-              text-zinc-400
+              text-white/80
             "
           >
             התחברו למערכת וקבלו גישה מיידית
             לסביבת העבודה התפעולית.
           </p>
 
-          <LandingSystemCtaLink variant="footer" />
+          <LandingSystemCtaLink
+            variant="footer"
+            className="relative"
+          />
         </div>
       </section>
 

@@ -1,3 +1,5 @@
+import time
+
 from fastapi.testclient import TestClient
 
 import app.main as main_module
@@ -49,6 +51,7 @@ class FakeReportProcessingService:
                 "indexed_at": "2026-01-01T00:00:00Z",
             }
         }
+        self._bulk_jobs: dict[str, dict] = {}
 
     def process_uploaded_report(self, project_id: str, filename: str, file_path: str):
         return {
@@ -87,8 +90,22 @@ class FakeReportProcessingService:
             "index": {"report_id": "r1", "indexed_at": "2026-01-01T00:00:00Z", "tokens_count": 3},
         }
 
-    def process_bulk_uploaded_reports(self, project_id: str, uploads: list[dict]):
+    def start_bulk_upload_job(self, project_id: str, total_files: int):
         job_id = "bulk-job-1"
+        self._bulk_jobs[job_id] = {
+            "job_id": job_id,
+            "project_id": project_id,
+            "total_files": total_files,
+            "processed_files": 0,
+            "successful_uploads": 0,
+            "failed_uploads": 0,
+            "progress_percent": 0,
+            "status": "IN_PROGRESS",
+            "results": [],
+        }
+        return job_id
+
+    def run_bulk_upload_job(self, job_id: str, project_id: str, uploads: list[dict]):
         results = [
             self.process_uploaded_report(
                 project_id=project_id,
@@ -99,33 +116,27 @@ class FakeReportProcessingService:
         ]
         successful = [item for item in results if item.get("success")]
         failed = [item for item in results if not item.get("success")]
-        return {
+        self._bulk_jobs[job_id] = {
             "job_id": job_id,
             "project_id": project_id,
             "total_files": len(uploads),
+            "processed_files": len(uploads),
             "successful_uploads": len(successful),
             "failed_uploads": len(failed),
             "progress_percent": 100 if uploads else 0,
+            "status": "COMPLETED",
             "results": results,
         }
 
+    def process_bulk_uploaded_reports(self, project_id: str, uploads: list[dict]):
+        job_id = self.start_bulk_upload_job(project_id, len(uploads))
+        self.run_bulk_upload_job(job_id, project_id, uploads)
+        return self._bulk_jobs[job_id]
+
     def get_bulk_upload_progress(self, project_id: str, job_id: str):
-        if project_id != "p1" or job_id != "bulk-job-1":
+        if project_id != "p1":
             return None
-        return {
-            "job_id": job_id,
-            "project_id": project_id,
-            "total_files": 2,
-            "processed_files": 2,
-            "successful_uploads": 2,
-            "failed_uploads": 0,
-            "progress_percent": 100,
-            "status": "COMPLETED",
-            "results": [
-                {"success": True, "filename": "weekly-report-1.pdf"},
-                {"success": True, "filename": "weekly-report-2.pdf"},
-            ],
-        }
+        return self._bulk_jobs.get(job_id)
 
     def get_project_report_timeline(self, project_id: str):
         return {
@@ -437,8 +448,7 @@ def test_reports_upload_malware_file_returns_422(monkeypatch):
 
 
 def test_reports_bulk_upload(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.post(
@@ -456,15 +466,31 @@ def test_reports_bulk_upload(monkeypatch):
     assert payload["project_id"] == "p1"
     assert payload["job_id"] == "bulk-job-1"
     assert payload["total_files"] == 2
-    assert payload["successful_uploads"] == 2
-    assert payload["failed_uploads"] == 0
-    assert payload["progress_percent"] == 100
-    assert len(payload["results"]) == 2
+    assert payload["status"] in {"IN_PROGRESS", "COMPLETED"}
+
+    completed = payload if payload["status"] == "COMPLETED" else None
+    for _ in range(100):
+        if completed is not None:
+            break
+        time.sleep(0.01)
+        progress_response = client.get(
+            "/projects/p1/reports/upload-jobs/bulk-job-1",
+            headers=_auth_headers(),
+        )
+        progress_payload = progress_response.json()
+        if progress_payload["status"] == "COMPLETED":
+            completed = progress_payload
+            break
+
+    assert completed is not None
+    assert completed["successful_uploads"] == 2
+    assert completed["failed_uploads"] == 0
+    assert completed["progress_percent"] == 100
+    assert len(completed["results"]) == 2
 
 
 def test_reports_bulk_upload_project_not_found(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.post(
@@ -479,23 +505,35 @@ def test_reports_bulk_upload_project_not_found(monkeypatch):
 
 
 def test_reports_bulk_upload_progress(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeReportProcessingService())
     client = TestClient(app)
 
-    response = client.get(
-        "/projects/p1/reports/upload-jobs/bulk-job-1",
+    upload_response = client.post(
+        "/reports/upload/bulk",
+        data={"project_id": "p1"},
+        files=[("files", ("weekly-report-1.pdf", b"fake-pdf-bytes-1", "application/pdf"))],
         headers=_auth_headers(),
     )
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["status"] == "COMPLETED"
-    assert payload["progress_percent"] == 100
+    assert upload_response.status_code == 200
+
+    completed = None
+    for _ in range(100):
+        time.sleep(0.01)
+        response = client.get(
+            "/projects/p1/reports/upload-jobs/bulk-job-1",
+            headers=_auth_headers(),
+        )
+        payload = response.json()
+        if payload["status"] == "COMPLETED":
+            completed = payload
+            break
+
+    assert completed is not None
+    assert completed["progress_percent"] == 100
 
 
 def test_reports_bulk_upload_progress_missing_job(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    _patch_report_dependencies(monkeypatch, FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.get(

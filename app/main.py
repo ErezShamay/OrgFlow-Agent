@@ -1,4 +1,5 @@
 import shutil
+import threading
 from urllib.parse import quote
 
 from contextlib import asynccontextmanager
@@ -3064,43 +3065,73 @@ async def upload_report(
 async def upload_reports_bulk(
     project_id: str = Form(...),
     files: list[UploadFile] = File(...),
+    auth=Depends(require_permission("reports:write")),
 ):
-    project = project_repository.get_project_by_id(project_id)
+    project = tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    )
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    if not files:
+        raise HTTPException(status_code=422, detail="At least one file is required")
 
     upload_dir = Path("tmp_uploads")
     upload_dir.mkdir(parents=True, exist_ok=True)
     uploads: list[dict] = []
 
-    try:
-        for file in files:
-            timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S%f")
-            target_path = upload_dir / f"{timestamp}_{file.filename or 'report'}"
-            with target_path.open("wb") as target_file:
-                shutil.copyfileobj(file.file, target_file)
-            uploads.append(
-                {
-                    "filename": file.filename or target_path.name,
-                    "file_path": str(target_path),
-                }
-            )
-
-        return report_processing_service.process_bulk_uploaded_reports(
-            project_id=project_id,
-            uploads=uploads,
+    for file in files:
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S%f")
+        target_path = upload_dir / f"{timestamp}_{file.filename or 'report'}"
+        with target_path.open("wb") as target_file:
+            shutil.copyfileobj(file.file, target_file)
+        uploads.append(
+            {
+                "filename": file.filename or target_path.name,
+                "file_path": str(target_path),
+            }
         )
-    finally:
-        for item in uploads:
-            path = Path(item["file_path"])
-            if path.exists():
-                path.unlink()
+
+    job_id = report_processing_service.start_bulk_upload_job(
+        project_id,
+        len(uploads),
+    )
+
+    def run_bulk_job() -> None:
+        try:
+            report_processing_service.run_bulk_upload_job(
+                job_id,
+                project_id,
+                uploads,
+            )
+        finally:
+            for item in uploads:
+                path = Path(item["file_path"])
+                if path.exists():
+                    path.unlink()
+
+    threading.Thread(target=run_bulk_job, daemon=True).start()
+
+    progress = report_processing_service.get_bulk_upload_progress(project_id, job_id)
+    if not progress:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to start bulk upload job",
+        )
+    return progress
 
 
 @app.get("/projects/{project_id}/reports/upload-jobs/{job_id}")
-def get_reports_bulk_upload_progress(project_id: str, job_id: str):
-    project = project_repository.get_project_by_id(project_id)
-    if not project:
+def get_reports_bulk_upload_progress(
+    project_id: str,
+    job_id: str,
+    auth=Depends(require_permission("reports:read")),
+):
+    if not tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    ):
         raise HTTPException(status_code=404, detail="Project not found")
     progress = report_processing_service.get_bulk_upload_progress(project_id, job_id)
     if not progress:
