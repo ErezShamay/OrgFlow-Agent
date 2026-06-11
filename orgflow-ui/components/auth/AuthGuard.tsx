@@ -15,7 +15,7 @@ import {
 } from "@/contexts/AuthContext";
 import {
   isPublicRoute,
-  POST_LOGIN_ROUTE,
+  resolvePostLoginRoute,
 } from "@/lib/navigation";
 
 export default function AuthGuard({
@@ -23,7 +23,12 @@ export default function AuthGuard({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const {
+    user,
+    loading,
+    profile,
+    sessionRole,
+  } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -44,9 +49,13 @@ export default function AuthGuard({
     }
 
     if (user && isAuthPage && !preserveAuthFlow) {
-      router.replace(POST_LOGIN_ROUTE);
+      router.replace(
+        resolvePostLoginRoute(
+          sessionRole || profile?.role
+        )
+      );
     }
-  }, [user, loading, pathname, router]);
+  }, [user, loading, pathname, router, profile?.role, sessionRole]);
 
   if (loading) {
     return <AppLoadingScreen />;

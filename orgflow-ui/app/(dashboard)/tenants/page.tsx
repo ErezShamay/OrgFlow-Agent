@@ -1,22 +1,61 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import TenantExportCards from "@/components/tenants/TenantExportCards";
 import TenantFileUploader from "@/components/tenants/TenantFileUploader";
 import TenantMergeUploader from "@/components/tenants/TenantMergeUploader";
 import TenantTable from "@/components/tenants/TenantTable";
+import Button from "@/components/ui/Button";
+import LoadingState from "@/components/ui/LoadingState";
+import { useTenantManagerModule } from "@/hooks/useTenantManagerModule";
 import type { Tenant } from "@/lib/tenants/types";
 
 type UploadMode = "single" | "merge";
 
 export default function TenantsPage() {
+  const { isEnabled, loading, error, reload } = useTenantManagerModule();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [projectAddress, setProjectAddress] = useState("פינלס 9 תל אביב");
   const [mode, setMode] = useState<UploadMode>("single");
 
   const withPhone = tenants.filter((t) => t.phone).length;
   const withEmail = tenants.filter((t) => t.email).length;
+
+  if (loading) {
+    return (
+      <div className="of-container mx-auto max-w-5xl p-8">
+        <LoadingState message="טוען מודול מנהל דיירים..." variant="spinner" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="of-container mx-auto max-w-5xl space-y-4 p-8">
+        <p className="text-sm text-red-600">{error}</p>
+        <Button variant="secondary" onClick={() => void reload()}>
+          נסה שוב
+        </Button>
+      </div>
+    );
+  }
+
+  if (!isEnabled) {
+    return (
+      <div className="of-container mx-auto max-w-5xl space-y-4 p-8">
+        <h1 className="of-page-title text-2xl">מנהל דיירים</h1>
+        <p className="of-page-desc text-sm">
+          מודול מנהל דיירים אינו מופעל עבור הארגון הנוכחי. פנה למנהל המערכת
+          להפעלה.
+        </p>
+        <Link href="/portfolio" className="text-sm text-brand hover:underline">
+          חזרה לתיק QC
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="of-dashboard-page of-container mx-auto max-w-5xl space-y-10">

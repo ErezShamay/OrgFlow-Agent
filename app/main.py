@@ -134,6 +134,10 @@ from app.schemas.organization import (
     OrganizationCreateRequest,
 )
 
+from app.schemas.tenant_manager import (
+    TenantManagerModuleToggleRequest,
+)
+
 from app.schemas.field_reports import (
     FieldReportOrganizationProfileUpdateRequest,
     FieldReportModuleToggleRequest,
@@ -153,6 +157,14 @@ from app.services.organization_admin_service import (
 
 from app.services.field_report_module_service import (
     FieldReportModuleService,
+)
+
+from app.services.tenant_manager_module_service import (
+    TenantManagerModuleService,
+)
+
+from app.services.ai_usage_dashboard_service import (
+    AIUsageDashboardService,
 )
 
 from app.services.field_report_organization_profile_service import (
@@ -712,6 +724,9 @@ organization_admin_service = OrganizationAdminService()
 
 field_report_module_service = FieldReportModuleService()
 
+tenant_manager_module_service = TenantManagerModuleService()
+ai_usage_dashboard_service = AIUsageDashboardService()
+
 field_report_organization_profile_service = (
     FieldReportOrganizationProfileService(
         module_service=field_report_module_service,
@@ -781,6 +796,9 @@ def startup_event():
 
     app.state.field_report_module_service = (
         field_report_module_service
+    )
+    app.state.tenant_manager_module_service = (
+        tenant_manager_module_service
     )
     app.state.startup_complete = True
 
@@ -1553,6 +1571,49 @@ def get_field_report_module_status(
     auth=Depends(get_auth_context),
 ):
     return field_report_module_service.get_status(
+        auth.org_id
+    )
+
+
+@app.get("/admin/ai-usage")
+def get_platform_ai_usage_dashboard(
+    period_days: int = 90,
+    _: object = Depends(require_permission("organizations:read")),
+):
+    return ai_usage_dashboard_service.get_platform_dashboard(
+        period_days=period_days,
+    )
+
+
+@app.get("/admin/tenant-manager/modules")
+def list_tenant_manager_modules(
+    _: object = Depends(
+        require_permission("tenant_manager:admin")
+    ),
+):
+    return tenant_manager_module_service.list_all_with_organizations()
+
+
+@app.patch(
+    "/admin/tenant-manager/modules/{organization_id}"
+)
+def set_tenant_manager_module(
+    organization_id: str,
+    request: TenantManagerModuleToggleRequest,
+    auth=Depends(require_permission("tenant_manager:admin")),
+):
+    return tenant_manager_module_service.set_enabled(
+        organization_id=organization_id,
+        is_enabled=request.is_enabled,
+        actor_profile_id=auth.user_id,
+    )
+
+
+@app.get("/tenant-manager/module-status")
+def get_tenant_manager_module_status(
+    auth=Depends(get_auth_context),
+):
+    return tenant_manager_module_service.get_status(
         auth.org_id
     )
 

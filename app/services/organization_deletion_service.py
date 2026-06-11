@@ -40,6 +40,7 @@ ORGANIZATION_SCOPED_TABLES: tuple[str, ...] = (
     "field_visit_report_lines",
     "field_visit_reports",
     "organization_field_report_modules",
+    "organization_tenant_manager_modules",
     "ai_interpretations",
     "operational_actions",
     "weekly_reports",

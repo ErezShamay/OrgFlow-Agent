@@ -29,15 +29,14 @@ export default function OrgSwitcher() {
     loading,
   } = useAuth();
 
-  const canManageOrganizations = useCanManageOrganizations();
-  const isPlatformAdmin = useIsPlatformAdmin();
+  const isPlatformAdminUser = useIsPlatformAdmin();
   const [targetOrgId, setTargetOrgId] = useState<string | null>(null);
   const switching = targetOrgId !== null && targetOrgId !== currentOrgId;
   const hasMultipleOrganizations = organizations.length > 1;
   const shouldShow =
     !loading
-    && organizations.length > 0
-    && (hasMultipleOrganizations || canManageOrganizations);
+    && isPlatformAdminUser
+    && organizations.length > 0;
 
   if (!shouldShow) {
     return null;
@@ -62,9 +61,7 @@ export default function OrgSwitcher() {
         title={
           canSwitch
             ? undefined
-            : isPlatformAdmin
-              ? "יש לקוח אחד במערכת - הוסף לקוח נוסף כדי לעבור ביניהם"
-              : "יש לך גישה ללקוח אחד בלבד"
+            : "יש לקוח אחד במערכת - הוסף לקוח נוסף כדי לעבור ביניהם"
         }
         onChange={(event) => {
           const nextOrgId = event.target.value;

@@ -41,6 +41,7 @@ QC_PERMISSIONS: tuple[str, ...] = (
     "field_reports:read",
     "field_reports:write",
     "field_reports:admin",
+    "tenant_manager:admin",
     "projects:read",
     "projects:write",
     "users:read",
@@ -111,6 +112,7 @@ _PLATFORM_ADMIN_EXTRA_PERMISSIONS: frozenset[str] = frozenset(
         "organizations:read",
         "organizations:write",
         "impersonation:use",
+        "tenant_manager:admin",
     }
 )
 

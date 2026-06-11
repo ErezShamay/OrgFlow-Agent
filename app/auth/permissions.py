@@ -42,6 +42,7 @@ PERMISSION_MATRIX: dict[str, set[str]] = {
         "field_reports:admin",
         "field_reports:read",
         "field_reports:write",
+        "tenant_manager:admin",
         "audit:read",
         "impersonation:use",
         *_QC_ADMIN,

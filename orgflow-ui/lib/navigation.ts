@@ -1,3 +1,7 @@
+import {
+  isPlatformAdmin,
+} from "@/lib/auth/permissions";
+
 export type NavLink = {
   href: string;
   label: string;
@@ -53,6 +57,17 @@ export const ADMIN_USERS_ROUTE = {
   label: "ניהול משתמשים",
 } as const;
 
+export const PLATFORM_ADMIN_HOME_ROUTE = {
+  href: "/admin/platform",
+  label: "דשבורד לקוחות",
+} as const;
+
+export const PLATFORM_ADMIN_NAV_LINKS: NavLink[] = [
+  PLATFORM_ADMIN_HOME_ROUTE,
+  ADMIN_USERS_ROUTE,
+  SETTINGS_ROUTE,
+];
+
 export const AUTOMATION_ROUTE = {
   href: "/automation",
   label: "אוטומציה",
@@ -87,7 +102,19 @@ export function isAdminOnlySystemRoute(href: string): boolean {
   );
 }
 
-export function getSystemNavLinks(isAdmin: boolean): NavLink[] {
+export function getSystemNavLinks(
+  isAdmin: boolean,
+  options?: {
+    platformAdmin?: boolean;
+  }
+): NavLink[] {
+  if (options?.platformAdmin) {
+    return [
+      ...PLATFORM_ADMIN_NAV_LINKS,
+      ...ADMIN_SYSTEM_NAV_LINKS,
+    ];
+  }
+
   if (isAdmin) {
     return [
       ADMIN_USERS_ROUTE,
@@ -97,6 +124,14 @@ export function getSystemNavLinks(isAdmin: boolean): NavLink[] {
   }
 
   return SYSTEM_NAV_LINKS;
+}
+
+export function resolvePostLoginRoute(
+  role?: string | null
+): string {
+  return isPlatformAdmin(role)
+    ? PLATFORM_ADMIN_HOME_ROUTE.href
+    : POST_LOGIN_ROUTE;
 }
 
 function matchesNavPath(pathname: string, href: string) {
@@ -159,10 +194,10 @@ export const FIELD_REPORTS_ROUTE = {
 
 /** QC primary nav (spec 0.4 / stage 5.1) - max 4 items for dashboard sidebar. */
 export const GLOBAL_NAV_LINKS: NavLink[] = filterPrimaryNavLinks([
-  FIELD_REPORTS_ROUTE,
-  { href: "/issues", label: "ליקויים" },
   { href: "/portfolio", label: "תיק QC" },
   { href: "/projects", label: "פרויקטים" },
+  FIELD_REPORTS_ROUTE,
+  { href: "/issues", label: "ליקויים" },
 ]);
 
 /** Legacy PM navbar - public home until stage 5.8. Upload hidden in 5.2. */

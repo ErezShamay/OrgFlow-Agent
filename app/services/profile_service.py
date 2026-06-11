@@ -1,5 +1,6 @@
 from postgrest.exceptions import APIError
 
+from app.auth.roles import is_platform_admin
 from app.config.settings import settings
 from app.repositories.organization_repository import (
     OrganizationRepository,
@@ -86,6 +87,13 @@ class ProfileService:
 
         if org_id:
             return org_id
+
+        if is_platform_admin(profile.get("role")):
+            organizations = (
+                self.organization_repository.get_all_organizations()
+            )
+            if organizations:
+                return str(organizations[0]["id"]).strip()
 
         if not self.repository.supports_organization_column():
             if settings.ENVIRONMENT in {

@@ -19,7 +19,6 @@ export type QCPrimaryNavId =
 
 export type QCProjectNavId =
   | "overview"
-  | "field_reports"
   | "issues"
   | "reviews_ai";
 
@@ -52,17 +51,21 @@ export const QC_PROJECTS_ROUTE = {
   label: "פרויקטים",
 };
 
+export const FIELD_REPORTS_UPLOAD_ROUTE = {
+  href: "/field-reports/upload",
+  label: "העלאת מסמכים",
+} as const;
+
+export const TENANT_MANAGER_ROUTE = {
+  href: "/tenants",
+  label: "מנהל דיירים",
+} as const;
+
+export const TOOLS_NAV_LABEL = "כלים נוספים";
+
 export const QC_PRIMARY_NAV_ITEMS: ReadonlyArray<
   QCNavItem & { id: QCPrimaryNavId }
 > = [
-  {
-    ...QC_FIELD_REPORTS_ROUTE,
-    requiredPermission: "field_reports:read",
-  },
-  {
-    ...QC_ISSUES_ROUTE,
-    requiredPermission: "quality_issues:read",
-  },
   {
     ...QC_PORTFOLIO_ROUTE,
     requiredPermission: "quality_portfolio:read",
@@ -70,6 +73,14 @@ export const QC_PRIMARY_NAV_ITEMS: ReadonlyArray<
   {
     ...QC_PROJECTS_ROUTE,
     requiredPermission: "projects:read",
+  },
+  {
+    ...QC_FIELD_REPORTS_ROUTE,
+    requiredPermission: "field_reports:read",
+  },
+  {
+    ...QC_ISSUES_ROUTE,
+    requiredPermission: "quality_issues:read",
   },
 ];
 
@@ -98,7 +109,6 @@ const PROJECT_NAV_PERSONA_VISIBILITY: Record<
   ReadonlySet<string>
 > = {
   overview: new Set(["SUPERVISOR", "CONTRACTOR", "DEVELOPER", "ADMIN"]),
-  field_reports: new Set(["SUPERVISOR", "DEVELOPER", "ADMIN"]),
   issues: new Set(["SUPERVISOR", "CONTRACTOR", "DEVELOPER", "ADMIN"]),
   reviews_ai: new Set(["SUPERVISOR", "ADMIN"]),
 };
@@ -115,12 +125,6 @@ function buildQCProjectNavItems(
       id: "overview",
       href: `/projects/${projectId}`,
       label: "סקירת הפרויקט",
-    },
-    {
-      id: "field_reports",
-      href: `/projects/${projectId}/field-reports`,
-      label: "דוחות שטח",
-      requiredPermission: "field_reports:read",
     },
     {
       id: "issues",
@@ -251,6 +255,22 @@ export function isQCPrimaryNavActive(pathname: string, href: string): boolean {
     );
   }
 
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function getToolsNavLinks(options: {
+  tenantManagerEnabled?: boolean;
+}): NavLink[] {
+  const links: NavLink[] = [];
+
+  if (options.tenantManagerEnabled) {
+    links.push(TENANT_MANAGER_ROUTE);
+  }
+
+  return links;
+}
+
+export function isToolsNavActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

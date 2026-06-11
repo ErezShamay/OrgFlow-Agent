@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { FieldReportModuleProvider } from "@/contexts/FieldReportModuleContext";
 import { FieldReportSyncContextProvider } from "@/contexts/FieldReportSyncContext";
+import { TenantManagerModuleProvider } from "@/contexts/TenantManagerModuleContext";
 
 export default function DashboardProviders({
   children,
@@ -12,7 +13,11 @@ export default function DashboardProviders({
 }) {
   return (
     <FieldReportModuleProvider>
-      <FieldReportSyncContextProvider>{children}</FieldReportSyncContextProvider>
+      <TenantManagerModuleProvider>
+        <FieldReportSyncContextProvider>
+          {children}
+        </FieldReportSyncContextProvider>
+      </TenantManagerModuleProvider>
     </FieldReportModuleProvider>
   );
 }

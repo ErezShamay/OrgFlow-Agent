@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import datetime
 
 from postgrest.exceptions import APIError
 
@@ -162,6 +163,39 @@ class AILogRepository:
             organization_id,
             project_ids,
         )
+
+        try:
+            response = request.execute()
+        except APIError as error:
+            if is_invalid_uuid_error(error):
+                return []
+            raise
+
+        return response.data or []
+
+    def list_for_usage_summary(
+        self,
+        *,
+        since: datetime | None = None,
+        limit: int = 20000,
+    ) -> list[dict]:
+        columns = (
+            "organization_id,project_id,prompt_name,model_name,"
+            "prompt_tokens,completion_tokens,cache_hit,success,created_at"
+        )
+        request = (
+            supabase
+            .table("ai_logs")
+            .select(columns)
+            .order("created_at", desc=True)
+            .limit(limit)
+        )
+
+        if since is not None:
+            request = request.gte(
+                "created_at",
+                since.isoformat(),
+            )
 
         try:
             response = request.execute()

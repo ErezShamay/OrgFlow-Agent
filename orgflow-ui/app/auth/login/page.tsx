@@ -26,12 +26,18 @@ import {
   getApiBaseUrl,
   isSupabaseConfigured,
 } from "@/lib/env/public-env";
-import { POST_LOGIN_ROUTE } from "@/lib/navigation";
+import { resolvePostLoginRoute } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading: authLoading, authBootstrapError } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    authBootstrapError,
+    profile,
+    sessionRole,
+  } = useAuth();
   const configWarning = describeMobileAuthConfig();
 
   const [email, setEmail] = useState("");
@@ -68,14 +74,22 @@ export default function LoginPage() {
       return;
     }
 
+    const postLoginRoute = resolvePostLoginRoute(
+      sessionRole || profile?.role
+    );
+
+    if (!sessionRole && !profile?.role) {
+      return;
+    }
+
     logAuthInfo("login:redirect_ok", {
-      route: POST_LOGIN_ROUTE,
+      route: postLoginRoute,
       userId: user.id,
     });
 
     setAwaitingRedirect(false);
     setLoading(false);
-    router.replace(POST_LOGIN_ROUTE);
+    router.replace(postLoginRoute);
   }, [
     awaitingRedirect,
     authLoading,
@@ -83,6 +97,8 @@ export default function LoginPage() {
     configWarning,
     router,
     user,
+    profile?.role,
+    sessionRole,
   ]);
 
   async function handleLogin(e: React.FormEvent) {

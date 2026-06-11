@@ -423,6 +423,14 @@ export function AuthProvider({
       return;
     }
 
+    const activeRole = (sessionRole || profile?.role || "")
+      .trim()
+      .toUpperCase();
+
+    if (activeRole !== "PLATFORM_ADMIN") {
+      return;
+    }
+
     clearQueryCache();
     invalidateWorkspaceCache();
     await establishBackendSessionWrapped(session, organizationId);

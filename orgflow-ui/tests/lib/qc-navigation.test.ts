@@ -16,10 +16,10 @@ describe("qc navigation (spec 0.4)", () => {
   it("defines exactly four primary nav items", () => {
     expect(QC_PRIMARY_NAV_ITEMS).toHaveLength(4);
     expect(QC_PRIMARY_NAV_ITEMS.map((item) => item.label)).toEqual([
-      "דוחות שטח",
-      "ליקויים",
       "תיק QC",
       "פרויקטים",
+      "דוחות שטח",
+      "ליקויים",
     ]);
   });
 
@@ -35,25 +35,25 @@ describe("qc navigation (spec 0.4)", () => {
     const links = getQCPrimaryNavLinks({ role: "SUPERVISOR" });
     expect(links).toHaveLength(4);
     expect(links.map((link) => link.href)).toEqual([
-      "/field-reports",
-      "/issues",
       "/portfolio",
       "/projects",
+      "/field-reports",
+      "/issues",
     ]);
   });
 
   it("hides field reports and portfolio for contractor", () => {
     const links = getQCPrimaryNavLinks({ role: "CONTRACTOR" });
-    expect(links.map((link) => link.href)).toEqual(["/issues", "/projects"]);
+    expect(links.map((link) => link.href)).toEqual(["/projects", "/issues"]);
   });
 
   it("hides field reports write nav for developer but keeps portfolio", () => {
     const links = getQCPrimaryNavLinks({ role: "DEVELOPER" });
     expect(links.map((link) => link.label)).toEqual([
-      "דוחות שטח",
-      "ליקויים",
       "תיק QC",
       "פרויקטים",
+      "דוחות שטח",
+      "ליקויים",
     ]);
   });
 
@@ -81,7 +81,6 @@ describe("qc navigation (spec 0.4)", () => {
 
     expect(primary.map((link) => link.label)).toEqual([
       "סקירת הפרויקט",
-      "דוחות שטח",
       "ליקויים",
     ]);
     expect(secondary.map((link) => link.href)).toEqual([
@@ -94,7 +93,7 @@ describe("qc navigation (spec 0.4)", () => {
     expect(getQCProjectSecondaryNavLinks("proj-1", "DEVELOPER")).toEqual([]);
     expect(
       getQCProjectPrimaryNavLinks("proj-1", "DEVELOPER").map((link) => link.label)
-    ).toEqual(["סקירת הפרויקט", "דוחות שטח", "ליקויים"]);
+    ).toEqual(["סקירת הפרויקט", "ליקויים"]);
   });
 
   it("limits contractor project nav to overview and issues", () => {

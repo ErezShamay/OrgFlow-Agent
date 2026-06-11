@@ -77,7 +77,7 @@ QC_FROZEN_SURFACES: tuple[QCFrozenSurface, ...] = (
         id=QCFrozenSurfaceId.AI_UPLOAD_PIPELINE,
         label_he="העלאת דוח → findings",
         category=QCFreezeCategory.FROZEN,
-        ui_routes=("/upload",),
+        ui_routes=("/upload", "/field-reports/upload"),
         api_prefixes=(
             "/reports/upload",
             "/reports/upload/bulk",
@@ -107,9 +107,12 @@ QC_FROZEN_SURFACES: tuple[QCFrozenSurface, ...] = (
         id=QCFrozenSurfaceId.UPLOAD_LEGACY,
         label_he="העלאת דוח",
         category=QCFreezeCategory.DEPRECATED,
-        ui_routes=("/upload",),
+        ui_routes=("/upload", "/field-reports/upload"),
         api_prefixes=("/reports/upload",),
-        code_paths=("orgflow-ui/app/(dashboard)/upload/page.tsx",),
+        code_paths=(
+            "orgflow-ui/app/(dashboard)/upload/page.tsx",
+            "orgflow-ui/app/(dashboard)/field-reports/upload/page.tsx",
+        ),
         qc_replacement="field_visit_reports",
     ),
     QCFrozenSurface(

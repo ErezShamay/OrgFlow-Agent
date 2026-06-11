@@ -103,13 +103,7 @@ class TenantAccessService:
             ProfileRepository.extract_organization_id(profile)
         )
 
-        if profile_org_id == organization_id:
-            return True
-
-        return self.organization_repository.profile_owns_organization(
-            profile_id=profile_id,
-            organization_id=organization_id,
-        )
+        return profile_org_id == organization_id
 
     def resolve_admin_target_organization(
         self,
@@ -154,7 +148,20 @@ class TenantAccessService:
         if profile and is_platform_admin(profile.get("role")):
             return self.organization_repository.get_all_organizations()
 
-        return (
-            self.organization_repository
-            .list_accessible_for_profile(profile_id)
+        profile_org_id = (
+            ProfileRepository.extract_organization_id(profile)
+            if profile
+            else ""
         )
+
+        if not profile_org_id:
+            return []
+
+        organization = self.organization_repository.get_by_id(
+            profile_org_id
+        )
+
+        if not organization:
+            return []
+
+        return [organization]

@@ -66,3 +66,30 @@ def test_org_admin_cannot_target_different_organization(
             session_org_id="org-client",
             requested_organization_id="org-demo",
         )
+
+
+def test_org_admin_cannot_access_other_organization_even_when_owner(
+    tenant_access_service: TenantAccessService,
+):
+    service = TenantAccessService(
+        profile_repository=FakeProfileRepository(),
+        organization_repository=FakeOrganizationRepository(),
+    )
+    service.organization_repository.profile_owns_organization = (
+        lambda **_: True
+    )
+
+    assert service.can_access_organization(
+        profile_id="client-admin",
+        organization_id="org-demo",
+    ) is False
+
+
+def test_org_admin_lists_only_assigned_organization(
+    tenant_access_service: TenantAccessService,
+):
+    organizations = tenant_access_service.list_accessible_organizations(
+        "client-admin"
+    )
+
+    assert organizations == [{"id": "org-client"}]

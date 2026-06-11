@@ -5,6 +5,9 @@ import {
   ADMIN_SYSTEM_NAV_LINKS,
   AUTOMATION_ROUTE,
   DEAD_LETTERS_ROUTE,
+  PLATFORM_ADMIN_HOME_ROUTE,
+  PLATFORM_ADMIN_NAV_LINKS,
+  POST_LOGIN_ROUTE,
   ESCALATIONS_LEGACY_ROUTE,
   FIELD_REPORTS_ROUTE,
   filterPrimaryNavLinks,
@@ -15,6 +18,7 @@ import {
   LEGACY_HOME_NAVBAR_LINKS,
   PRIMARY_NAV_HIDDEN_ROUTES,
   REVIEWS_GLOBAL_LEGACY_ROUTE,
+  resolvePostLoginRoute,
   SETTINGS_ROUTE,
   UPLOAD_LEGACY_ROUTE,
 } from "@/lib/navigation";
@@ -24,22 +28,22 @@ describe("navigation (stage 5.1 - QC primary nav)", () => {
   it("defines exactly four QC items in GLOBAL_NAV_LINKS", () => {
     expect(GLOBAL_NAV_LINKS).toHaveLength(4);
     expect(GLOBAL_NAV_LINKS.map((link) => link.label)).toEqual([
-      "דוחות שטח",
-      "ליקויים",
       "תיק QC",
       "פרויקטים",
+      "דוחות שטח",
+      "ליקויים",
     ]);
     expect(GLOBAL_NAV_LINKS.map((link) => link.href)).toEqual([
-      "/field-reports",
-      "/issues",
       "/portfolio",
       "/projects",
+      "/field-reports",
+      "/issues",
     ]);
   });
 
   it("uses QC field reports label", () => {
     expect(FIELD_REPORTS_ROUTE.label).toBe("דוחות שטח");
-    expect(GLOBAL_NAV_LINKS[0]).toEqual(FIELD_REPORTS_ROUTE);
+    expect(GLOBAL_NAV_LINKS[2]).toEqual(FIELD_REPORTS_ROUTE);
   });
 
   it("keeps remaining legacy PM links on public home navbar until stage 5.8", () => {
@@ -109,5 +113,27 @@ describe("navigation (stage 5.1 - QC primary nav)", () => {
     ]);
     expect(isAdminOnlySystemRoute("/automation/runs")).toBe(true);
     expect(isAdminOnlySystemRoute("/portfolio")).toBe(false);
+  });
+
+  it("routes platform admin to the usage dashboard after login", () => {
+    expect(resolvePostLoginRoute("PLATFORM_ADMIN")).toBe(
+      PLATFORM_ADMIN_HOME_ROUTE.href
+    );
+    expect(resolvePostLoginRoute("ADMIN")).toBe(POST_LOGIN_ROUTE);
+    expect(PLATFORM_ADMIN_NAV_LINKS[0]).toEqual(PLATFORM_ADMIN_HOME_ROUTE);
+  });
+
+  it("prioritizes platform admin system navigation", () => {
+    expect(
+      getSystemNavLinks(true, { platformAdmin: true }).map(
+        (link) => link.href
+      )
+    ).toEqual([
+      "/admin/platform",
+      "/admin/users",
+      "/settings",
+      "/automation/dead-letters",
+      "/automation",
+    ]);
   });
 });

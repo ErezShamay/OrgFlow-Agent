@@ -10,8 +10,10 @@ import NavLinkItem from "@/components/ui/NavLinkItem";
 import {
   useEffectiveRole,
   useIsAdmin,
+  useIsPlatformAdmin,
 } from "@/hooks/useEffectiveRole";
 import { useFieldReportModule } from "@/hooks/useFieldReportModule";
+import { useTenantManagerModule } from "@/hooks/useTenantManagerModule";
 import { isContractorRole } from "@/lib/auth/contractor-access";
 import {
   getSystemNavLinks,
@@ -23,8 +25,11 @@ import {
   getQCProjectNavLinks,
   getQCProjectPrimaryNavLinks,
   getQCProjectSecondaryNavLinks,
+  getToolsNavLinks,
   isQCPrimaryNavActive,
   isQCProjectNavActive,
+  isToolsNavActive,
+  TOOLS_NAV_LABEL,
 } from "@/lib/qc-navigation";
 
 export default function Sidebar() {
@@ -32,35 +37,43 @@ export default function Sidebar() {
   const params = useParams();
   const effectiveRole = useEffectiveRole();
   const isAdminUser = useIsAdmin();
+  const isPlatformAdminUser = useIsPlatformAdmin();
   const { isEnabled: fieldReportsEnabled } = useFieldReportModule();
+  const { isEnabled: tenantManagerEnabled } = useTenantManagerModule();
   const projectId =
     typeof params?.id === "string"
       ? params.id
       : null;
 
   const contractorView = isContractorRole(effectiveRole);
+  const showClientNavigation = !contractorView && !isPlatformAdminUser;
   const systemLinks = contractorView
     ? [SETTINGS_ROUTE]
-    : getSystemNavLinks(isAdminUser);
+    : getSystemNavLinks(isAdminUser, {
+        platformAdmin: isPlatformAdminUser,
+      });
 
-  const primaryLinks = getQCPrimaryNavLinks({
-    role: effectiveRole,
-    fieldReportsEnabled: fieldReportsEnabled,
-  });
-
-  const projectPrimaryLinks = projectId
-    ? getQCProjectPrimaryNavLinks(projectId, effectiveRole).filter((link) => {
-        if (!fieldReportsEnabled && link.href.endsWith("/field-reports")) {
-          return false;
-        }
-
-        return true;
+  const primaryLinks = showClientNavigation
+    ? getQCPrimaryNavLinks({
+        role: effectiveRole,
+        fieldReportsEnabled: fieldReportsEnabled,
       })
     : [];
 
-  const projectSecondaryLinks = projectId
-    ? getQCProjectSecondaryNavLinks(projectId, effectiveRole)
-    : [];
+  const projectPrimaryLinks =
+    showClientNavigation && projectId
+      ? getQCProjectPrimaryNavLinks(projectId, effectiveRole)
+      : [];
+
+  const projectSecondaryLinks =
+    showClientNavigation && projectId
+      ? getQCProjectSecondaryNavLinks(projectId, effectiveRole)
+      : [];
+
+  const toolsLinks =
+    showClientNavigation
+      ? getToolsNavLinks({ tenantManagerEnabled })
+      : [];
 
   return (
     <aside
@@ -81,22 +94,24 @@ export default function Sidebar() {
       </div>
 
       <nav className="space-y-6">
-        <div>
-          <p className="of-nav-section-label">
-            ניווט ראשי
-          </p>
+        {primaryLinks.length > 0 ? (
+          <div>
+            <p className="of-nav-section-label">
+              ניווט ראשי
+            </p>
 
-          <div className="space-y-1">
-            {primaryLinks.map((link) => (
-              <NavLinkItem
-                key={link.href}
-                href={link.href}
-                label={link.label}
-                isActive={isQCPrimaryNavActive(pathname, link.href)}
-              />
-            ))}
+            <div className="space-y-1">
+              {primaryLinks.map((link) => (
+                <NavLinkItem
+                  key={link.href}
+                  href={link.href}
+                  label={link.label}
+                  isActive={isQCPrimaryNavActive(pathname, link.href)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {projectPrimaryLinks.length > 0 ? (
           <div>
@@ -136,9 +151,30 @@ export default function Sidebar() {
           </div>
         ) : null}
 
+        {toolsLinks.length > 0 ? (
+          <div>
+            <p className="of-nav-section-label">
+              {TOOLS_NAV_LABEL}
+            </p>
+
+            <div className="space-y-1">
+              {toolsLinks.map((link) => (
+                <NavLinkItem
+                  key={link.href}
+                  href={link.href}
+                  label={link.label}
+                  isActive={isToolsNavActive(pathname, link.href)}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div>
           <p className="of-nav-section-label">
-            מערכת
+            {isPlatformAdminUser
+              ? "ניהול פלטפורמה"
+              : "מערכת"}
           </p>
 
           <div className="space-y-1">

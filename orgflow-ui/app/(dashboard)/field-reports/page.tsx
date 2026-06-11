@@ -7,6 +7,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import LoadingState from "@/components/ui/LoadingState";
 import { apiFetch } from "@/lib/api/client";
+import { FIELD_REPORTS_UPLOAD_ROUTE } from "@/lib/qc-navigation";
 import { fieldReportDetailPath } from "@/lib/field-reports/routes";
 import { isFieldReportVisibleInList } from "@/lib/field-reports/field-report-list";
 import { FR_TOUCH_BUTTON } from "@/lib/field-reports/touch-input-class";
@@ -233,7 +234,7 @@ export default function FieldReportsPage() {
         <h1 className="of-page-title text-2xl">הפקת דוחות</h1>
         <p className="of-page-desc text-sm">
           מודול הפקת דוחות אינו מופעל עבור הארגון הנוכחי. פנה למנהל המערכת
-          (ספק) להפעלה.
+          להפעלה.
         </p>
         {status?.storage_available === false ? (
           <p className="text-sm text-amber-700 dark:text-amber-400">
@@ -256,6 +257,12 @@ export default function FieldReportsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge>מודול פעיל</Badge>
+          <Link
+            href={FIELD_REPORTS_UPLOAD_ROUTE.href}
+            className="of-focus-ring inline-flex min-h-12 touch-manipulation items-center justify-center rounded-2xl border border-zinc-300 bg-white px-5 py-2.5 text-base font-semibold text-zinc-900 transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900 lg:min-h-0 lg:px-4 lg:py-2 lg:text-sm"
+          >
+            {FIELD_REPORTS_UPLOAD_ROUTE.label}
+          </Link>
           <Button
             variant="secondary"
             size="lg"

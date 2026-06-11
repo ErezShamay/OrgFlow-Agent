@@ -26,6 +26,7 @@ import {
 } from "@/lib/auth/permissions";
 import { getRoleLabel } from "@/lib/auth/roleLabels";
 import { apiFetch } from "@/lib/api/client";
+import { dispatchTenantManagerModuleChanged } from "@/lib/tenant-manager/module-events";
 
 const ALL_ORGANIZATIONS_SCOPE = "__all__";
 
@@ -57,6 +58,18 @@ type FieldReportModuleRow = {
 
 type FieldReportModulesResponse = {
   organizations: FieldReportModuleRow[];
+  storage_available?: boolean;
+};
+
+type TenantManagerModuleRow = {
+  organization_id: string;
+  organization_name: string;
+  contact_email?: string;
+  is_enabled: boolean;
+};
+
+type TenantManagerModulesResponse = {
+  organizations: TenantManagerModuleRow[];
   storage_available?: boolean;
 };
 
@@ -98,9 +111,16 @@ function AdminUsersContent() {
   >([]);
   const [fieldReportStorageAvailable, setFieldReportStorageAvailable] =
     useState(true);
+  const [tenantManagerModules, setTenantManagerModules] = useState<
+    TenantManagerModuleRow[]
+  >([]);
+  const [tenantManagerStorageAvailable, setTenantManagerStorageAvailable] =
+    useState(true);
   const [togglingModuleOrgId, setTogglingModuleOrgId] = useState<
     string | null
   >(null);
+  const [togglingTenantManagerOrgId, setTogglingTenantManagerOrgId] =
+    useState<string | null>(null);
   const [exportingReportsOrgId, setExportingReportsOrgId] = useState<
     string | null
   >(null);
@@ -123,6 +143,9 @@ function AdminUsersContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [creatingOrganization, setCreatingOrganization] = useState(false);
+  const [showCreateOrganizationForm, setShowCreateOrganizationForm] =
+    useState(false);
+  const [showInviteUserForm, setShowInviteUserForm] = useState(false);
   const [deletingOrganizationId, setDeletingOrganizationId] = useState<
     string | null
   >(null);
@@ -257,6 +280,7 @@ function AdminUsersContent() {
       void loadOrganizations();
       if (canManageOrganizations) {
         void loadFieldReportModules();
+        void loadTenantManagerModules();
       }
     });
 
@@ -300,6 +324,69 @@ function AdminUsersContent() {
       );
     } catch {
       setFieldReportModules([]);
+    }
+  }
+
+  async function loadTenantManagerModules() {
+    try {
+      const response = await apiFetch("/admin/tenant-manager/modules");
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as TenantManagerModulesResponse;
+      setTenantManagerModules(data.organizations || []);
+      setTenantManagerStorageAvailable(
+        data.storage_available !== false
+      );
+    } catch {
+      setTenantManagerModules([]);
+    }
+  }
+
+  async function handleToggleTenantManagerModule(
+    organizationId: string,
+    nextEnabled: boolean
+  ) {
+    try {
+      setTogglingTenantManagerOrgId(organizationId);
+      setError("");
+
+      const response = await apiFetch(
+        `/admin/tenant-manager/modules/${organizationId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ is_enabled: nextEnabled }),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error?.message
+          || data?.detail
+          || "עדכון מודול מנהל דיירים נכשל"
+        );
+      }
+
+      toast.success(
+        nextEnabled
+          ? "מודול מנהל דיירים הופעל - ודא שבחרת את אותו לקוח בסוויצ'ר בראש הדף"
+          : "מודול מנהל דיירים כובה"
+      );
+      dispatchTenantManagerModuleChanged(organizationId);
+      await loadTenantManagerModules();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "עדכון מודול מנהל דיירים נכשל";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setTogglingTenantManagerOrgId(null);
     }
   }
 
@@ -554,6 +641,7 @@ function AdminUsersContent() {
         loadOrganizations(),
         refreshOrganizations(),
         loadFieldReportModules(),
+        loadTenantManagerModules(),
       ]);
 
       if (
@@ -605,6 +693,7 @@ function AdminUsersContent() {
       toast.success("הלקוח נוצר בהצלחה");
       setOrganizationName("");
       setOrganizationEmail("");
+      setShowCreateOrganizationForm(false);
 
       const createdOrgId = String(
         data?.organization?.id || ""
@@ -684,6 +773,7 @@ function AdminUsersContent() {
       setEmail("");
       setFullName("");
       setRole("VIEWER");
+      setShowInviteUserForm(false);
       await loadUsers();
     } catch (err: unknown) {
       const message =
@@ -1011,46 +1101,70 @@ function AdminUsersContent() {
           לקוחות במערכת
         </h2>
 
-        <form
-          onSubmit={handleCreateOrganization}
-          className="mb-6 grid gap-4 md:grid-cols-2"
-        >
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              שם הלקוח
-            </label>
-            <input
-              type="text"
-              value={organizationName}
-              onChange={(e) => setOrganizationName(e.target.value)}
-              required
-              className="of-input of-focus-ring w-full text-sm"
-            />
-          </div>
+        {showCreateOrganizationForm ? (
+          <form
+            onSubmit={handleCreateOrganization}
+            className="mb-6 grid gap-4 md:grid-cols-2"
+          >
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                שם הלקוח
+              </label>
+              <input
+                type="text"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+                required
+                className="of-input of-focus-ring w-full text-sm"
+              />
+            </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              אימייל ליצירת קשר
-            </label>
-            <input
-              type="email"
-              value={organizationEmail}
-              onChange={(e) => setOrganizationEmail(e.target.value)}
-              required
-              className="of-input of-focus-ring w-full text-sm"
-            />
-          </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                אימייל ליצירת קשר
+              </label>
+              <input
+                type="email"
+                value={organizationEmail}
+                onChange={(e) => setOrganizationEmail(e.target.value)}
+                required
+                className="of-input of-focus-ring w-full text-sm"
+              />
+            </div>
 
-          <div className="md:col-span-2">
+            <div className="md:col-span-2 flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                variant="accent"
+                disabled={creatingOrganization}
+              >
+                {creatingOrganization ? "יוצר לקוח..." : "יצירת לקוח"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={creatingOrganization}
+                onClick={() => {
+                  setShowCreateOrganizationForm(false);
+                  setOrganizationName("");
+                  setOrganizationEmail("");
+                }}
+              >
+                ביטול
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="mb-6">
             <Button
-              type="submit"
+              type="button"
               variant="secondary"
-              disabled={creatingOrganization}
+              onClick={() => setShowCreateOrganizationForm(true)}
             >
-              {creatingOrganization ? "יוצר לקוח..." : "הוספת לקוח חדש"}
+              הוספת לקוח חדש
             </Button>
           </div>
-        </form>
+        )}
 
         {customerOrganizations.length > 0 ? (
           <ul className="space-y-2 text-sm">
@@ -1094,7 +1208,7 @@ function AdminUsersContent() {
 
         <div className="mt-10 border-t border-zinc-200/80 pt-8 dark:border-zinc-800">
           <h3 className="mb-2 text-lg font-semibold">
-            מודול הפקת דוחות (ספק)
+            מודול הפקת דוחות
           </h3>
           <p className="mb-4 text-sm text-zinc-500">
             הפעלה וכיבוי לפי ארגון. ארגון ללא מודול לא יכול לגשת לאזור
@@ -1128,7 +1242,7 @@ function AdminUsersContent() {
                       {(row.unsent_drafts_count || 0) > 0 ? (
                         <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
                           {row.unsent_drafts_count} טיוטות שלא נשלחו לליבה נשמרו
-                          לביקורת ספק.
+                          לביקורת.
                         </p>
                       ) : null}
                     </div>
@@ -1318,127 +1432,101 @@ function AdminUsersContent() {
             </p>
           )}
         </div>
+
+        <div className="mt-10 border-t border-zinc-200/80 pt-8 dark:border-zinc-800">
+          <h3 className="mb-2 text-lg font-semibold">
+            מודול מנהל דיירים
+          </h3>
+          <p className="mb-4 text-sm text-zinc-500">
+            הפעלה וכיבוי לפי לקוח. מופיע תחת «כלים נוספים» בניווט כשמופעל.
+          </p>
+
+          {!tenantManagerStorageAvailable ? (
+            <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
+              טבלאות המודול אינן קיימות במסד - יש להריץ את המיגרציה
+              2026061101_organization_tenant_manager_module.sql
+            </p>
+          ) : null}
+
+          {tenantManagerModules.length > 0 ? (
+            <ul className="space-y-2 text-sm">
+              {tenantManagerModules.map((row) => (
+                <li
+                  key={row.organization_id}
+                  className="rounded-xl border border-zinc-200/80 px-4 py-3 dark:border-zinc-800"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <span className="font-medium">
+                        {row.organization_name}
+                      </span>
+                      <span className="mx-2 text-zinc-400">·</span>
+                      <span className="text-zinc-500">
+                        {row.contact_email || row.organization_id}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {row.is_enabled ? (
+                        <Badge variant="success">מופעל</Badge>
+                      ) : (
+                        <Badge variant="neutral">כבוי</Badge>
+                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={
+                          !tenantManagerStorageAvailable
+                          || togglingTenantManagerOrgId === row.organization_id
+                        }
+                        onClick={() =>
+                          void handleToggleTenantManagerModule(
+                            row.organization_id,
+                            !row.is_enabled
+                          )
+                        }
+                      >
+                        {togglingTenantManagerOrgId === row.organization_id
+                          ? "מעדכן..."
+                          : row.is_enabled
+                            ? "כיבוי"
+                            : "הפעלה"}
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-zinc-500">
+              אין ארגונים להצגה.
+            </p>
+          )}
+        </div>
       </section>
       ) : null}
 
       <section className="of-card of-card-p6">
-        <h2 className="mb-4 text-xl font-semibold">
-          {canManageOrganizations
-            ? "הזמנת משתמש ללקוח"
-            : "הזמנת משתמש לחברה"}
-        </h2>
-        <p className="mb-4 text-sm text-zinc-500">
-          {canManageOrganizations
-            ? "בחרו במפורש לאיזה לקוח משויך המשתמש - לא מספיק ליצור לקוח חדש בלי לבחור אותו."
-            : "משתמשים חדשים ישויכו לחברה שלך בלבד. מנהל לקוח יכול לנהל רק את הארגון שלו."}
-          {" "}
-          לכל לקוח מותר מנהל לקוח אחד בלבד.
-          {hasClientAdmin && canManageOrganizations
-            ? " ללקוח הפעיל כבר יש מנהל לקוח - ניתן להזמין מפקח או משתמש כללי."
-            : ""}
-        </p>
-
-        <form
-          onSubmit={handleInvite}
-          className="grid gap-4 md:grid-cols-2"
-        >
-          {canManageOrganizations ? (
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium">
-                לקוח
-              </label>
-              <select
-                value={activeInviteOrganizationId}
-                onChange={(event) => {
-                  setInviteOrganizationId(event.target.value);
-                }}
-                required
-                className="of-input of-focus-ring w-full text-sm"
-              >
-                <option value="" disabled>
-                  בחר לקוח
-                </option>
-                {customerOrganizations.map((organization) => (
-                  <option
-                    key={organization.id}
-                    value={organization.id}
-                  >
-                    {organization.organization_name
-                      || organization.name
-                      || organization.contact_email
-                      || organization.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              שם מלא
-            </label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              className="of-input of-focus-ring w-full text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              אימייל
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="of-input of-focus-ring w-full text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              תפקיד
-            </label>
-            <select
-              value={selectedRole}
-              onChange={(e) => setRole(e.target.value)}
-              className="of-input of-focus-ring w-full text-sm"
-            >
-              {roleOptions.map((option) => (
-                <option key={option} value={option}>
-                  {getRoleLabel(option)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <Button
-              type="submit"
-              variant="accent"
-              disabled={submitting}
-              className="w-full md:w-auto"
-            >
-              {submitting ? "שולח הזמנה..." : "שליחת הזמנה"}
-            </Button>
-          </div>
-        </form>
-      </section>
-
-      <section className="of-card of-card-p6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-xl font-semibold">
-            {canManageOrganizations
-              ? "משתמשים במערכת"
-              : "משתמשים בארגון"}
-          </h2>
-          <span className="text-sm text-zinc-500">
-            {users.length} משתמשים
-          </span>
+          <div>
+            <h2 className="text-xl font-semibold">
+              {canManageOrganizations
+                ? "משתמשים במערכת"
+                : "משתמשים בארגון"}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              {users.length} משתמשים
+            </p>
+          </div>
+          {!showInviteUserForm ? (
+            <Button
+              type="button"
+              variant="accent"
+              onClick={() => setShowInviteUserForm(true)}
+            >
+              משתמש חדש
+            </Button>
+          ) : null}
         </div>
 
         {canManageOrganizations ? (
@@ -1465,6 +1553,134 @@ function AdminUsersContent() {
                 </option>
               ))}
             </select>
+          </div>
+        ) : null}
+
+        {showInviteUserForm ? (
+          <div className="mb-6 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-5 dark:border-zinc-800 dark:bg-zinc-900/40">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {canManageOrganizations
+                    ? "הזמנת משתמש ללקוח"
+                    : "הזמנת משתמש לחברה"}
+                </h3>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {canManageOrganizations
+                    ? "בחרו במפורש לאיזה לקוח משויך המשתמש."
+                    : "משתמשים חדשים ישויכו לחברה שלך בלבד."}
+                  {" "}
+                  לכל לקוח מותר מנהל לקוח אחד בלבד.
+                  {hasClientAdmin && canManageOrganizations
+                    ? " ללקוח שנבחר כבר יש מנהל לקוח - ניתן להזמין מפקח או משתמש כללי."
+                    : ""}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={submitting}
+                onClick={() => {
+                  setShowInviteUserForm(false);
+                  setEmail("");
+                  setFullName("");
+                  setRole("VIEWER");
+                }}
+              >
+                ביטול
+              </Button>
+            </div>
+
+            <form
+              onSubmit={handleInvite}
+              className="grid gap-4 md:grid-cols-2"
+            >
+              {canManageOrganizations ? (
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium">
+                    לקוח
+                  </label>
+                  <select
+                    value={activeInviteOrganizationId}
+                    onChange={(event) => {
+                      setInviteOrganizationId(event.target.value);
+                    }}
+                    required
+                    className="of-input of-focus-ring w-full text-sm"
+                  >
+                    <option value="" disabled>
+                      בחר לקוח
+                    </option>
+                    {customerOrganizations.map((organization) => (
+                      <option
+                        key={organization.id}
+                        value={organization.id}
+                      >
+                        {organization.organization_name
+                          || organization.name
+                          || organization.contact_email
+                          || organization.id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  שם מלא
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="of-input of-focus-ring w-full text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  אימייל
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="of-input of-focus-ring w-full text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  תפקיד
+                </label>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="of-input of-focus-ring w-full text-sm"
+                >
+                  {roleOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {getRoleLabel(option)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  type="submit"
+                  variant="accent"
+                  disabled={submitting}
+                  className="w-full md:w-auto"
+                >
+                  {submitting ? "שולח הזמנה..." : "שליחת הזמנה"}
+                </Button>
+              </div>
+            </form>
           </div>
         ) : null}
 
