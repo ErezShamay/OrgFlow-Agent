@@ -1,5 +1,8 @@
 "use client";
 
+import { Fragment } from "react";
+
+import FindingSimilarIssuesHint from "@/components/quality-issues/FindingSimilarIssuesHint";
 import Button from "@/components/ui/Button";
 import { COLUMN_PRESET_OPTIONS } from "@/lib/field-reports/block-kind-labels";
 import { getColumnPreset } from "@/lib/field-reports/schema/column-presets";
@@ -18,8 +21,16 @@ import {
 type ReportFindingsBlockEditorProps = {
   block: FindingsTableBlock;
   disabled: boolean;
-  /** שורות נגזרות מ-report.lines — עריכה דרך «שורות ממצאים» (FR-2.1). */
+  projectId?: string | null;
+  organizationId?: string | null;
+  reportId?: string | null;
+  /** שורות נגזרות מ-report.lines - עריכה דרך «שורות ממצאים» (FR-2.1). */
   lineDerived?: boolean;
+  linkingRowId?: string | null;
+  onLinkRow?: (
+    rowId: string,
+    linkedIssueId: string | null
+  ) => void | Promise<void>;
   onChange: (block: FindingsTableBlock) => void;
 };
 
@@ -52,10 +63,62 @@ const FINDING_ROW_FIELDS: Partial<
   notes: "notes",
 };
 
+function FindingRowMatchHintRow({
+  row,
+  projectId,
+  organizationId,
+  reportId,
+  disabled,
+  linking,
+  columnCount,
+  onLinkIssue,
+  onMarkNewIssue,
+  onUnlinkIssue,
+}: {
+  row: FindingRow;
+  projectId?: string | null;
+  organizationId?: string | null;
+  reportId?: string | null;
+  disabled: boolean;
+  linking?: boolean;
+  columnCount: number;
+  onLinkIssue?: (issueId: string) => void | Promise<void>;
+  onMarkNewIssue?: () => void | Promise<void>;
+  onUnlinkIssue?: () => void | Promise<void>;
+}) {
+  return (
+    <tr className="border-b border-zinc-100">
+      <td colSpan={columnCount} className="px-2 py-2">
+        <FindingSimilarIssuesHint
+          projectId={projectId}
+          organizationId={organizationId}
+          reportId={reportId}
+          lineId={row.id}
+          disabled={disabled}
+          linkedIssueId={row.linked_issue_id}
+          linking={linking}
+          location={row.location}
+          trade={row.trade}
+          group_key={row.group_key}
+          issue_id={row.issue_id}
+          onLinkIssue={onLinkIssue}
+          onMarkNewIssue={onMarkNewIssue}
+          onUnlinkIssue={onUnlinkIssue}
+        />
+      </td>
+    </tr>
+  );
+}
+
 export default function ReportFindingsBlockEditor({
   block,
   disabled,
+  projectId = null,
+  organizationId = null,
+  reportId = null,
   lineDerived = false,
+  linkingRowId = null,
+  onLinkRow,
   onChange,
 }: ReportFindingsBlockEditorProps) {
   const columns = getColumnPreset(block.column_preset);
@@ -91,37 +154,81 @@ export default function ReportFindingsBlockEditor({
     onChange({ ...block, column_preset });
   }
 
+  function setRowLinkedIssue(index: number, linkedIssueId: string | null) {
+    const next = [...tableRows];
+    next[index] = { ...next[index], linked_issue_id: linkedIssueId };
+    emitRows(next);
+  }
+
+  function buildRowLinkHandlers(
+    row: FindingRow,
+    index: number
+  ): {
+    onLinkIssue?: (issueId: string) => void | Promise<void>;
+    onMarkNewIssue?: () => void | Promise<void>;
+    onUnlinkIssue?: () => void | Promise<void>;
+  } {
+    if (disabled) {
+      return {};
+    }
+
+    if (lineDerived && onLinkRow) {
+      return {
+        onLinkIssue: (issueId) => onLinkRow(row.id, issueId),
+        onMarkNewIssue: () => onLinkRow(row.id, null),
+        onUnlinkIssue: () => onLinkRow(row.id, null),
+      };
+    }
+
+    if (!lineDerived) {
+      return {
+        onLinkIssue: (issueId) => {
+          setRowLinkedIssue(index, issueId);
+        },
+        onMarkNewIssue: () => {
+          setRowLinkedIssue(index, null);
+        },
+        onUnlinkIssue: () => {
+          setRowLinkedIssue(index, null);
+        },
+      };
+    }
+
+    return {};
+  }
+
+  const visibleColumns = columns.filter((column) => column.id !== "photos");
+  const tableColumnCount = visibleColumns.length + (readOnly ? 0 : 1);
+
   if (lineDerived) {
     return (
       <div className="space-y-2 text-sm text-zinc-600">
         <p>
           {tableRows.length > 0
-            ? `${tableRows.length} שורות מוצגות לפי «שורות ממצאים» למטה — עריכה שם נשמרת ב-API.`
-            : "אין שורות ממצאים עדיין — הוסף שורות בסעיף «שורות ממצאים» למטה."}
+            ? `${tableRows.length} שורות מוצגות לפי «שורות ממצאים» למטה - עריכה שם נשמרת ב-API.`
+            : "אין שורות ממצאים עדיין - הוסף שורות בסעיף «שורות ממצאים» למטה."}
         </p>
         {tableRows.length > 0 ? (
           <div className="overflow-x-auto rounded-lg border border-zinc-100">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 text-right">
-                  {columns
-                    .filter((column) => column.id !== "photos")
-                    .map((column) => (
-                      <th key={column.id} className="px-2 py-2 font-medium">
-                        {column.header_he}
-                      </th>
-                    ))}
+                  {visibleColumns.map((column) => (
+                    <th key={column.id} className="px-2 py-2 font-medium">
+                      {column.header_he}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {tableRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-zinc-100 align-top"
-                  >
-                    {columns
-                      .filter((column) => column.id !== "photos")
-                      .map((column) => {
+                {tableRows.map((row, index) => {
+                  const linkHandlers = buildRowLinkHandlers(row, index);
+                  return (
+                  <Fragment key={row.id}>
+                    <tr
+                      className="border-b border-zinc-100 align-top"
+                    >
+                      {visibleColumns.map((column) => {
                         const field = FINDING_ROW_FIELDS[column.id];
                         const value =
                           field && field in row
@@ -129,12 +236,24 @@ export default function ReportFindingsBlockEditor({
                             : "";
                         return (
                           <td key={column.id} className="px-2 py-2">
-                            {value || "—"}
+                            {value || "-"}
                           </td>
                         );
                       })}
-                  </tr>
-                ))}
+                    </tr>
+                    <FindingRowMatchHintRow
+                      row={row}
+                      projectId={projectId}
+                      organizationId={organizationId}
+                      reportId={reportId}
+                      disabled={disabled}
+                      linking={linkingRowId === row.id}
+                      columnCount={visibleColumns.length}
+                      {...linkHandlers}
+                    />
+                  </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -170,30 +289,28 @@ export default function ReportFindingsBlockEditor({
         <table className="w-full min-w-[32rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-zinc-200 text-right">
-              {columns
-                .filter((column) => column.id !== "photos")
-                .map((column) => (
-                  <th key={column.id} className="px-2 py-2 font-medium">
-                    {column.header_he}
-                  </th>
-                ))}
+              {visibleColumns.map((column) => (
+                <th key={column.id} className="px-2 py-2 font-medium">
+                  {column.header_he}
+                </th>
+              ))}
               {readOnly ? null : <th className="w-16 px-2 py-2" />}
             </tr>
           </thead>
           <tbody>
-            {editableRows.map((row, index) => (
-              <tr
-                key={row.id}
-                className="border-b border-zinc-100 align-top"
-              >
-                {columns
-                  .filter((column) => column.id !== "photos")
-                  .map((column) => {
+            {editableRows.map((row, index) => {
+              const linkHandlers = buildRowLinkHandlers(row, index);
+              return (
+              <Fragment key={row.id}>
+                <tr
+                  className="border-b border-zinc-100 align-top"
+                >
+                  {visibleColumns.map((column) => {
                     const field = FINDING_ROW_FIELDS[column.id];
                     if (!field) {
                       return (
                         <td key={column.id} className="px-2 py-2">
-                          —
+                          -
                         </td>
                       );
                     }
@@ -226,20 +343,32 @@ export default function ReportFindingsBlockEditor({
                       </td>
                     );
                   })}
-                {readOnly ? null : (
-                  <td className="px-2 py-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className={FR_TOUCH_BUTTON}
-                      onClick={() => removeRow(index)}
-                    >
-                      הסר
-                    </Button>
-                  </td>
-                )}
-              </tr>
-            ))}
+                  {readOnly ? null : (
+                    <td className="px-2 py-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className={FR_TOUCH_BUTTON}
+                        onClick={() => removeRow(index)}
+                      >
+                        הסר
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+                <FindingRowMatchHintRow
+                  row={row}
+                  projectId={projectId}
+                  organizationId={organizationId}
+                  reportId={reportId}
+                  disabled={disabled}
+                  linking={linkingRowId === row.id}
+                  columnCount={tableColumnCount}
+                  {...linkHandlers}
+                />
+              </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

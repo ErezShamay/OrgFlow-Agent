@@ -43,7 +43,7 @@ function run(command, args, options = {}) {
   }
 }
 
-console.log("ElayoAI — Android APK build");
+console.log("ElayoAI - Android APK build");
 console.log(`Variant: ${variant}`);
 for (const note of androidEnvNotes) {
   console.log(note);
@@ -58,7 +58,7 @@ if (loaded.length > 0) {
   console.log(`Env files: ${loaded.join(", ")}`);
 } else {
   console.warn(
-    "No .env.capacitor.local — copy .env.capacitor.example and set NEXT_PUBLIC_API_URL"
+    "No .env.capacitor.local - copy .env.capacitor.example and set NEXT_PUBLIC_API_URL"
   );
 }
 

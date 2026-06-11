@@ -2,6 +2,10 @@ import {
   constructionProgressTitleHe,
 } from "../construction-progress";
 import {
+  migrateLegacyFinishingBlocks,
+  shouldMigrateLegacyFinishingBlocks,
+} from "./migrate-legacy-finishing-blocks";
+import {
   migrateLegacyProjectMetadataFromHeader,
   migrateLegacyStakeholdersFromHeader,
 } from "./migrate-legacy-header";
@@ -31,7 +35,7 @@ import {
   STAKEHOLDER_ROLES,
 } from "./types";
 
-/** קלט גולמי לדוח ביקור — תואם תגובת API קיימת. */
+/** קלט גולמי לדוח ביקור - תואם תגובת API קיימת. */
 export type RawVisitReportInput = {
   id: string;
   project_id?: string | null;
@@ -65,7 +69,7 @@ export function normalizeProjectMetadata(
 }
 
 /**
- * מנרמל stakeholders — מערך מפורש + מיגרציה משדות legacy.
+ * מנרמל stakeholders - מערך מפורש + מיגרציה משדות legacy.
  * אין הסרה של שדות legacy מה-raw.
  */
 export function normalizeStakeholders(
@@ -153,7 +157,7 @@ export function normalizeFixedTextBlocks(
 }
 
 /**
- * מנרמל blocks[] — מ-header_fields.blocks או ממיר מ-construction_progress / lines.
+ * מנרמל blocks[] - מ-header_fields.blocks או ממיר מ-construction_progress / lines.
  */
 export function normalizeReportBlocks(
   raw: Record<string, unknown>,
@@ -161,9 +165,29 @@ export function normalizeReportBlocks(
   reportLines?: unknown[] | null
 ): ReportBlock[] {
   if (Array.isArray(raw.blocks) && raw.blocks.length > 0) {
-    return raw.blocks
+    const normalized = raw.blocks
       .map((item, index) => normalizeReportBlock(item, index, visitType))
       .filter((block): block is ReportBlock => block !== null);
+
+    if (
+      shouldMigrateLegacyFinishingBlocks(
+        visitType,
+        raw,
+        normalized,
+        reportLines
+      )
+    ) {
+      return migrateLegacyFinishingBlocks(raw, reportLines, normalized);
+    }
+
+    return normalized;
+  }
+
+  if (
+    visitType === "FINISHING_APARTMENTS"
+    && shouldMigrateLegacyFinishingBlocks(visitType, raw, [], reportLines)
+  ) {
+    return migrateLegacyFinishingBlocks(raw, reportLines);
   }
 
   const blocks: ReportBlock[] = [];
@@ -204,7 +228,7 @@ export function normalizeReportBlocks(
 }
 
 /**
- * aggregator — מנרמל דוח ביקור שלם ל-VisitReportDocument.
+ * aggregator - מנרמל דוח ביקור שלם ל-VisitReportDocument.
  * שדות legacy נשמרים ב-header_fields_raw ללא שינוי.
  */
 export function normalizeVisitReportDocument(
@@ -289,6 +313,12 @@ function normalizeNestedProjectMetadata(value: unknown): ProjectMetadata {
     "illustration_caption_he",
     raw.illustration_caption_he
   );
+  assignOptionalString(
+    metadata,
+    "illustration_source_he",
+    raw.illustration_source_he
+  );
+  assignOptionalString(metadata, "illustration_url", raw.illustration_url);
   assignOptionalString(metadata, "tenant_changes_notes", raw.tenant_changes_notes);
 
   if (
@@ -554,6 +584,7 @@ function normalizeFindingRow(value: unknown, index: number): FindingRow | null {
     group_key: nullableString(raw.group_key),
     group_label_he: nullableString(raw.group_label_he),
     block_id: nullableString(raw.block_id),
+    linked_issue_id: nullableString(raw.linked_issue_id),
     sort_order:
       typeof raw.sort_order === "number" ? raw.sort_order : index,
     has_photo: raw.has_photo === true,
@@ -606,10 +637,10 @@ function normalizePhotoIds(value: unknown): string[] | undefined {
 
 function defaultFindingsColumnPreset(visitType: string): ColumnPresetKey {
   if (visitType === "FINISHING_APARTMENTS") {
-    return "simple";
+    return "finishing";
   }
   if (visitType === "STRUCTURE_SITE") {
-    return "rich";
+    return "simple";
   }
   return "rich";
 }

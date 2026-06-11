@@ -53,7 +53,7 @@ function createLocalStorageMock() {
   };
 }
 
-/** סוגר חיבור — הקריאה הבאה ל-repository פותחת מחדש (כמו רענון אפליקציה). */
+/** סוגר חיבור - הקריאה הבאה ל-repository פותחת מחדש (כמו רענון אפליקציה). */
 async function simulateAppRestart() {
   await closeFieldReportDatabase();
 }

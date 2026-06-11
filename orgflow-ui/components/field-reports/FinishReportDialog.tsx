@@ -68,7 +68,7 @@ export default function FinishReportDialog({
 
         {!loading && preview && !preview.warnings.length ? (
           <p className="text-sm text-emerald-800 dark:text-emerald-300">
-            {preview.line_count} שורות — אין אזהרות לפני סגירה.
+            {preview.line_count} שורות - אין אזהרות לפני סגירה.
           </p>
         ) : null}
 

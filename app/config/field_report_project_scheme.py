@@ -1,4 +1,4 @@
-"""תוויות עברית לסוג פרויקט תמ״א — mirrors orgflow-ui project-scheme-labels (FR-4.3)."""
+"""תוויות עברית לסוג פרויקט תמ״א - mirrors orgflow-ui project-scheme-labels (FR-4.3)."""
 
 from __future__ import annotations
 

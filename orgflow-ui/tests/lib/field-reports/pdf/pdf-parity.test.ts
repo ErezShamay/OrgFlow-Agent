@@ -1,6 +1,6 @@
 /**
  * Guardrails ל-parity מול דוחות דוגמה (FR-5.1).
- * לא משווה bytes של PDF — רק מחרוזות/כותרות שחולצו מ-example_reports.
+ * לא משווה bytes של PDF - רק מחרוזות/כותרות שחולצו מ-example_reports.
  */
 import { describe, expect, it } from "vitest";
 
@@ -22,11 +22,12 @@ const EXAMPLE_SHARED_HEADER_STRINGS = [
 const EXAMPLE_COLUMN_HEADERS = {
   rich: ["מיקום", "מלאכה", "סטטוס / הערות", "תיאור", "תמונות"],
   simple: ["תיאור", "הערות / לטיפול", "תמונות"],
+  finishing: ["מיקום", "מלאכה", "הערות", "סטטוס / תיאור", "תמונות"],
   progress: ["תיאור עבודה", "סטטוס", "תאריך ביצוע / סיום"],
   structure: ["תיאור", "סטטוס / תאריך סיום"],
 } as const;
 
-/** צ'קליסט גמר — דוח ההגנה 29 גבעתיים. */
+/** צ'קליסט גמר - דוח ההגנה 29 גבעתיים. */
 const HAGANA_CHECKLIST_LABELS = [
   "בעלים",
   "בדיקת חללים",

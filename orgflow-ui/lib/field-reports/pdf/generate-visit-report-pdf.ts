@@ -5,13 +5,18 @@ import {
   buildVisitReportDocDefinition,
 } from "./build-doc-definition";
 import { createPdfPrinter } from "./font-loader";
-import { resolveLinePhotos, resolveLogoDataUrl } from "./resolve-assets";
+import {
+  resolveIllustrationDataUrl,
+  resolveLinePhotos,
+  resolveLogoDataUrl,
+} from "./resolve-assets";
 import type { VisitReportPdfInput } from "./types";
 import {
   loadVisitReportPdfLocally,
   saveVisitReportPdfLocally,
   visitReportPdfStorageKey,
 } from "./visit-report-pdf-store";
+import { resolveVisitPdfIssueMarkers } from "./resolve-visit-pdf-issue-markers";
 
 export type VisitReportPdfDownloadSource = "cache" | "generated";
 
@@ -23,15 +28,23 @@ export async function generateVisitReportPdf(
     input.logoDataUrl
       ?? input.report.organization_profile_snapshot?.logo_url
   );
+  const illustrationDataUrl =
+    input.illustrationDataUrl
+    ?? (await resolveIllustrationDataUrl(input.report.header_fields || {}));
   const storageKey = visitReportPdfStorageKey(input.report);
   const linePhotos =
     input.linePhotos
     ?? (await resolveLinePhotos(storageKey, input.report.lines));
+  const lineIssueMarkers =
+    input.lineIssueMarkers
+    ?? (await resolveVisitPdfIssueMarkers(input.report));
 
   const docDefinition = buildVisitReportDocDefinition({
     ...input,
     logoDataUrl,
+    illustrationDataUrl,
     linePhotos,
+    lineIssueMarkers,
   });
 
   try {
@@ -66,6 +79,22 @@ export async function triggerVisitReportPdfDownload(
   URL.revokeObjectURL(objectUrl);
 }
 
+export async function saveAndDownloadVisitReportPdf(
+  input: VisitReportPdfInput,
+  blob: Blob
+): Promise<void> {
+  const filename = buildPdfFilename(input.report);
+  const storageKey = visitReportPdfStorageKey(input.report);
+
+  await saveVisitReportPdfLocally(
+    storageKey,
+    blob,
+    filename,
+    input.generatedAt ?? new Date()
+  );
+  await triggerVisitReportPdfDownload(storageKey, blob, filename);
+}
+
 export async function downloadVisitReportPdf(
   input: VisitReportPdfInput,
   options?: { forceRegenerate?: boolean }
@@ -86,13 +115,7 @@ export async function downloadVisitReportPdf(
   }
 
   const blob = await generateVisitReportPdf(input);
-  await saveVisitReportPdfLocally(
-    storageKey,
-    blob,
-    filename,
-    input.generatedAt ?? new Date()
-  );
-  await triggerVisitReportPdfDownload(storageKey, blob, filename);
+  await saveAndDownloadVisitReportPdf(input, blob);
   return "generated";
 }
 

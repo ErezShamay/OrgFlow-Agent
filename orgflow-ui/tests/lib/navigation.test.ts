@@ -1,0 +1,113 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  ACTIONS_LEGACY_ROUTE,
+  ADMIN_SYSTEM_NAV_LINKS,
+  AUTOMATION_ROUTE,
+  DEAD_LETTERS_ROUTE,
+  ESCALATIONS_LEGACY_ROUTE,
+  FIELD_REPORTS_ROUTE,
+  filterPrimaryNavLinks,
+  getSystemNavLinks,
+  GLOBAL_NAV_LINKS,
+  HOME_NAVBAR_LINKS,
+  isAdminOnlySystemRoute,
+  LEGACY_HOME_NAVBAR_LINKS,
+  PRIMARY_NAV_HIDDEN_ROUTES,
+  REVIEWS_GLOBAL_LEGACY_ROUTE,
+  SETTINGS_ROUTE,
+  UPLOAD_LEGACY_ROUTE,
+} from "@/lib/navigation";
+import { shouldHideFromPrimaryNav } from "@/lib/qc-freeze";
+
+describe("navigation (stage 5.1 - QC primary nav)", () => {
+  it("defines exactly four QC items in GLOBAL_NAV_LINKS", () => {
+    expect(GLOBAL_NAV_LINKS).toHaveLength(4);
+    expect(GLOBAL_NAV_LINKS.map((link) => link.label)).toEqual([
+      "דוחות שטח",
+      "ליקויים",
+      "תיק QC",
+      "פרויקטים",
+    ]);
+    expect(GLOBAL_NAV_LINKS.map((link) => link.href)).toEqual([
+      "/field-reports",
+      "/issues",
+      "/portfolio",
+      "/projects",
+    ]);
+  });
+
+  it("uses QC field reports label", () => {
+    expect(FIELD_REPORTS_ROUTE.label).toBe("דוחות שטח");
+    expect(GLOBAL_NAV_LINKS[0]).toEqual(FIELD_REPORTS_ROUTE);
+  });
+
+  it("keeps remaining legacy PM links on public home navbar until stage 5.8", () => {
+    expect(HOME_NAVBAR_LINKS).toEqual(LEGACY_HOME_NAVBAR_LINKS);
+    expect(HOME_NAVBAR_LINKS.map((link) => link.href)).not.toContain("/issues");
+    expect(HOME_NAVBAR_LINKS.map((link) => link.label)).toContain("מנהל דיירים");
+  });
+
+  it("hides upload from all primary nav surfaces (stage 5.2)", () => {
+    expect(PRIMARY_NAV_HIDDEN_ROUTES).toContain("/upload");
+    expect(shouldHideFromPrimaryNav(UPLOAD_LEGACY_ROUTE.href)).toBe(true);
+    expect(GLOBAL_NAV_LINKS.map((link) => link.href)).not.toContain("/upload");
+    expect(HOME_NAVBAR_LINKS.map((link) => link.href)).not.toContain("/upload");
+    expect(
+      filterPrimaryNavLinks([
+        UPLOAD_LEGACY_ROUTE,
+        FIELD_REPORTS_ROUTE,
+      ]).map((link) => link.href)
+    ).toEqual(["/field-reports"]);
+  });
+
+  it("hides actions and escalations from primary nav (stage 5.3)", () => {
+    expect(PRIMARY_NAV_HIDDEN_ROUTES).toContain("/upload");
+    expect(PRIMARY_NAV_HIDDEN_ROUTES).toContain("/actions");
+    expect(PRIMARY_NAV_HIDDEN_ROUTES).toContain("/escalations");
+    expect(shouldHideFromPrimaryNav(ACTIONS_LEGACY_ROUTE.href)).toBe(true);
+    expect(shouldHideFromPrimaryNav(ESCALATIONS_LEGACY_ROUTE.href)).toBe(true);
+    expect(GLOBAL_NAV_LINKS.map((link) => link.href)).not.toContain("/actions");
+    expect(GLOBAL_NAV_LINKS.map((link) => link.href)).not.toContain(
+      "/escalations"
+    );
+    expect(HOME_NAVBAR_LINKS.map((link) => link.href)).not.toContain("/actions");
+    expect(HOME_NAVBAR_LINKS.map((link) => link.href)).not.toContain(
+      "/escalations"
+    );
+    expect(HOME_NAVBAR_LINKS.map((link) => link.label)).not.toContain(
+      "פעולות תפעוליות"
+    );
+    expect(HOME_NAVBAR_LINKS.map((link) => link.label)).not.toContain(
+      "נקודות סיכון"
+    );
+  });
+
+  it("hides global reviews from primary nav (stage 5.4)", () => {
+    expect(PRIMARY_NAV_HIDDEN_ROUTES).toContain("/reviews");
+    expect(shouldHideFromPrimaryNav(REVIEWS_GLOBAL_LEGACY_ROUTE.href)).toBe(
+      true
+    );
+    expect(GLOBAL_NAV_LINKS.map((link) => link.href)).not.toContain("/reviews");
+    expect(HOME_NAVBAR_LINKS.map((link) => link.href)).not.toContain("/reviews");
+    expect(HOME_NAVBAR_LINKS.map((link) => link.label)).not.toContain(
+      "ביקורות AI"
+    );
+  });
+
+  it("limits automation system nav to admin only (stage 5.5)", () => {
+    expect(getSystemNavLinks(false)).toEqual([SETTINGS_ROUTE]);
+    expect(getSystemNavLinks(true).map((link) => link.href)).toContain(
+      "/automation"
+    );
+    expect(getSystemNavLinks(true).map((link) => link.href)).toContain(
+      "/automation/dead-letters"
+    );
+    expect(ADMIN_SYSTEM_NAV_LINKS).toEqual([
+      DEAD_LETTERS_ROUTE,
+      AUTOMATION_ROUTE,
+    ]);
+    expect(isAdminOnlySystemRoute("/automation/runs")).toBe(true);
+    expect(isAdminOnlySystemRoute("/portfolio")).toBe(false);
+  });
+});

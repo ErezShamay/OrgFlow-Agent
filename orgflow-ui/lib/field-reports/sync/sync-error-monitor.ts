@@ -1,7 +1,7 @@
 import { ELAYOAI_FIELD_REPORT_SYNC_ERRORS_KEY } from "@/lib/elayoai/keys";
 import type { PendingSendSyncPhase } from "@/lib/field-reports/send-queue";
 
-/** מפתח localStorage — טבעת שגיאות סנכרון (FR-037). */
+/** מפתח localStorage - טבעת שגיאות סנכרון (FR-037). */
 export const FIELD_REPORT_SYNC_ERROR_LOG_KEY =
   ELAYOAI_FIELD_REPORT_SYNC_ERRORS_KEY;
 
@@ -261,8 +261,8 @@ function reportSyncErrorToSentry(event: FieldReportSyncErrorEvent): void {
 }
 
 /**
- * רושם שגיאת סנכרון — localStorage (טבעת) + Sentry אופציונלי (FR-037).
- * לא זורק — ניטור לא חוסם sync.
+ * רושם שגיאת סנכרון - localStorage (טבעת) + Sentry אופציונלי (FR-037).
+ * לא זורק - ניטור לא חוסם sync.
  */
 export function recordFieldReportSyncError(
   input: Omit<FieldReportSyncErrorEvent, "occurredAt"> & {

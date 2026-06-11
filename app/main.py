@@ -6,10 +6,13 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
+from typing import Annotated
+
 from fastapi import (
     FastAPI,
     HTTPException,
     Depends,
+    Query,
     Request,
     WebSocket,
     WebSocketDisconnect,
@@ -141,6 +144,7 @@ from app.schemas.field_reports import (
     FieldVisitReportSyncRequest,
     FieldVisitReportSyncResponse,
     FieldVisitReportUpdateRequest,
+    OpenReportReminderResponse,
 )
 
 from app.services.organization_admin_service import (
@@ -162,6 +166,36 @@ from app.services.field_visit_report_export_service import (
 from app.services.field_visit_report_service import (
     FieldVisitReportService,
 )
+
+from app.services.quality_issue_service import (
+    QualityIssueService,
+)
+from app.services.qc_notification_service import QcNotificationService
+
+from app.schemas.quality_issue import (
+    QualityIssue,
+    QualityIssueCreateRequest,
+    QualityIssueDetailResponse,
+    QualityIssueListQuery,
+    QualityIssueListResponse,
+    QualityIssueOrgListResponse,
+    QualityIssueOpenListResponse,
+    QualityIssuePhotoUploadResponse,
+    QualityIssueSeverity,
+    QualityIssueStatus,
+    QualityIssueSuggestMatchesRequest,
+    QualityIssueSuggestMatchesResponse,
+    QualityIssueUpdateRequest,
+    QualityIssueVisitDiffResponse,
+    QualityCriticalStaleAlertResponse,
+    QualityPortfolioSummaryResponse,
+    QualityPeriodicReportResponse,
+    QualityRecurringRankingsResponse,
+    QualityTradeHeatmapResponse,
+    parse_quality_issue_row,
+)
+
+from app.schemas.qc_notifications import QcNotificationCycleResponse
 
 from app.auth.field_report_dependencies import (
     require_field_report_module,
@@ -309,6 +343,11 @@ from app.automation.scheduler import (
 
 from app.automation.jobs import (
     register_automation_jobs
+)
+
+from app.jobs.scheduler import (
+    register_qc_notification_jobs,
+    scheduler as qc_notification_scheduler,
 )
 
 automation_monitoring_service = (
@@ -687,6 +726,10 @@ field_visit_report_service = FieldVisitReportService(
 
 field_visit_report_export_service = FieldVisitReportExportService()
 
+quality_issue_service = QualityIssueService()
+
+qc_notification_service = QcNotificationService()
+
 tenant_migration_service = TenantMigrationService()
 
 tenant_scope_service = TenantScopeService()
@@ -728,6 +771,14 @@ def startup_event():
             "Automation disabled by feature flag"
         )
 
+    if settings.FEATURE_FLAGS.enable_email_delivery:
+        register_qc_notification_jobs()
+        if not qc_notification_scheduler.running:
+            qc_notification_scheduler.start()
+            print(
+                "[QC] Notification scheduler started"
+            )
+
     app.state.field_report_module_service = (
         field_report_module_service
     )
@@ -741,6 +792,12 @@ def shutdown_event():
         scheduler.shutdown(wait=False)
         print(
             "[AUTOMATION] Scheduler stopped"
+        )
+
+    if qc_notification_scheduler.running:
+        qc_notification_scheduler.shutdown(wait=False)
+        print(
+            "[QC] Notification scheduler stopped"
         )
 
 # ==========================================
@@ -875,6 +932,8 @@ class CreateProjectRequest(
     project_end_date: str | None = None
     project_grace_end_date: str | None = None
     structure_documentation_date: str | None = None
+    illustration_url: str | None = None
+    illustration_source_he: str | None = None
 
 
 class EditProjectRequest(
@@ -897,6 +956,8 @@ class EditProjectRequest(
     project_end_date: str | None = None
     project_grace_end_date: str | None = None
     structure_documentation_date: str | None = None
+    illustration_url: str | None = None
+    illustration_source_he: str | None = None
 
 
 class ProjectTagsRequest(
@@ -1356,7 +1417,7 @@ def exchange_supabase_session(request: ExchangeTokenRequest):
 
     if not profile:
         logger.warning(
-            "Token exchange rejected — profile missing for Supabase user",
+            "Token exchange rejected - profile missing for Supabase user",
             extra={"event": "auth.exchange.profile_not_found", "user_id": user_id},
         )
         raise HTTPException(
@@ -1569,7 +1630,8 @@ def export_admin_field_report_pdfs(
 
 @app.get("/field-reports/home")
 def field_reports_home(
-    auth=Depends(require_field_report_module),
+    auth=Depends(require_permission("field_reports:read")),
+    _module=Depends(require_field_report_module),
 ):
     return {
         "module": "field_reports",
@@ -1591,11 +1653,17 @@ def list_field_report_visit_types(
 @app.get("/field-reports/visits")
 def list_field_visit_reports(
     status: str | None = None,
+    project_id: str | None = None,
     auth=Depends(
         require_permission("field_reports:read")
     ),
     _module=Depends(require_field_report_module),
 ):
+    if project_id:
+        project = project_repository.get_project_by_id(project_id)
+        if project is None or str(project.get("organization_id")) != auth.org_id:
+            raise HTTPException(status_code=404, detail="Project not found")
+
     projects = project_repository.get_projects_by_organization(
         auth.org_id
     )
@@ -1607,6 +1675,7 @@ def list_field_visit_reports(
     return field_visit_report_service.list_reports(
         auth.org_id,
         status=status,
+        project_id=project_id,
         project_names=project_names,
     )
 
@@ -1758,6 +1827,7 @@ def close_field_visit_report(
     return field_visit_report_service.close_report(
         organization_id=auth.org_id,
         report_id=report_id,
+        actor_id=auth.user_id,
     )
 
 
@@ -1838,6 +1908,211 @@ def get_project_field_report_archive(
         organization_id=auth.org_id,
         project_id=project_id,
     )
+
+
+@app.post(
+    "/projects/{project_id}/issues",
+    response_model=QualityIssue,
+)
+def create_project_quality_issue(
+    project_id: str,
+    request: QualityIssueCreateRequest,
+    auth=Depends(get_auth_context),
+):
+    record = quality_issue_service.create_issue(
+        organization_id=auth.org_id,
+        project_id=project_id,
+        request=request,
+        actor_role=auth.role,
+        actor_id=auth.effective_user_id or auth.user_id,
+    )
+    return parse_quality_issue_row(record)
+
+
+@app.get(
+    "/projects/{project_id}/issues/open",
+    response_model=QualityIssueOpenListResponse,
+)
+def list_project_open_quality_issues(
+    project_id: str,
+    auth=Depends(get_auth_context),
+):
+    return quality_issue_service.list_open_issues(
+        organization_id=auth.org_id,
+        project_id=project_id,
+        actor_role=auth.role,
+    )
+
+
+@app.post(
+    "/projects/{project_id}/issues/suggest-matches",
+    response_model=QualityIssueSuggestMatchesResponse,
+)
+def suggest_project_quality_issue_matches(
+    project_id: str,
+    request: QualityIssueSuggestMatchesRequest,
+    auth=Depends(get_auth_context),
+):
+    return quality_issue_service.suggest_matches(
+        organization_id=auth.org_id,
+        project_id=project_id,
+        request=request,
+        actor_role=auth.role,
+    )
+
+
+@app.get(
+    "/projects/{project_id}/visits/{report_id}/issue-diff",
+    response_model=QualityIssueVisitDiffResponse,
+)
+def get_project_visit_issue_diff(
+    project_id: str,
+    report_id: str,
+    auth=Depends(get_auth_context),
+):
+    return quality_issue_service.get_visit_issue_diff(
+        organization_id=auth.org_id,
+        project_id=project_id,
+        report_id=report_id,
+        actor_role=auth.role,
+    )
+
+
+@app.get(
+    "/projects/{project_id}/issues",
+    response_model=QualityIssueListResponse,
+)
+def list_project_quality_issues(
+    project_id: str,
+    status: Annotated[
+        list[QualityIssueStatus] | None,
+        Query(),
+    ] = None,
+    severity: Annotated[
+        list[QualityIssueSeverity] | None,
+        Query(),
+    ] = None,
+    trade: str | None = None,
+    search: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    auth=Depends(get_auth_context),
+):
+    return quality_issue_service.list_issues(
+        organization_id=auth.org_id,
+        project_id=project_id,
+        query=QualityIssueListQuery(
+            status=status,
+            severity=severity,
+            trade=trade,
+            search=search,
+            limit=limit,
+            offset=offset,
+        ),
+        actor_role=auth.role,
+    )
+
+
+@app.get(
+    "/issues",
+    response_model=QualityIssueOrgListResponse,
+)
+def list_organization_quality_issues(
+    status: Annotated[
+        list[QualityIssueStatus] | None,
+        Query(),
+    ] = None,
+    severity: Annotated[
+        list[QualityIssueSeverity] | None,
+        Query(),
+    ] = None,
+    trade: str | None = None,
+    search: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    auth=Depends(get_auth_context),
+):
+    return quality_issue_service.list_organization_issues(
+        organization_id=auth.org_id,
+        query=QualityIssueListQuery(
+            status=status,
+            severity=severity,
+            trade=trade,
+            search=search,
+            limit=limit,
+            offset=offset,
+        ),
+        actor_role=auth.role,
+    )
+
+
+@app.get(
+    "/issues/{issue_id}",
+    response_model=QualityIssueDetailResponse,
+)
+def get_quality_issue_detail(
+    issue_id: str,
+    auth=Depends(get_auth_context),
+):
+    return quality_issue_service.get_issue_detail(
+        organization_id=auth.org_id,
+        issue_id=issue_id,
+        actor_role=auth.role,
+    )
+
+
+@app.patch(
+    "/issues/{issue_id}",
+    response_model=QualityIssue,
+)
+def update_quality_issue(
+    issue_id: str,
+    request: QualityIssueUpdateRequest,
+    auth=Depends(get_auth_context),
+):
+    record = quality_issue_service.update_issue(
+        organization_id=auth.org_id,
+        issue_id=issue_id,
+        request=request,
+        actor_role=auth.role,
+        actor_id=auth.effective_user_id or auth.user_id,
+    )
+    return parse_quality_issue_row(record)
+
+
+@app.post(
+    "/issues/{issue_id}/photos",
+    response_model=QualityIssuePhotoUploadResponse,
+)
+async def upload_quality_issue_remediation_photo(
+    issue_id: str,
+    file: UploadFile = File(...),
+    auth=Depends(get_auth_context),
+):
+    content = await file.read()
+    return quality_issue_service.upload_remediation_photo(
+        organization_id=auth.org_id,
+        issue_id=issue_id,
+        content=content,
+        content_type=file.content_type,
+        filename=file.filename,
+        actor_role=auth.role,
+    )
+
+
+@app.get("/issues/{issue_id}/photos/{photo_id}")
+def get_quality_issue_photo(
+    issue_id: str,
+    photo_id: str,
+    auth=Depends(get_auth_context),
+):
+    content, content_type = quality_issue_service.get_issue_photo(
+        organization_id=auth.org_id,
+        issue_id=issue_id,
+        photo_id=photo_id,
+        actor_role=auth.role,
+    )
+    return Response(content=content, media_type=content_type)
 
 
 @app.get("/field-reports/catalog")
@@ -2108,6 +2383,9 @@ def extract_tenants(
 def run_agent(
     request: AgentRequest
 ):
+    from app.schemas.qc_freeze import raise_if_frozen_api_path
+
+    raise_if_frozen_api_path("/agent/run")
 
     return orchestrator.run(
         request.user_request
@@ -2860,10 +3138,61 @@ def edit_project(
         project_end_date=request.project_end_date,
         project_grace_end_date=request.project_grace_end_date,
         structure_documentation_date=request.structure_documentation_date,
+        illustration_url=request.illustration_url,
+        illustration_source_he=request.illustration_source_he,
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Project not found")
     return updated
+
+
+@app.post("/projects/{project_id}/illustration")
+async def upload_project_illustration(
+    project_id: str,
+    file: UploadFile = File(...),
+    auth=Depends(require_permission("projects:write")),
+):
+    project = tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    )
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    content = await file.read()
+    updated = project_service.upload_project_illustration(
+        project_id=project_id,
+        organization_id=auth.org_id,
+        content=content,
+        content_type=file.content_type,
+        filename=file.filename,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return updated
+
+
+@app.get("/projects/{project_id}/illustration")
+def get_project_illustration(
+    project_id: str,
+    auth=Depends(require_permission("projects:read")),
+):
+    project = tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+    )
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    payload = project_service.read_project_illustration(
+        organization_id=auth.org_id,
+        project_id=project_id,
+    )
+    if not payload:
+        raise HTTPException(status_code=404, detail="Illustration not found")
+
+    content, content_type = payload
+    return Response(content=content, media_type=content_type)
 
 
 @app.post("/projects/{project_id}/archive")
@@ -4438,6 +4767,145 @@ def get_portfolio_summary(
 ):
     return portfolio_intelligence_dashboard_service.get_summary(
         organization_id=auth.org_id,
+    )
+
+
+@app.get(
+    "/portfolio/quality-summary",
+    response_model=QualityPortfolioSummaryResponse,
+)
+def get_portfolio_quality_summary(
+    auth=Depends(get_auth_context),
+):
+    return quality_issue_service.get_portfolio_quality_summary(
+        organization_id=auth.org_id,
+        actor_role=auth.role,
+    )
+
+
+@app.get(
+    "/portfolio/quality-trade-heatmap",
+    response_model=QualityTradeHeatmapResponse,
+)
+def get_portfolio_quality_trade_heatmap(
+    auth=Depends(get_auth_context),
+    project_id: str | None = None,
+):
+    """Roadmap 6.1 - open issues heatmap grouped by trade."""
+    return quality_issue_service.get_portfolio_trade_heatmap(
+        organization_id=auth.org_id,
+        actor_role=auth.role,
+        project_id=project_id,
+    )
+
+
+@app.get(
+    "/portfolio/quality-recurring-rankings",
+    response_model=QualityRecurringRankingsResponse,
+)
+def get_portfolio_quality_recurring_rankings(
+    auth=Depends(get_auth_context),
+    project_id: str | None = None,
+):
+    """Roadmap 6.2 - recurring issues and subcontractor pressure rankings."""
+    return quality_issue_service.get_portfolio_recurring_rankings(
+        organization_id=auth.org_id,
+        actor_role=auth.role,
+        project_id=project_id,
+    )
+
+
+@app.get(
+    "/portfolio/quality-periodic-report",
+    response_model=QualityPeriodicReportResponse,
+)
+def get_portfolio_quality_periodic_report(
+    auth=Depends(get_auth_context),
+    period_days: int = 30,
+    project_id: str | None = None,
+):
+    """Roadmap 6.3 - periodic QC report for developers."""
+    return quality_issue_service.get_portfolio_periodic_report(
+        organization_id=auth.org_id,
+        actor_role=auth.role,
+        period_days=period_days,
+        project_id=project_id,
+    )
+
+
+@app.get("/portfolio/quality-periodic-report/export")
+def export_portfolio_quality_periodic_report(
+    auth=Depends(get_auth_context),
+    period_days: int = 30,
+    project_id: str | None = None,
+    format: str = "csv",
+):
+    """Roadmap 6.3 - CSV export for periodic QC report."""
+    if format.lower() != "csv":
+        raise HTTPException(
+            status_code=400,
+            detail={"message": "Only csv export is supported"},
+        )
+
+    csv_content = quality_issue_service.export_portfolio_periodic_report_csv(
+        organization_id=auth.org_id,
+        actor_role=auth.role,
+        period_days=period_days,
+        project_id=project_id,
+    )
+    return Response(
+        content=csv_content.encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="qc-periodic-report.csv"'
+            ),
+        },
+    )
+
+
+@app.post(
+    "/portfolio/quality-alerts/critical-stale",
+    response_model=QualityCriticalStaleAlertResponse,
+)
+def send_critical_stale_quality_alerts(
+    auth=Depends(require_permission("quality_issues:write")),
+):
+    """Roadmap 4.3.1 - email supervisors for CRITICAL issues open > 7 days."""
+    send_email = settings.FEATURE_FLAGS.enable_email_delivery
+    return qc_notification_service.run_critical_stale_for_organization(
+        organization_id=auth.org_id,
+        send_email=send_email,
+    )
+
+
+@app.post(
+    "/portfolio/quality-alerts/open-reports",
+    response_model=OpenReportReminderResponse,
+)
+def send_open_report_reminders(
+    auth=Depends(require_permission("quality_issues:write")),
+):
+    """Roadmap 4.3.2 - email supervisors for IN_PROGRESS reports open > 3 days."""
+    send_email = settings.FEATURE_FLAGS.enable_email_delivery
+    return qc_notification_service.run_open_reports_for_organization(
+        organization_id=auth.org_id,
+        send_email=send_email,
+    )
+
+
+@app.post(
+    "/portfolio/quality-alerts/run",
+    response_model=QcNotificationCycleResponse,
+)
+def run_qc_notification_alerts(
+    auth=Depends(require_permission("quality_issues:write")),
+):
+    """Roadmap 4.3.3 - run all QC alerts via NotificationTool (not automation)."""
+    send_email = settings.FEATURE_FLAGS.enable_email_delivery
+    return qc_notification_service.run_for_organization(
+        organization_id=auth.org_id,
+        send_email=send_email,
     )
 
 

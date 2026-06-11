@@ -10,13 +10,15 @@ from datetime import date, datetime
 from typing import Any, Final, Literal, TypedDict
 
 from app.config.field_report_construction_progress import (
+    FINISHING_APARTMENT_FINDINGS_TITLE_HE,
     FINISHING_APARTMENTS_PROGRESS_TITLE_HE,
+    FINISHING_LOBBY_FINDINGS_TITLE_HE,
     STRUCTURE_SITE_PROGRESS_TITLE_HE,
     default_construction_progress_rows,
 )
 from app.config.field_report_pdf_defaults import DEFAULT_WINTER_RECOMMENDATIONS_HE
 
-ColumnPresetKey = Literal["rich", "simple", "progress", "structure"]
+ColumnPresetKey = Literal["rich", "simple", "finishing", "progress", "structure"]
 
 VISIT_TYPE_MIXED: Final = "MIXED"
 
@@ -42,6 +44,13 @@ COLUMN_PRESETS: dict[ColumnPresetKey, list[dict[str, str]]] = {
         {"id": "notes", "header_he": "הערות / לטיפול"},
         {"id": "photos", "header_he": "תמונות"},
     ],
+    "finishing": [
+        {"id": "location", "header_he": "מיקום"},
+        {"id": "trade", "header_he": "מלאכה"},
+        {"id": "notes", "header_he": "הערות"},
+        {"id": "status", "header_he": "סטטוס / תיאור"},
+        {"id": "photos", "header_he": "תמונות"},
+    ],
     "progress": [
         {"id": "description", "header_he": "תיאור עבודה"},
         {"id": "status", "header_he": "סטטוס"},
@@ -64,7 +73,7 @@ class BlockTemplate(TypedDict, total=False):
 
 DEFAULT_FINISHING_CHECKLIST_BLOCK_ID: Final = "default-finishing-checklist"
 
-DEFAULT_FINISHING_CHECKLIST_TITLE_HE: Final = "צ'קליסט גמר"
+DEFAULT_FINISHING_CHECKLIST_TITLE_HE: Final = FINISHING_APARTMENTS_PROGRESS_TITLE_HE
 
 FINISHING_CHECKLIST_ITEM_DEFS: Final = [
     {"id": "owners", "label_he": "בעלים"},
@@ -103,18 +112,11 @@ DEFAULT_BLOCKS_BY_VISIT_TYPE: dict[str, list[BlockTemplate]] = {
         {
             "kind": "findings_table",
             "id": "default-findings-table",
-            "title_he": "ממצאים",
-            "column_preset": "rich",
+            "title_he": "ממצאים נוספים",
+            "column_preset": "simple",
         },
     ],
     "FINISHING_APARTMENTS": [
-        {
-            "kind": "progress_table",
-            "id": "default-progress-table",
-            "title_he": FINISHING_APARTMENTS_PROGRESS_TITLE_HE,
-            "column_preset": "progress",
-            "include_default_progress_rows": True,
-        },
         {
             "kind": "checklist",
             "id": DEFAULT_FINISHING_CHECKLIST_BLOCK_ID,
@@ -122,9 +124,15 @@ DEFAULT_BLOCKS_BY_VISIT_TYPE: dict[str, list[BlockTemplate]] = {
         },
         {
             "kind": "findings_table",
-            "id": "default-findings-table",
-            "title_he": "ממצאים",
-            "column_preset": "simple",
+            "id": "default-lobby-findings",
+            "title_he": FINISHING_LOBBY_FINDINGS_TITLE_HE,
+            "column_preset": "finishing",
+        },
+        {
+            "kind": "findings_table",
+            "id": "default-apartment-findings",
+            "title_he": FINISHING_APARTMENT_FINDINGS_TITLE_HE,
+            "column_preset": "finishing",
         },
     ],
     VISIT_TYPE_MIXED: [
@@ -216,7 +224,7 @@ WINTER_SEASON_MONTHS: Final = frozenset({10, 11, 12, 1, 2, 3})
 
 
 def is_winter_season_date(value: str | date | datetime | None) -> bool:
-    """אוקטובר–מרץ — להפעלת המלצות חורף בדוח חדש (FR-4.2)."""
+    """אוקטובר–מרץ - להפעלת המלצות חורף בדוח חדש (FR-4.2)."""
     if value is None:
         return False
     if isinstance(value, datetime):
@@ -268,7 +276,7 @@ def default_fixed_text_blocks(
 def default_fixed_text_blocks_for_new_report(
     visit_date: str | date | datetime | None = None,
 ) -> list[dict[str, Any]]:
-    """Boilerplate לדוח חדש — mirrors buildFixedTextBlocksForNewReport (FR-4.2)."""
+    """Boilerplate לדוח חדש - mirrors buildFixedTextBlocksForNewReport (FR-4.2)."""
     return default_fixed_text_blocks(visit_date=visit_date)
 
 

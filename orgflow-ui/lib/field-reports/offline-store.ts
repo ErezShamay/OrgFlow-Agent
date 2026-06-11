@@ -5,6 +5,7 @@ import {
   resolveOfflinePrepBundle,
   saveFromOfflinePrep,
 } from "@/lib/field-reports/repositories/catalog-repository";
+import { clearOpenIssuesOfflineCache } from "@/lib/quality-issues/open-issues-offline";
 
 export type { OfflinePrepBundle } from "@/lib/field-reports/offline-store-types";
 
@@ -38,7 +39,7 @@ export async function hydrateOfflinePrepBundle(
   return bundle;
 }
 
-/** קריאה סינכרונית מהמטמון — אחרי `hydrateOfflinePrepBundle`. */
+/** קריאה סינכרונית מהמטמון - אחרי `hydrateOfflinePrepBundle`. */
 export function loadOfflinePrepBundle(
   organizationId: string
 ): OfflinePrepBundle | null {
@@ -77,4 +78,5 @@ export async function clearOfflinePrepBundle(organizationId: string) {
   clearLegacyOfflinePrepBundle(organizationId);
   setCachedOfflinePrepBundle(organizationId, null);
   await clearCatalogBundle(organizationId);
+  await clearOpenIssuesOfflineCache(organizationId);
 }

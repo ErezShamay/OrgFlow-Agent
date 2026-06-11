@@ -249,7 +249,7 @@ async function runPdfAndRequestSend(
 ): Promise<void> {
   const storedPdf = await loadVisitReportPdfLocally(pdfReportKey);
   if (!storedPdf?.blob) {
-    throw new Error("PDF לא נמצא במכשיר — יש להפיק מחדש לפני שליחה");
+    throw new Error("PDF לא נמצא במכשיר - יש להפיק מחדש לפני שליחה");
   }
 
   await requestSendToCore(serverReportId, idempotencyKey, {

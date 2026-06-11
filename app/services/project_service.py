@@ -7,6 +7,9 @@ from uuid import uuid4
 from app.config.field_report_project_scheme import (
     is_valid_project_scheme,
 )
+from app.services.project_illustration_service import (
+    ProjectIllustrationService,
+)
 
 
 def _normalized_project_scheme(scheme: str | None) -> str | None:
@@ -24,6 +27,7 @@ class ProjectService:
         )
         self.project_comments: dict[str, list[dict]] = {}
         self.project_attachments: dict[str, list[dict]] = {}
+        self.illustration_service = ProjectIllustrationService()
 
     def create_project(
         self,
@@ -138,6 +142,8 @@ class ProjectService:
         project_end_date: str | None = None,
         project_grace_end_date: str | None = None,
         structure_documentation_date: str | None = None,
+        illustration_url: str | None = None,
+        illustration_source_he: str | None = None,
     ):
         updates = {
             "project_name": project_name,
@@ -157,8 +163,61 @@ class ProjectService:
             "project_end_date": project_end_date,
             "project_grace_end_date": project_grace_end_date,
             "structure_documentation_date": structure_documentation_date,
+            "illustration_url": illustration_url,
+            "illustration_source_he": illustration_source_he,
         }
         return self.project_repository.update_project(project_id, updates)
+
+    def upload_project_illustration(
+        self,
+        *,
+        project_id: str,
+        organization_id: str,
+        content: bytes,
+        content_type: str | None,
+        filename: str | None,
+    ):
+        storage_path = self.illustration_service.save_illustration(
+            organization_id=organization_id,
+            project_id=project_id,
+            content=content,
+            content_type=content_type,
+            filename=filename,
+        )
+        illustration_url = f"/projects/{project_id}/illustration"
+        updated = self.project_repository.update_project(
+            project_id,
+            {
+                "illustration_url": illustration_url,
+            },
+        )
+        if not updated:
+            return None
+
+        return {
+            **updated,
+            "illustration_storage_path": storage_path,
+        }
+
+    def read_project_illustration(
+        self,
+        *,
+        organization_id: str,
+        project_id: str,
+    ) -> tuple[bytes, str] | None:
+        for extension in ("jpeg", "jpg", "png", "webp"):
+            storage_path = self.illustration_service.build_storage_path(
+                organization_id=organization_id,
+                project_id=project_id,
+                extension=extension,
+            )
+            try:
+                return self.illustration_service.read_illustration(
+                    storage_path
+                )
+            except FileNotFoundError:
+                continue
+        return None
 
     def archive_project(
         self,

@@ -403,7 +403,7 @@ export default function LinePhotoCapture({
         תמונות לשורה
       </p>
       <p className="text-xs text-zinc-500">
-        עד {MAX_LINE_PHOTOS} תמונות — נשמרות במכשיר ומועלות לשרת כשהמערכת מחוברת.
+        עד {MAX_LINE_PHOTOS} תמונות - נשמרות במכשיר ומועלות לשרת כשהמערכת מחוברת.
       </p>
       {androidEmulator ? (
         <p className="text-xs text-amber-800 dark:text-amber-300">

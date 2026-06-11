@@ -1,5 +1,5 @@
 /**
- * פריטי צ'קליסט גמר — לפי דוח ההגנה (FR-2.4).
+ * פריטי צ'קליסט גמר - לפי דוח ההגנה (FR-2.4).
  */
 
 import type { ChecklistBlock, ChecklistItem } from "./types";
@@ -7,9 +7,10 @@ import type { ChecklistBlock, ChecklistItem } from "./types";
 /** מזהה בלוק צ'קליסט ברירת מחדל ב-preset FINISHING_APARTMENTS. */
 export const DEFAULT_FINISHING_CHECKLIST_BLOCK_ID = "default-finishing-checklist";
 
-export const DEFAULT_FINISHING_CHECKLIST_TITLE_HE = "צ'קליסט גמר";
+/** כותרת צ'קליסט בדוח גמר - תחת «התקדמות הבנייה» (דוח ההגנה). */
+export const DEFAULT_FINISHING_CHECKLIST_TITLE_HE = "התקדמות הבנייה";
 
-/** הגדרות פריטים קבועות — סדר כמו בדוחות הלקוח. */
+/** הגדרות פריטים קבועות - סדר כמו בדוחות הלקוח. */
 export const FINISHING_CHECKLIST_ITEM_DEFS: readonly {
   id: string;
   label_he: string;
@@ -22,7 +23,7 @@ export const FINISHING_CHECKLIST_ITEM_DEFS: readonly {
   { id: "balcony_sealing", label_he: "איטום מרפסות" },
 ] as const;
 
-/** פריטי צ'קליסט גמר עם מזהים יציבים — לעריכה ו-PDF. */
+/** פריטי צ'קליסט גמר עם מזהים יציבים - לעריכה ו-PDF. */
 export function defaultFinishingChecklistItems(): ChecklistItem[] {
   return FINISHING_CHECKLIST_ITEM_DEFS.map((def, index) => ({
     id: `checklist-${def.id}`,
@@ -33,7 +34,7 @@ export function defaultFinishingChecklistItems(): ChecklistItem[] {
   }));
 }
 
-/** בלוק צ'קליסט גמר מלא — לתבנית FINISHING_APARTMENTS. */
+/** בלוק צ'קליסט גמר מלא - לתבנית FINISHING_APARTMENTS. */
 export function defaultFinishingChecklistBlock(
   options?: { id?: string; title_he?: string; sort_order?: number }
 ): ChecklistBlock {

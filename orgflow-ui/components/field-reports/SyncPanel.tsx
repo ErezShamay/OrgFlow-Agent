@@ -117,7 +117,7 @@ export default function SyncPanel() {
           </div>
         ) : pendingSendCount > 0 && canSync ? (
           <p className="text-xs text-sky-800 dark:text-sky-300">
-            הסנכרון יתחיל אוטומטית כשהשרת זמין — או לחץ «העלה דוחות ומסמכים».
+            הסנכרון יתחיל אוטומטית כשהשרת זמין - או לחץ «העלה דוחות ומסמכים».
           </p>
         ) : null}
 

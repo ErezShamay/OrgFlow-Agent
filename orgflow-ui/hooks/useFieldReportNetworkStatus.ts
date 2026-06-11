@@ -20,7 +20,7 @@ export type UseFieldReportNetworkStatusResult = {
 };
 
 /**
- * מצב רשת לדוחות שטח — ping ל-module-status + polling (FR-026).
+ * מצב רשת לדוחות שטח - ping ל-module-status + polling (FR-026).
  */
 export function useFieldReportNetworkStatus(): UseFieldReportNetworkStatusResult {
   const { isOnline: navigatorOnline } = useOffline();

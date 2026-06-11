@@ -58,7 +58,7 @@ export default function SendToCoreDialog({
 
         {offline ? (
           <p className="rounded-lg bg-sky-50 px-4 py-3 text-sm text-sky-950 dark:bg-sky-950/40 dark:text-sky-100">
-            אין חיבור לרשת — הדוח יסומן כ<strong>ממתין לשליחה</strong> ויועלה
+            אין חיבור לרשת - הדוח יסומן כ<strong>ממתין לשליחה</strong> ויועלה
             אוטומטית כשהרשת תחזור.
           </p>
         ) : (
@@ -86,7 +86,7 @@ export default function SendToCoreDialog({
             {loading
               ? "שולח..."
               : offline
-                ? "אשר — ממתין לרשת"
+                ? "אשר - ממתין לרשת"
                 : "אשר ושלח לליבה"}
           </Button>
         </div>

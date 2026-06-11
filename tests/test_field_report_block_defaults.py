@@ -30,6 +30,13 @@ def test_column_presets_match_typescript_headers() -> None:
         "הערות / לטיפול",
         "תמונות",
     ]
+    assert column_preset_headers("finishing") == [
+        "מיקום",
+        "מלאכה",
+        "הערות",
+        "סטטוס / תיאור",
+        "תמונות",
+    ]
     assert column_preset_headers("progress") == [
         "תיאור עבודה",
         "סטטוס",
@@ -45,6 +52,7 @@ def test_column_presets_define_all_keys() -> None:
     assert set(COLUMN_PRESETS.keys()) == {
         "rich",
         "simple",
+        "finishing",
         "progress",
         "structure",
     }
@@ -66,7 +74,7 @@ def test_default_report_blocks_for_structure_site() -> None:
     assert blocks[0]["column_preset"] == "structure"
     assert len(blocks[0]["rows"]) > 0
     assert blocks[1]["kind"] == "findings_table"
-    assert blocks[1]["column_preset"] == "rich"
+    assert blocks[1]["column_preset"] == "simple"
     assert blocks[1]["rows"] == []
 
 
@@ -82,12 +90,16 @@ def test_default_report_blocks_for_finishing_includes_checklist() -> None:
     blocks = default_report_blocks_for_visit_type("FINISHING_APARTMENTS")
 
     assert [block["kind"] for block in blocks] == [
-        "progress_table",
         "checklist",
+        "findings_table",
         "findings_table",
     ]
     checklist = next(block for block in blocks if block["kind"] == "checklist")
+    assert checklist["title_he"] == "התקדמות הבנייה"
     assert len(checklist["items"]) == 6
+    findings = [block for block in blocks if block["kind"] == "findings_table"]
+    assert findings[0]["column_preset"] == "finishing"
+    assert findings[1]["column_preset"] == "finishing"
 
 
 def test_default_report_blocks_for_mixed() -> None:

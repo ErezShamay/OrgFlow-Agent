@@ -107,7 +107,7 @@ export default function TenantMergeUploader({ onTenants }: Props) {
   return (
     <div className="space-y-6">
       <p className="text-sm text-zinc-500">
-        קובץ א׳ — דירות (מספר דירה, בניין, כניסה, שם בעלים). קובץ ב׳ — אנשי קשר
+        קובץ א׳ - דירות (מספר דירה, בניין, כניסה, שם בעלים). קובץ ב׳ - אנשי קשר
         (שם, טלפון, מייל). האיחוד מתבצע לפי שם בעל הדירה.
       </p>
 
@@ -160,7 +160,7 @@ function SlotCard({
       <h4 className="font-medium">{title}</h4>
       {file ? (
         <p className="mt-2 text-sm text-zinc-600">
-          {file.fileName} — {file.tenants.length} שורות
+          {file.fileName} - {file.tenants.length} שורות
         </p>
       ) : (
         <p className="mt-2 text-sm text-zinc-400">טרם הועלה קובץ</p>

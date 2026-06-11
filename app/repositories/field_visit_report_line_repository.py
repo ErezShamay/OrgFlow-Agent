@@ -24,6 +24,9 @@ LINE_SYNC_MIGRATIONS = {
     "block_id": (
         "deploy/sql/2026060301_field_visit_report_line_grouping.sql"
     ),
+    "linked_issue_id": (
+        "deploy/sql/2026060914_field_visit_report_line_linked_issue.sql"
+    ),
 }
 
 

@@ -100,7 +100,7 @@ function shouldSignOutAfterBootstrapError(error: unknown): boolean {
 function bootstrapErrorMessage(error: unknown): string {
   if (error instanceof TokenExchangeError) {
     return error.status === 0
-      ? `לא ניתן להגיע לשרת ב-${getApiBaseUrl()} — ודאו שה-API רץ (uvicorn --host 0.0.0.0) ושהמכשיר והמחשב באותה רשת`
+      ? `לא ניתן להגיע לשרת ב-${getApiBaseUrl()} - ודאו שה-API רץ (uvicorn --host 0.0.0.0) ושהמכשיר והמחשב באותה רשת`
       : `שגיאת שרת (${error.status}): ${error.message}`;
   }
 
@@ -461,7 +461,7 @@ export function AuthProvider({
     const result = await signOut();
     if (!result.ok) {
       toast.warning(
-        result.block?.message || "לא ניתן להתנתק — דוחות ממתינים לשליחה"
+        result.block?.message || "לא ניתן להתנתק - דוחות ממתינים לשליחה"
       );
       throw new Error("field-report-logout-blocked");
     }

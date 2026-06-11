@@ -81,7 +81,7 @@ async function migrateLegacyRecord(
 
 /**
  * מעביר תמונות מ-`orgflow-field-report-line-photos` ל-store `blobs` המאוחד.
- * חד-פעמי: מסומן ב-localStorage; אם אין נתונים ישנים — מסמן וממשיך.
+ * חד-פעמי: מסומן ב-localStorage; אם אין נתונים ישנים - מסמן וממשיך.
  */
 export async function migrateLinePhotosFromLegacyIndexedDb(): Promise<void> {
   if (isMigrationMarkedComplete()) {
@@ -121,7 +121,7 @@ export async function ensureLinePhotosMigratedToBlobs(): Promise<void> {
   await migrationPromise;
 }
 
-/** לבדיקות — מאפס סימון מיגרציה. */
+/** לבדיקות - מאפס סימון מיגרציה. */
 export function resetLinePhotoMigrationMarkerForTests(): void {
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem(MIGRATION_MARKER_KEY);

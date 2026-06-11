@@ -54,7 +54,7 @@ export async function loadCatalogBundle(
   return record ?? null;
 }
 
-/** האם חבילת ההכנה פגה תוקף (מקביל ל-`isOfflinePrepValid` — הפוך). */
+/** האם חבילת ההכנה פגה תוקף (מקביל ל-`isOfflinePrepValid` - הפוך). */
 export function isExpired(bundle: CatalogRecord | null): boolean {
   if (!bundle?.expires_at) {
     return true;
@@ -64,7 +64,7 @@ export function isExpired(bundle: CatalogRecord | null): boolean {
 }
 
 /**
- * קטלוג מסונן לפי סוג ביקור — מ-IndexedDB בלבד.
+ * קטלוג מסונן לפי סוג ביקור - מ-IndexedDB בלבד.
  * מחזיר `null` אם אין חבילה, פג תוקף, או אין קטלוג.
  */
 export async function getCatalogForVisitType(
@@ -101,7 +101,7 @@ export async function putCatalogRecord(
 
 /**
  * מעביר חבילה מ-localStorage ל-IndexedDB (חד-פעמי לכל ארגון).
- * אם כבר קיימת ב-IndexedDB — מוחק legacy מ-localStorage בלבד.
+ * אם כבר קיימת ב-IndexedDB - מוחק legacy מ-localStorage בלבד.
  */
 export async function migrateOfflinePrepFromLocalStorage(
   organizationId: string
@@ -130,7 +130,7 @@ export async function migrateOfflinePrepFromLocalStorage(
   return record;
 }
 
-/** טוען מ-IndexedDB; אם חסר — מנסה מיגרציה מ-localStorage. */
+/** טוען מ-IndexedDB; אם חסר - מנסה מיגרציה מ-localStorage. */
 export async function resolveOfflinePrepBundle(
   organizationId: string
 ): Promise<CatalogRecord | null> {

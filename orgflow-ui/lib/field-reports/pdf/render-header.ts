@@ -13,14 +13,14 @@ import type { OrganizationProfileSnapshot, PdfVisitReport } from "./types";
 export const PDF_SUPERVISION_BANNER_HE =
   "פיקוח בניה הנדסי מטעם הדיירים";
 
-/** כותרת דוח ראשית — דוחות דוגמה. */
+/** כותרת דוח ראשית - דוחות דוגמה. */
 export const PDF_REPORT_TITLE_HE =
   "דוח מפקח/ת הנדסי מטעם בעלי הדירות";
 
 /** נמען ברירת מחדל כשאין addressee_label_he. */
 export const PDF_DEFAULT_ADDRESSEE_HE = "בעלי הקרקע / בעלי הדירות";
 
-/** תוויות stakeholders ב-PDF — כמו בדוחות example_reports. */
+/** תוויות stakeholders ב-PDF - גרשיים ישרים לתאימות גופן. */
 const PDF_STAKEHOLDER_LABELS_HE: Record<StakeholderRole, string> = {
   developer: "שם החברה היזמית",
   project_manager: "מנהל הפרויקט מטעם היזם",
@@ -30,6 +30,9 @@ const PDF_STAKEHOLDER_LABELS_HE: Record<StakeholderRole, string> = {
   lawyer_accompanying: 'עו"ד מלווה',
   architect: "אדריכל הפרויקט",
 };
+
+export const PDF_DEFAULT_ILLUSTRATION_CAPTION_HE =
+  "הדמיית הפרויקט להמחשה בלבד";
 
 /** סדר תצוגת stakeholders בכותרת PDF. */
 const STAKEHOLDER_RENDER_ORDER: readonly StakeholderRole[] = [
@@ -53,6 +56,7 @@ export type RenderVisitReportHeaderInput = {
   >;
   profile?: OrganizationProfileSnapshot | null;
   logoDataUrl?: string | null;
+  illustrationDataUrl?: string | null;
 };
 
 export function formatOrgAddress(
@@ -78,13 +82,13 @@ export function formatHeaderContact(
 }
 
 /**
- * מרender את בלוק הכותרת ב-PDF — metadata, stakeholders, עדכוני פרויקט (FR-1.4).
+ * מרender את בלוק הכותרת ב-PDF - metadata, stakeholders, עדכוני פרויקט (FR-1.4).
  * גוף הדוח (ממצאים, blocks) נשאר ב-build-doc-definition.
  */
 export function renderVisitReportHeader(
   input: RenderVisitReportHeaderInput
 ): Content[] {
-  const { report, profile, logoDataUrl } = input;
+  const { report, profile, logoDataUrl, illustrationDataUrl } = input;
   const headerFields = report.header_fields || {};
   const normalized = normalizeHeaderFields(headerFields, report.visit_type);
   const metadata = normalized.project_metadata;
@@ -189,7 +193,15 @@ export function renderVisitReportHeader(
     }
   }
 
-  content.push(...renderProjectIllustrationSection(metadata, normalized.stakeholders));
+  content.push({ text: "", pageBreak: "before" });
+  content.push(
+    ...renderProjectIllustrationSection(
+      metadata,
+      headerFields,
+      normalized.stakeholders,
+      illustrationDataUrl
+    )
+  );
 
   const structureDocSection = renderStructureDocumentationSection(
     metadata,
@@ -203,7 +215,7 @@ export function renderVisitReportHeader(
   return content;
 }
 
-/** @deprecated — השתמשו ב-PDF_DOCUMENT_STYLES מ-pdf-styles (נשמר לתאימות בדיקות). */
+/** @deprecated - השתמשו ב-PDF_DOCUMENT_STYLES מ-pdf-styles (נשמר לתאימות בדיקות). */
 export { PDF_DOCUMENT_STYLES as PDF_HEADER_STYLES } from "./pdf-styles";
 
 function buildCoverMetadataLines(
@@ -267,32 +279,63 @@ function resolveDeveloperDisplayLine(
 
 function renderProjectIllustrationSection(
   metadata: ProjectMetadata,
-  stakeholders: Stakeholder[]
+  headerFields: Record<string, unknown>,
+  stakeholders: Stakeholder[],
+  illustrationDataUrl?: string | null
 ): Content[] {
   const content: Content[] = [];
   const caption =
     stringField(metadata.illustration_caption_he) ||
-    "הדמיית הפרויקט (להמחשה בלבד)";
+    stringField(headerFields.illustration_caption_he) ||
+    PDF_DEFAULT_ILLUSTRATION_CAPTION_HE;
+  const sourceNote =
+    stringField(metadata.illustration_source_he) ||
+    stringField(headerFields.illustration_source_he);
   const architect = stakeholders.find((item) => item.role === "architect");
-  const architectName = architect?.name?.trim();
+  const architectName =
+    architect?.name?.trim() || stringField(metadata.architect_name);
   const housingUnits = metadata.housing_units_count;
 
   content.push(
     pdfText(caption, {
       style: "sectionTitle",
-      margin: [0, 12, 0, 4],
+      alignment: "center",
+      margin: [0, 8, 0, 8],
     })
   );
 
+  if (illustrationDataUrl) {
+    content.push({
+      image: illustrationDataUrl,
+      width: 460,
+      alignment: "center",
+      margin: [0, 0, 0, 8],
+    });
+  }
+
+  if (sourceNote) {
+    content.push(
+      pdfText(sourceNote, {
+        alignment: "center",
+        fontSize: 9,
+        margin: [0, 0, 0, 6],
+      })
+    );
+  }
+
   if (architectName) {
     content.push(
-      pdfText(`אדריכל הפרויקט: ${architectName}`, { margin: [0, 0, 0, 4] })
+      pdfText(`אדריכל הפרויקט: ${architectName}`, {
+        alignment: "center",
+        margin: [0, 0, 0, 4],
+      })
     );
   }
 
   if (housingUnits !== null && housingUnits !== undefined) {
     content.push(
       pdfText(`בפרויקט ייבנו סה"כ ${housingUnits} יחידות דיור`, {
+        alignment: "center",
         margin: [0, 0, 0, 8],
       })
     );
@@ -363,8 +406,8 @@ function buildLegacyStakeholderFallback(
   return [
     `יזם: ${displayValue(normalized.developer_name)}`,
     `מנהל פרויקט מטעם יזם: ${displayValue(developerPmName)}`,
-    `עו״ד ב״כ דיירים: ${displayValue(normalized.lawyer_name)}`,
-    `עו״ד מלווה: ${displayValue(normalized.accompanying_lawyer)}`,
+    `עו"ד ב"כ הדיירים: ${displayValue(normalized.lawyer_name)}`,
+    `עו"ד מלווה: ${displayValue(normalized.accompanying_lawyer)}`,
     `כתובת אתר: ${displayValue(normalized.site_address)}`,
   ];
 }
@@ -451,5 +494,5 @@ function parseOptionalNumber(value: unknown): number | null {
 
 function displayValue(value: string): string {
   const text = value.trim();
-  return text || "—";
+  return text || "-";
 }

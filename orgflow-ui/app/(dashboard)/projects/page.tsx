@@ -381,7 +381,7 @@ export default function ProjectsPage() {
                   <h3 className="mb-2 font-semibold">
                     אימייל מפקח מלווה
                   </h3>
-                  <p>{project.supervisor_email || "—"}</p>
+                  <p>{project.supervisor_email || "-"}</p>
                 </div>
 
                 <div>

@@ -46,7 +46,7 @@ def _print_step(name: str, ok: bool, detail: str = "") -> None:
     status = "PASS" if ok else "FAIL"
     line = f"[{status}] {name}"
     if detail:
-        line += f" — {detail}"
+        line += f" - {detail}"
     print(line)
 
 
@@ -184,7 +184,7 @@ def main() -> int:
         _print_step(
             "Block second client admin invitation",
             True,
-            "skipped — no existing client admin in organization",
+            "skipped - no existing client admin in organization",
         )
 
     existing_projects = (

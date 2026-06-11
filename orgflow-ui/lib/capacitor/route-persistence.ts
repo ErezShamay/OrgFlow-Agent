@@ -18,7 +18,7 @@ function routeStorage(): Storage | null {
   return window.localStorage;
 }
 
-/** נתיב מלא כולל query — לשחזור אחרי מצלמה / reload של WebView. */
+/** נתיב מלא כולל query - לשחזור אחרי מצלמה / reload של WebView. */
 export function readCapacitorPersistedRoute(): string | null {
   const storage = routeStorage();
   if (!storage) {
@@ -95,7 +95,7 @@ export function shouldRestoreCapacitorRoute(pathname: string): boolean {
   return isBootstrapCapacitorPath(pathname);
 }
 
-/** ניווט חזרה לדוח — `location.replace` עובד אחרי reload ב-static export. */
+/** ניווט חזרה לדוח - `location.replace` עובד אחרי reload ב-static export. */
 export function restoreCapacitorRouteIfNeeded(): boolean {
   if (typeof window === "undefined") {
     return false;

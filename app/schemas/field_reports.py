@@ -75,7 +75,7 @@ class FieldVisitReportCreateRequest(BaseModel):
 
 
 class FieldVisitReportSyncLineRequest(BaseModel):
-    """שורת דוח לסנכרון bulk — `client_line_uuid` חובה (§7 ג.ב.2)."""
+    """שורת דוח לסנכרון bulk - `client_line_uuid` חובה (§7 ג.ב.2)."""
 
     client_line_uuid: str
     location: str | None = None
@@ -95,10 +95,11 @@ class FieldVisitReportSyncLineRequest(BaseModel):
     group_key: str | None = Field(default=None, max_length=120)
     group_label_he: str | None = Field(default=None, max_length=120)
     block_id: str | None = Field(default=None, max_length=120)
+    linked_issue_id: str | None = None
 
 
 class FieldVisitReportSyncRequest(BaseModel):
-    """גוף `PUT /field-reports/visits/sync` — upsert לפי `client_report_uuid`."""
+    """גוף `PUT /field-reports/visits/sync` - upsert לפי `client_report_uuid`."""
 
     client_report_uuid: str
     project_id: str
@@ -180,6 +181,10 @@ class FieldVisitReportLineCreateRequest(BaseModel):
             "Optional stable UUID from the field device (offline-first sync)"
         ),
     )
+    linked_issue_id: str | None = Field(
+        default=None,
+        description="Optional link to an existing quality_issues.id (QC matching)",
+    )
 
 
 class FieldVisitReportLineUpdateRequest(BaseModel):
@@ -200,6 +205,10 @@ class FieldVisitReportLineUpdateRequest(BaseModel):
     group_key: str | None = Field(default=None, max_length=120)
     group_label_he: str | None = Field(default=None, max_length=120)
     block_id: str | None = Field(default=None, max_length=120)
+    linked_issue_id: str | None = Field(
+        default=None,
+        description="Optional link to an existing quality_issues.id (QC matching)",
+    )
 
 
 class FieldVisitReportSummary(BaseModel):
@@ -269,3 +278,21 @@ class FieldVisitReportLineSummary(BaseModel):
     block_id: str | None = None
     created_at: datetime | str | None = None
     updated_at: datetime | str | None = None
+
+
+class OpenReportReminderDelivery(BaseModel):
+    to: str | None = None
+    status: str
+    report_ids: list[str] = Field(default_factory=list)
+    error: str | None = None
+
+
+class OpenReportReminderResponse(BaseModel):
+    """POST /portfolio/quality-alerts/open-reports - roadmap 4.3.2."""
+
+    organization_id: str
+    threshold_days: int = Field(ge=1)
+    overdue_report_count: int = Field(ge=0)
+    digest_count: int = Field(ge=0)
+    skipped_report_ids: list[str] = Field(default_factory=list)
+    deliveries: list[OpenReportReminderDelivery] = Field(default_factory=list)

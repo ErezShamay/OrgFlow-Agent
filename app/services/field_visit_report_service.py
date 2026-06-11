@@ -47,6 +47,9 @@ from app.services.field_visit_report_pdf_service import (
 from app.services.field_visit_report_core_adapter import (
     FieldVisitReportCoreAdapter,
 )
+from app.services.quality_issue_materialization_service import (
+    QualityIssueMaterializationService,
+)
 from app.services.report_processing_service import (
     ReportProcessingService,
 )
@@ -102,6 +105,8 @@ class FieldVisitReportService:
             FieldVisitReportCoreAdapter | None = None,
         report_processing_service:
             ReportProcessingService | None = None,
+        materialization_service:
+            QualityIssueMaterializationService | None = None,
     ) -> None:
         self.report_repository = (
             report_repository or FieldVisitReportRepository()
@@ -131,6 +136,9 @@ class FieldVisitReportService:
         self.core_adapter = core_adapter or FieldVisitReportCoreAdapter(
             report_processing_service=report_processing_service
             or ReportProcessingService(),
+        )
+        self.materialization_service = (
+            materialization_service or QualityIssueMaterializationService()
         )
 
     def is_storage_available(self) -> bool:
@@ -228,6 +236,10 @@ class FieldVisitReportService:
                     "structure_documentation_date": project.get(
                         "structure_documentation_date"
                     ),
+                    "illustration_url": project.get("illustration_url"),
+                    "illustration_source_he": project.get(
+                        "illustration_source_he"
+                    ),
                     "project_type": project.get("project_type"),
                 }
                 for project in projects
@@ -244,6 +256,7 @@ class FieldVisitReportService:
         organization_id: str,
         *,
         status: str | None = None,
+        project_id: str | None = None,
         project_names: dict[str, str] | None = None,
     ) -> dict:
         if not self.is_storage_available():
@@ -258,6 +271,7 @@ class FieldVisitReportService:
         records = self.report_repository.list_by_organization(
             organization_id,
             status=status,
+            project_id=project_id,
         )
         if status is None:
             records = [
@@ -459,6 +473,7 @@ class FieldVisitReportService:
         *,
         organization_id: str,
         report_id: str,
+        actor_id: str | None = None,
     ) -> dict:
         record = self._get_org_report(
             organization_id=organization_id,
@@ -492,6 +507,12 @@ class FieldVisitReportService:
                 resource_id=report_id,
             )
 
+        materialization = self._materialize_issues_after_close(
+            organization_id=organization_id,
+            report_id=report_id,
+            actor_id=actor_id,
+        )
+
         project = self.project_repository.get_project_by_id(
             str(record["project_id"])
         )
@@ -506,6 +527,7 @@ class FieldVisitReportService:
         return {
             **serialized,
             "close_preview": close_preview,
+            "issue_materialization": materialization,
         }
 
     def reopen_report(
@@ -1506,6 +1528,7 @@ class FieldVisitReportService:
             "group_key": normalized.get("group_key"),
             "group_label_he": normalized.get("group_label_he"),
             "block_id": normalized.get("block_id"),
+            "linked_issue_id": normalized.get("linked_issue_id"),
         }
 
         if client_line_uuid:
@@ -1543,6 +1566,7 @@ class FieldVisitReportService:
                 "group_key",
                 "group_label_he",
                 "block_id",
+                "linked_issue_id",
             )
             payload = {
                 key: merged.get(key)
@@ -1584,6 +1608,7 @@ class FieldVisitReportService:
             "group_key",
             "group_label_he",
             "block_id",
+            "linked_issue_id",
         ):
             if key in incoming:
                 update_payload[key] = incoming[key]
@@ -1602,6 +1627,23 @@ class FieldVisitReportService:
         return self.catalog_service.get_catalog_summary().get(
             "catalog_version"
         )
+
+    def _materialize_issues_after_close(
+        self,
+        *,
+        organization_id: str,
+        report_id: str,
+        actor_id: str | None,
+    ) -> dict | None:
+        if not self.materialization_service.issue_repository.is_storage_available():
+            return None
+
+        result = self.materialization_service.materialize_issues_from_report(
+            organization_id=organization_id,
+            report_id=report_id,
+            actor_id=actor_id,
+        )
+        return result.model_dump(mode="json")
 
     def _load_lines(
         self,
@@ -2377,6 +2419,7 @@ class FieldVisitReportService:
             "group_key": record.get("group_key"),
             "group_label_he": record.get("group_label_he"),
             "block_id": record.get("block_id"),
+            "linked_issue_id": record.get("linked_issue_id"),
             "created_at": record.get("created_at"),
             "updated_at": record.get("updated_at"),
         }
@@ -2424,12 +2467,12 @@ def _build_close_preview(lines: list[dict]) -> dict:
 
     if empty_lines:
         warnings.append(
-            f"{len(empty_lines)} שורות ללא תיאור — מומלץ למלא לפני הפקת PDF."
+            f"{len(empty_lines)} שורות ללא תיאור - מומלץ למלא לפני הפקת PDF."
         )
 
     if catalog_warnings:
         warnings.append(
-            f"{len(catalog_warnings)} שורות עם אזהרת מפרט — "
+            f"{len(catalog_warnings)} שורות עם אזהרת מפרט - "
             "מומלץ לבדוק לפני סגירה."
         )
 
@@ -2490,7 +2533,7 @@ def _line_catalog_warning(
     if not catalog_issue:
         return (
             f"ממצא {issue_id} אינו קיים בקטלוג הנוכחי. "
-            "השורה לא נמחקה — יש לעדכן ידנית."
+            "השורה לא נמחקה - יש לעדכן ידנית."
         )
 
     if (
@@ -2515,6 +2558,7 @@ def _merge_header_fields(
 ) -> dict:
     from app.config.field_report_block_defaults import (
         default_fixed_text_blocks_for_new_report,
+        default_report_blocks_for_visit_type,
     )
     from app.config.field_report_construction_progress import (
         default_construction_progress_rows,
@@ -2540,6 +2584,12 @@ def _merge_header_fields(
         else ""
     )
 
+    default_blocks = default_report_blocks_for_visit_type(visit_type)
+    if visit_type == "FINISHING_APARTMENTS":
+        default_progress = []
+    else:
+        default_progress = default_construction_progress_rows(visit_type)
+
     defaults = {
         "developer_name": project.get("developer_name"),
         "developer_pm_name": project.get("developer_pm_name")
@@ -2554,18 +2604,25 @@ def _merge_header_fields(
         "contractor_notes": list(DEFAULT_CONTRACTOR_NOTES_HE),
         "inspector_title": "",
         "inspector_license": "",
-        "construction_progress": default_construction_progress_rows(
-            visit_type
-        ),
+        "construction_progress": default_progress,
         "fixed_text_blocks": fixed_text_blocks,
         "include_fixed_text_blocks": True,
     }
+    if default_blocks and not (header_fields or {}).get("blocks"):
+        defaults["blocks"] = default_blocks
+
     merged = {**defaults, **(header_fields or {})}
     if not merged.get("fixed_text_blocks"):
         merged["fixed_text_blocks"] = fixed_text_blocks
     if merged.get("include_fixed_text_blocks") is None:
         merged["include_fixed_text_blocks"] = True
-    if not merged.get("construction_progress"):
+    if not merged.get("blocks") and default_blocks:
+        merged["blocks"] = default_blocks
+    if visit_type == "FINISHING_APARTMENTS" and not (
+        header_fields or {}
+    ).get("construction_progress"):
+        merged["construction_progress"] = []
+    elif not merged.get("construction_progress"):
         merged["construction_progress"] = default_construction_progress_rows(
             visit_type
         )

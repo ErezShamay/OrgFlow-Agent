@@ -17,7 +17,7 @@ Internal organizational workflow agent MVP.
 
 ## Deploy to cloud (preview, ~$0/month)
 
-See [docs/deploy-preview-cloud.md](docs/deploy-preview-cloud.md) — Vercel (UI) + Render (API) + Supabase (DB).
+See [docs/deploy-preview-cloud.md](docs/deploy-preview-cloud.md) - Vercel (UI) + Render (API) + Supabase (DB).
 
 ## Run locally
 
@@ -33,5 +33,5 @@ uvicorn app.main:app --reload
 In `orgflow-ui/.env.local` you can control the auth behavior for local development:
 
 - `NEXT_PUBLIC_API_URL` should point to the backend, e.g. `http://127.0.0.1:8000`
-- `NEXT_PUBLIC_FORCE_LOGIN=false` — in the browser, auth is stored per tab (`sessionStorage`) and ends when the tab is closed; reopening the app shows the public home page until you sign in again
+- `NEXT_PUBLIC_FORCE_LOGIN=false` - in the browser, auth is stored per tab (`sessionStorage`) and ends when the tab is closed; reopening the app shows the public home page until you sign in again
 - `NEXT_PUBLIC_FORCE_LOGIN=true` forces sign-out on every page load (including refresh), for stricter local testing

@@ -1,5 +1,5 @@
 /**
- * בדיקות פריסה מול example_reports — מחרוזות מפתח מדוח ההגנה / אורנים.
+ * בדיקות פריסה מול example_reports - מחרוזות מפתח מדוח ההגנה / אורנים.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -61,7 +61,7 @@ describe("example_reports PDF layout parity", () => {
           structure_documentation_date: "2025-04-21",
           housing_units_count: 29,
           illustration_caption_he:
-            "הדמיית הפרויקט (להמחשה בלבד)",
+            "הדמיית הפרויקט להמחשה בלבד",
           stakeholders: [
             {
               id: "dev",
@@ -111,6 +111,10 @@ describe("example_reports PDF layout parity", () => {
     expect(contentText).toContain("-פנדור.דלתות פנים");
     expect(contentText).toContain("תיעוד המבנה מיום 21.04.2025");
     expect(contentText).toContain("התקדמות הבנייה");
+    expect(contentText).toContain("התקדמות עבודות הגמר לובי קומה");
+    expect(contentText).toContain("ממצאים בדירות");
+    expect(contentText).toContain("בעלים");
+    expect(contentText).toContain("איטום מרפסות");
     expect(typeof doc.header).toBe("function");
 
     const pdfMake = await createPdfPrinter();

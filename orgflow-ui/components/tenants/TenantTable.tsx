@@ -41,7 +41,7 @@ export default function TenantTable({ tenants, onChange }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
         <div>
           <h3 className="font-semibold">רשימת דיירים</h3>
-          <p className="text-xs text-zinc-500">{tenants.length} רשומות — ניתן לערוך</p>
+          <p className="text-xs text-zinc-500">{tenants.length} רשומות - ניתן לערוך</p>
         </div>
         <Button variant="secondary" size="sm" type="button" onClick={add}>
           + הוסף דייר

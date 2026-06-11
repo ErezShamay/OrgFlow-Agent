@@ -198,17 +198,17 @@ async function createFullNativeOfflineFieldReport(fetchSpy: ReturnType<typeof vi
     ...localReport,
     header_fields: {
       ...localReport.header_fields,
-      contractor_notes: ["כותרת שטח — Gate ד"],
+      contractor_notes: ["כותרת שטח - Gate ד"],
     },
     local_status: "LOCAL_IN_PROGRESS",
   });
 
   const lineDescriptions = [
-    "שורה 1 — ממצא",
-    "שורה 2 — ממצא",
-    "שורה 3 — ממצא",
-    "שורה 4 — ממצא",
-    "שורה 5 — ממצא",
+    "שורה 1 - ממצא",
+    "שורה 2 - ממצא",
+    "שורה 3 - ממצא",
+    "שורה 4 - ממצא",
+    "שורה 5 - ממצא",
   ];
 
   const lineUuids: string[] = [];
@@ -268,7 +268,7 @@ async function createFullNativeOfflineFieldReport(fetchSpy: ReturnType<typeof vi
 
 /**
  * קריטריוני Gate שלב ד (§8 בתוכנית, FR-035).
- * APK / Capacitor native — prep, עריכה, PDF, מצלמה, סנכרון תמונות.
+ * APK / Capacitor native - prep, עריכה, PDF, מצלמה, סנכרון תמונות.
  */
 describe("phase D gate acceptance (FR-035)", () => {
   beforeEach(async () => {
@@ -290,7 +290,7 @@ describe("phase D gate acceptance (FR-035)", () => {
     vi.clearAllMocks();
   });
 
-  it("§8.1 — APK targets Android 10+ (minSdk 29) with ElayoAI package and build scripts", () => {
+  it("§8.1 - APK targets Android 10+ (minSdk 29) with ElayoAI package and build scripts", () => {
     const variablesGradle = readFileSync(
       path.join(UI_ROOT, "android/variables.gradle"),
       "utf8"
@@ -322,7 +322,7 @@ describe("phase D gate acceptance (FR-035)", () => {
     expect(manifest).toContain("android.permission.INTERNET");
   });
 
-  it("§8.2 — airplane mode on native: prep, 5 lines, 3 native photos, close, PDF, no API", async () => {
+  it("§8.2 - airplane mode on native: prep, 5 lines, 3 native photos, close, PDF, no API", async () => {
     const fetchSpy = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.startsWith("capacitor://")) {
@@ -377,7 +377,7 @@ describe("phase D gate acceptance (FR-035)", () => {
     ).toBe(true);
   });
 
-  it("§8.3 — native camera photos sync to core after network returns", async () => {
+  it("§8.3 - native camera photos sync to core after network returns", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     const fetchSpy = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);

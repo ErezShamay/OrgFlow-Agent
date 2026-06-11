@@ -1,14 +1,18 @@
 import type { MetadataRoute } from "next";
 
-import { ELAYOAI_APP_NAME } from "@/lib/elayoai/keys";
+import {
+  ELAYOAI_APP_NAME,
+  ELAYOAI_MANIFEST_DESCRIPTION,
+  ELAYOAI_MANIFEST_NAME,
+} from "@/lib/elayoai/keys";
 
 export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: ELAYOAI_APP_NAME,
+    name: ELAYOAI_MANIFEST_NAME,
     short_name: ELAYOAI_APP_NAME,
-    description: "דוחות שטח ועריכה במצב רשת/אופליין",
+    description: ELAYOAI_MANIFEST_DESCRIPTION,
     start_url: "/",
     scope: "/",
     display: "standalone",

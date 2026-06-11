@@ -3,20 +3,22 @@ import type { DBSchema } from "idb";
 import type { OfflinePrepBundle } from "@/lib/field-reports/offline-store-types";
 import type { PendingSendSyncPhase } from "@/lib/field-reports/send-queue";
 import type { FindingRow } from "@/lib/field-reports/schema/types";
+import type { QualityIssue } from "@/lib/quality-issues/types";
 
 import { ELAYOAI_FIELD_REPORT_DB_NAME } from "@/lib/elayoai/keys";
 
-/** שם מסד IndexedDB המאוחד לדוחות שטח (שלב א — Offline-First). */
+/** שם מסד IndexedDB המאוחד לדוחות שטח (שלב א - Offline-First). */
 export const FIELD_REPORT_DB_NAME = ELAYOAI_FIELD_REPORT_DB_NAME;
 
-/** גרסת schema — העלאה ב-`field-report-db.ts` בלבד. */
-export const FIELD_REPORT_DB_VERSION = 1;
+/** גרסת schema - העלאה ב-`field-report-db.ts` בלבד. */
+export const FIELD_REPORT_DB_VERSION = 2;
 
 export const FIELD_REPORT_STORES = {
   catalog: "catalog",
   reports: "reports",
   blobs: "blobs",
   sync_queue: "sync_queue",
+  open_issues: "open_issues",
 } as const;
 
 export type FieldReportStoreName =
@@ -35,19 +37,37 @@ export type LocalSyncStatus = "pending" | "syncing" | "failed" | "done";
 export type FieldReportBlobKind = "line_photo" | "pdf";
 
 /**
- * חבילת הכנה לא מקוון — מחליף `offline-store` (FR-006).
+ * חבילת הכנה לא מקוון - מחליף `offline-store` (FR-006).
  * מפתח: `organization_id`.
  */
 export type CatalogRecord = OfflinePrepBundle;
 
-/** שורת דוח מקומית — `client_line_uuid` ימולא ב-FR-005. */
+/** snapshot של ליקויים פתוחים לפרויקט - לשימוש offline (roadmap 2.1.7). */
+export type ProjectOpenIssuesSnapshot = {
+  project_id: string;
+  total: number;
+  items: QualityIssue[];
+};
+
+/**
+ * מטמון ליקויים פתוחים לפי ארגון - נשמר ב-IndexedDB בזמן «הכנה לא מקוון».
+ * מפתח: `organization_id`.
+ */
+export type OpenIssuesCacheRecord = {
+  organization_id: string;
+  cached_at: string;
+  expires_at: string;
+  projects: Record<string, ProjectOpenIssuesSnapshot>;
+};
+
+/** שורת דוח מקומית - `client_line_uuid` ימולא ב-FR-005. */
 export type LocalVisitReportLine = FindingRow & {
   client_line_uuid: string;
   server_line_id?: string | null;
 };
 
 /**
- * דוח ביקור מקומי — מקור אמת בשטח (§4.3).
+ * דוח ביקור מקומי - מקור אמת בשטח (§4.3).
  * מפתח: `client_report_uuid`.
  */
 export type LocalVisitReportRecord = {
@@ -71,7 +91,7 @@ export type LocalVisitReportRecord = {
   closed_at?: string | null;
 };
 
-/** blob בינארי (תמונה / PDF) — לא Base64 בתוך מסמך הדוח. */
+/** blob בינארי (תמונה / PDF) - לא Base64 בתוך מסמך הדוח. */
 export type BlobRecord = {
   id: string;
   kind: FieldReportBlobKind;
@@ -87,7 +107,7 @@ export type BlobRecord = {
   pending_upload?: boolean;
 };
 
-/** רשומת תור שליחה — מרחיב `send-queue.ts` (FR-024). */
+/** רשומת תור שליחה - מרחיב `send-queue.ts` (FR-024). */
 export type SyncQueueRecord = {
   client_report_uuid: string;
   organization_id: string;
@@ -118,7 +138,7 @@ export function reportLineIndexKey(reportId: string, lineId: string): string {
   return `${reportId}:${lineId}`;
 }
 
-/** סכמת IndexedDB לספריית `idb` — ממופה ל-object stores. */
+/** סכמת IndexedDB לספריית `idb` - ממופה ל-object stores. */
 export interface FieldReportDBSchema extends DBSchema {
   [FIELD_REPORT_STORES.catalog]: {
     key: string;
@@ -146,5 +166,9 @@ export interface FieldReportDBSchema extends DBSchema {
     indexes: {
       "by-organization": string;
     };
+  };
+  [FIELD_REPORT_STORES.open_issues]: {
+    key: string;
+    value: OpenIssuesCacheRecord;
   };
 }

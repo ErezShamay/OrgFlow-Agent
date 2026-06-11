@@ -42,7 +42,7 @@ export type {
   SupplierRow,
 };
 
-/** שדות legacy בכותרת — נשמרים לתאימות API ו-PDF קיים. */
+/** שדות legacy בכותרת - נשמרים לתאימות API ו-PDF קיים. */
 export type ReportHeaderLegacyFields = {
   site_address: string;
   developer_name: string;
@@ -59,25 +59,25 @@ export type ReportHeaderLegacyFields = {
 };
 
 /**
- * שדות כותרת דוח — legacy + מבנה חדש (FR-1.1).
+ * שדות כותרת דוח - legacy + מבנה חדש (FR-1.1).
  * העריכה ב-UI עדיין יכולה לגעת בשדות legacy; נורמליזציה מסנכרנת ל-stakeholders.
  */
 export type ReportHeaderFields = ReportHeaderLegacyFields & {
   project_metadata: ProjectMetadata;
   stakeholders: Stakeholder[];
   main_suppliers: SupplierRow[];
-  /** בלוקי גוף הדוח — נשמרים ב-header_fields.blocks (FR-2.1). */
+  /** בלוקי גוף הדוח - נשמרים ב-header_fields.blocks (FR-2.1). */
   blocks: ReportBlock[];
-  /** טקסטים קבועים (disclaimers, חורף) — FR-4.2. */
+  /** טקסטים קבועים (disclaimers, חורף) - FR-4.2. */
   fixed_text_blocks: FixedTextBlock[];
-  /** מתג ראשי — האם לכלול boilerplate ב-PDF. */
+  /** מתג ראשי - האם לכלול boilerplate ב-PDF. */
   include_fixed_text_blocks: boolean;
 };
 
 export type NormalizeHeaderFieldsOptions = {
-  /** שורות דוח — ליצירת findings block כשאין blocks (derive read-only). */
+  /** שורות דוח - ליצירת findings block כשאין blocks (derive read-only). */
   lines?: unknown[] | null;
-  /** תאריך ביקור — להפעלת המלצות חורף עונתיות. */
+  /** תאריך ביקור - להפעלת המלצות חורף עונתיות. */
   visitDate?: string;
 };
 
@@ -428,6 +428,8 @@ function syncLegacyMetadataTopLevel(
     "addressee_label_he",
     "gantt_forecast",
     "illustration_caption_he",
+    "illustration_source_he",
+    "illustration_url",
     "tenant_changes_notes",
     "architect_name",
   ] as const;

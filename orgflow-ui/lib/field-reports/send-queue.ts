@@ -27,7 +27,7 @@ export type PendingSendSyncPhase =
   | "request_send";
 
 export type PendingSendRequest = {
-  /** מזהה ל-API — `server_report_id` אם קיים, אחרת `client_report_uuid`. */
+  /** מזהה ל-API - `server_report_id` אם קיים, אחרת `client_report_uuid`. */
   reportId: string;
   clientReportUuid: string;
   organizationId: string;

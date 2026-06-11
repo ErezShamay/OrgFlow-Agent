@@ -63,7 +63,7 @@ export default function OrgSwitcher() {
           canSwitch
             ? undefined
             : isPlatformAdmin
-              ? "יש לקוח אחד במערכת — הוסף לקוח נוסף כדי לעבור ביניהם"
+              ? "יש לקוח אחד במערכת - הוסף לקוח נוסף כדי לעבור ביניהם"
               : "יש לך גישה ללקוח אחד בלבד"
         }
         onChange={(event) => {
@@ -167,7 +167,7 @@ export function TenantMigrationBanner() {
         נדרשת הגדרת הפרדת לקוחות
       </p>
       <p className="mt-2">
-        כרגע יש במערכת לקוח אחד — כל המשתמשים והפרויקטים הקיימים
+        כרגע יש במערכת לקוח אחד - כל המשתמשים והפרויקטים הקיימים
         ישויכו אליו. הרץ את קובץ המיגרציה{" "}
         <code className="rounded bg-white/70 px-1 dark:bg-black/30">
           {status.migration_sql_path}

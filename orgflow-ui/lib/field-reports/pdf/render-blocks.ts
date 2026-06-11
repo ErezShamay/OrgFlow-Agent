@@ -13,6 +13,7 @@ import type {
   BlockColumnDef,
   BlockColumnId,
   ChecklistBlock,
+  ColumnPresetKey,
   FindingRow,
   FindingsTableBlock,
   FreeTextBlock,
@@ -21,6 +22,12 @@ import type {
   ReportBlock,
 } from "../schema/types";
 import type { LinePhotoData } from "./types";
+import {
+  hasPdfIssueMarkers,
+  PDF_ISSUE_MARKER_COLUMN_HEADER_HE,
+  resolvePdfIssueMarkerForLine,
+  type PdfLineIssueMarkerMap,
+} from "./pdf-issue-markers";
 
 const LINE_STATUS_LABELS: Record<string, string> = {
   IN_PROGRESS: "בתהליך",
@@ -35,9 +42,10 @@ export type LinePhotoLookup = ReadonlyMap<string, readonly string[]>;
 
 export type RenderBlocksOptions = {
   visitType: string;
-  /** שורות דוח — fallback derive ל-findings כשאין blocks מפורשים (לא בשימוש כאן). */
+  /** שורות דוח - fallback derive ל-findings כשאין blocks מפורשים (לא בשימוש כאן). */
   reportLines?: unknown[] | null;
   linePhotos?: LinePhotoData[];
+  lineIssueMarkers?: PdfLineIssueMarkerMap;
 };
 
 /** האם נשמר מערך blocks מפורש ב-header_fields (לא מיגרציה אוטומטית בלבד). */
@@ -67,7 +75,11 @@ export function renderBlocks(
         break;
       case "findings_table":
         content.push(
-          ...renderFindingsTable(block, options.linePhotos ?? [])
+          ...renderFindingsTable(
+            block,
+            options.linePhotos ?? [],
+            options.lineIssueMarkers
+          )
         );
         break;
       case "checklist":
@@ -90,7 +102,7 @@ export function renderBlocks(
 }
 
 /**
- * טוען blocks מפורשים מ-header_fields ומרender — לשימוש ב-buildVisitReportDocDefinition.
+ * טוען blocks מפורשים מ-header_fields ומרender - לשימוש ב-buildVisitReportDocDefinition.
  */
 export function renderExplicitBlocksFromHeader(
   headerFields: Record<string, unknown>,
@@ -157,7 +169,7 @@ export function findingsPresetIncludesPhotosColumn(
 }
 
 /**
- * שורות שצפויות לקבל thumbnail inline — לסינון תמונות בסוף הדוח (FR-3.2).
+ * שורות שצפויות לקבל thumbnail inline - לסינון תמונות בסוף הדוח (FR-3.2).
  */
 export function collectInlineRenderedPhotoLineIds(
   headerFields: Record<string, unknown>,
@@ -201,7 +213,8 @@ export function collectInlineRenderedPhotoLineIds(
 
 export function renderFindingsTable(
   block: FindingsTableBlock,
-  linePhotos: LinePhotoData[] = []
+  linePhotos: LinePhotoData[] = [],
+  lineIssueMarkers?: PdfLineIssueMarkerMap
 ): Content[] {
   const rows = [...block.rows].sort(
     (left, right) => (left.sort_order ?? 0) - (right.sort_order ?? 0)
@@ -211,11 +224,19 @@ export function renderFindingsTable(
   const includeCatalogColumns =
     block.column_preset === "rich"
     && rows.some((row) => Boolean(row.issue_id));
+  const includeIssueMarkerColumn = hasPdfIssueMarkers(lineIssueMarkers);
   const headers = columns.map((column) => column.header_he);
   if (includeCatalogColumns) {
     headers.push("תקן", "חומרה");
   }
-  const widths = tableWidthsForColumns(columns, includeCatalogColumns);
+  if (includeIssueMarkerColumn) {
+    headers.push(PDF_ISSUE_MARKER_COLUMN_HEADER_HE);
+  }
+  const widths = tableWidthsForColumns(
+    columns,
+    includeCatalogColumns,
+    includeIssueMarkerColumn
+  );
 
   const content: Content[] = [
     pdfText(block.title_he, {
@@ -243,7 +264,14 @@ export function renderFindingsTable(
     }
 
     const body = segment.rows.map((row) =>
-      findingRowToCells(row, columns, includeCatalogColumns, photoLookup)
+      findingRowToCells(
+        row,
+        columns,
+        includeCatalogColumns,
+        photoLookup,
+        block.column_preset,
+        lineIssueMarkers
+      )
     );
 
     content.push({
@@ -311,7 +339,7 @@ export function renderChecklist(block: ChecklistBlock): Content[] {
   const statusRow = items.map((item) => {
     const status = item.checked ? "בוצע" : "לא בוצע";
     const notes = item.notes?.trim();
-    return notes ? `${status} — ${notes}` : status;
+    return notes ? `${status} - ${notes}` : status;
   });
 
   return [
@@ -385,13 +413,17 @@ function pdfColumnsForFindingsPreset(
 
 function tableWidthsForColumns(
   columns: readonly BlockColumnDef[],
-  includeCatalogColumns: boolean
+  includeCatalogColumns: boolean,
+  includeIssueMarkerColumn = false
 ): Array<number | "*" | "auto"> {
   const widths: Array<number | "*" | "auto"> = columns.map((column) =>
     column.id === "photos" ? INLINE_PHOTO_THUMB_SIZE * 3 + 12 : "*"
   );
   if (includeCatalogColumns) {
     widths.push("auto", "auto");
+  }
+  if (includeIssueMarkerColumn) {
+    widths.push("auto");
   }
   return widths;
 }
@@ -418,14 +450,23 @@ function findingRowToCells(
   row: FindingRow,
   columns: readonly BlockColumnDef[],
   includeCatalogColumns: boolean,
-  photoLookup: LinePhotoLookup
+  photoLookup: LinePhotoLookup,
+  columnPreset?: ColumnPresetKey,
+  lineIssueMarkers?: PdfLineIssueMarkerMap
 ): PdfTableCell[] {
   const statusNotes = [
     row.status ? formatLineStatus(row.status) : "",
     row.notes || "",
   ]
     .filter(Boolean)
-    .join(" — ");
+    .join(" - ");
+
+  const statusDescription = [
+    row.status ? formatLineStatus(row.status) : "",
+    row.description || "",
+  ]
+    .filter(Boolean)
+    .join(" - ");
 
   const cells: PdfTableCell[] = columns.map((column) => {
     switch (column.id as BlockColumnId) {
@@ -434,7 +475,9 @@ function findingRowToCells(
       case "trade":
         return pdfTableCell(row.trade || "");
       case "status":
-        return pdfTableCell(statusNotes);
+        return pdfTableCell(
+          columnPreset === "finishing" ? statusDescription : statusNotes
+        );
       case "description":
         return pdfTableCell(row.description || "");
       case "notes":
@@ -449,6 +492,12 @@ function findingRowToCells(
   if (includeCatalogColumns) {
     cells.push(pdfTableCell(row.issue_id ? row.standard_ref || "" : ""));
     cells.push(pdfTableCell(row.issue_id ? row.severity || "" : ""));
+  }
+
+  if (hasPdfIssueMarkers(lineIssueMarkers)) {
+    cells.push(
+      pdfTableCell(resolvePdfIssueMarkerForLine(row.id, lineIssueMarkers))
+    );
   }
 
   return cells;
@@ -496,7 +545,7 @@ function formatLineStatus(status: string): string {
   return LINE_STATUS_LABELS[status] || status;
 }
 
-/** כותרות preset — לבדיקות. */
+/** כותרות preset - לבדיקות. */
 export function findingsTableHeadersForPreset(
   preset: FindingsTableBlock["column_preset"]
 ): string[] {

@@ -181,7 +181,7 @@ def test_sync_visit_report_updates_existing_idempotently():
         {
             "client_line_uuid": CLIENT_LINE_ONE,
             "sort_order": 1,
-            "description": "ממצא א — עודכן",
+            "description": "ממצא א - עודכן",
         },
     ]
     second = service.sync_visit_report(
@@ -200,7 +200,7 @@ def test_sync_visit_report_updates_existing_idempotently():
     assert second["id"] == server_id
     assert second["report"]["visit_date"] == "2026-06-04"
     assert len(second["report"]["lines"]) == 1
-    assert second["report"]["lines"][0]["description"] == "ממצא א — עודכן"
+    assert second["report"]["lines"][0]["description"] == "ממצא א - עודכן"
     assert lines.get_by_client_line_uuid(CLIENT_LINE_TWO) is None
 
 
@@ -265,7 +265,7 @@ def test_put_sync_endpoint(monkeypatch):
     assert payload["client_report_uuid"] == CLIENT_REPORT_UUID
     assert len(payload["report"]["lines"]) == 2
 
-    # עדכון שטח — ללא מפתח idempotency (גוף שונה); ה-upsert לפי client_report_uuid
+    # עדכון שטח - ללא מפתח idempotency (גוף שונה); ה-upsert לפי client_report_uuid
     retry = client.put(
         "/field-reports/visits/sync",
         headers=_headers(token),
@@ -298,7 +298,7 @@ def test_put_sync_endpoint(monkeypatch):
 
 
 def test_sync_visit_report_duplicate_payload_one_db_row():
-    """sync כפול עם אותו payload — שורת דוח אחת, אותו server id."""
+    """sync כפול עם אותו payload - שורת דוח אחת, אותו server id."""
     reports = FakeVisitReportRepository()
     lines = FakeVisitReportLineRepository()
     service = _service(reports=reports, lines=lines)
@@ -323,7 +323,7 @@ def test_sync_visit_report_duplicate_payload_one_db_row():
 
 
 def test_sync_visit_report_disconnect_retry_no_duplicate():
-    """retry אחרי ניתוק — שני sync זהים עם מפתח idempotency, בלי דוח/שורות כפולים."""
+    """retry אחרי ניתוק - שני sync זהים עם מפתח idempotency, בלי דוח/שורות כפולים."""
     reports = FakeVisitReportRepository()
     lines = FakeVisitReportLineRepository()
     service = _service(reports=reports, lines=lines)
@@ -409,7 +409,7 @@ def test_put_sync_idempotency_same_key_different_body_returns_409(
 
 
 def test_put_sync_identical_retry_single_report_row(monkeypatch):
-    """שני PUT זהים עם X-Idempotency-Key — replay, שורת דוח אחת ב-fake repo."""
+    """שני PUT זהים עם X-Idempotency-Key - replay, שורת דוח אחת ב-fake repo."""
     client, reports, lines = _setup_sync_client(monkeypatch)
     token = _token()
     sync_body = {

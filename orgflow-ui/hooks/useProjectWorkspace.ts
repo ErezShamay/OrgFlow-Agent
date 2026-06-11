@@ -31,6 +31,8 @@ type Project = {
   site_manager_name?: string | null;
   city?: string | null;
   housing_units_count?: number | null;
+  illustration_url?: string | null;
+  illustration_source_he?: string | null;
   status: string;
   created_at: string;
 };

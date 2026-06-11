@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-/** Tailwind `lg` breakpoint — overlays use full-screen sheet below this width. */
+/** Tailwind `lg` breakpoint - overlays use full-screen sheet below this width. */
 const LG_MAX_WIDTH_PX = 1023;
 
 function useMatchesMaxWidth(maxWidthPx: number, active: boolean) {

@@ -1,6 +1,8 @@
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 
-/** שם הגופן ב-pdfmake — חייב להתאים ל-font-loader. */
+import { sanitizePdfHebrewText } from "./sanitize-hebrew";
+
+/** שם הגופן ב-pdfmake - חייב להתאים ל-font-loader. */
 export const PDF_HEBREW_FONT = "NotoSansHebrew";
 
 export const PDF_DEFAULT_STYLE = {
@@ -71,11 +73,11 @@ export const PDF_DOCUMENT_STYLES: NonNullable<
   },
 };
 
-/** תא טבלה — מחרוזת או אובייקט תוכן (תמונות). */
+/** תא טבלה - מחרוזת או אובייקט תוכן (תמונות). */
 export type PdfTableCell = string | Content;
 
 /**
- * הופך סדר עמודות — pdfmake מצייר עמודה 0 משמאל; בדוח עברי העמודה הראשונה מימין.
+ * הופך סדר עמודות - pdfmake מצייר עמודה 0 משמאל; בדוח עברי העמודה הראשונה מימין.
  */
 export function mirrorTableRowsForRtl<T>(rows: T[][]): T[][] {
   return rows.map((row) => [...row].reverse());
@@ -86,7 +88,7 @@ export function pdfText(
   extra: Partial<Exclude<Content, string>> = {}
 ): Content {
   return {
-    text,
+    text: sanitizePdfHebrewText(text),
     font: PDF_HEBREW_FONT,
     alignment: "right",
     direction: "rtl",
@@ -99,7 +101,7 @@ export function pdfTableCell(
   options: { header?: boolean } = {}
 ): Content {
   return {
-    text,
+    text: sanitizePdfHebrewText(text),
     style: options.header ? "tableHeader" : "tableCell",
   };
 }

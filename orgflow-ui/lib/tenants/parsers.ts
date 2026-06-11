@@ -3,10 +3,10 @@ import * as XLSX from "xlsx";
 import type { Tenant } from "./types";
 
 /**
- * Parse file A — the apartments/protocol file.
+ * Parse file A - the apartments/protocol file.
  * Each row represents ONE apartment with its owner name(s), apartment number,
  * building and entrance. Phone/email columns are ignored here even if present.
- * Owner names are NOT split — they're kept as written so the UI can display
+ * Owner names are NOT split - they're kept as written so the UI can display
  * "Cohen, Levy" together; splitting per-owner happens later in the merge step.
  */
 export async function parseApartmentsExcel(file: File): Promise<Tenant[] | null> {
@@ -104,7 +104,7 @@ export async function parseApartmentsExcel(file: File): Promise<Tenant[] | null>
 }
 
 /**
- * Parse file B — the contacts file.
+ * Parse file B - the contacts file.
  * Each owner may have several rows (one per phone/email), with the name and
  * apartment cells filled only on the first row (merged-cell pattern). We
  * forward-fill those values so every phone/email is attached to the right
@@ -212,7 +212,7 @@ export async function parseContactsExcel(file: File): Promise<Tenant[] | null> {
       for (const ownerName of finalNames) {
         for (let k = 0; k < count; k++) {
           tenants.push({
-            apartment, // informational only — merge uses name as join key
+            apartment, // informational only - merge uses name as join key
             name: ownerName,
             phone: phonesRaw[k] ?? "",
             email: emailsRaw[k] ?? "",

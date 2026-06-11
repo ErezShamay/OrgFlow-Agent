@@ -17,6 +17,7 @@ import SendToCoreDialog from "@/components/field-reports/SendToCoreDialog";
 import VisitReportPdfActions from "@/components/field-reports/VisitReportPdfActions";
 import VisitReportPrimaryActions from "@/components/field-reports/VisitReportPrimaryActions";
 import VisitReportEditor from "@/components/field-reports/VisitReportEditor";
+import VisitReportIssueDiffPanel from "@/components/quality-issues/VisitReportIssueDiffPanel";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFieldReportDataSource } from "@/hooks/useFieldReportDataSource";
@@ -52,6 +53,7 @@ import {
   fieldReportDetailPath,
   resolveFieldReportRouteId,
 } from "@/lib/field-reports/routes";
+import { shouldShowVisitIssueDiff } from "@/lib/quality-issues/visit-issue-diff";
 import { useOffline } from "@/providers/OfflineProvider";
 
 type VisitReport = VisitReportView & {
@@ -355,7 +357,7 @@ export default function FieldVisitReportPage() {
         setPdfError(
           pdfErr instanceof Error
             ? pdfErr.message
-            : "הדוח נסגר אך הפקת PDF נכשלה — נסה שוב מהכפתור למטה."
+            : "הדוח נסגר אך הפקת PDF נכשלה - נסה שוב מהכפתור למטה."
         );
       }
     } catch (err: unknown) {
@@ -677,6 +679,17 @@ export default function FieldVisitReportPage() {
             </Button>
           </div>
         </div>
+      ) : null}
+
+      {!editSession.blockingSession
+      && shouldShowVisitIssueDiff(report)
+      && report.project_id
+      && serverVisitReportId(report) ? (
+        <VisitReportIssueDiffPanel
+          projectId={report.project_id}
+          reportId={serverVisitReportId(report)!}
+          isOnline={isOnline}
+        />
       ) : null}
 
       {!editSession.blockingSession ? (

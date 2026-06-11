@@ -1,6 +1,6 @@
 import { isCapacitorNativePlatform } from "@/lib/capacitor/platform";
 
-/** Native app — שמירת התחברות בין הפעלות. דפדפן — סשן לכל טאב, נמחק בסגירת הטאב. */
+/** Native app - שמירת התחברות בין הפעלות. דפדפן - סשן לכל טאב, נמחק בסגירת הטאב. */
 export function shouldPersistAuthAcrossBrowserRestarts(): boolean {
   if (typeof window === "undefined") {
     return true;

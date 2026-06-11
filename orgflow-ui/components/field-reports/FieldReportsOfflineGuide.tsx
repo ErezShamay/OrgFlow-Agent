@@ -40,10 +40,10 @@ export default function FieldReportsOfflineGuide({
           <strong>לפני יציאה מהמשרד:</strong> לחץ «הכנה לא מקוון» (דורש רשת).
         </li>
         <li>
-          <strong>דוח חדש:</strong> «דוח ביקור חדש» — נשמר במכשיר גם בלי רשת.
+          <strong>דוח חדש:</strong> «דוח ביקור חדש» - נשמר במכשיר גם בלי רשת.
         </li>
         <li>
-          <strong>דוח מהמשרד:</strong> פתח דוח «בעבודה» מהרשימה — ימשיך
+          <strong>דוח מהמשרד:</strong> פתח דוח «בעבודה» מהרשימה - ימשיך
           אופליין אחרי ההכנה.
         </li>
         <li>
@@ -51,10 +51,10 @@ export default function FieldReportsOfflineGuide({
           אוטומטית.
         </li>
         <li>
-          <strong>סיום:</strong> «סיום דוח» + PDF במכשיר — גם ללא רשת.
+          <strong>סיום:</strong> «סיום דוח» + PDF במכשיר - גם ללא רשת.
         </li>
         <li>
-          <strong>אחרי רשת:</strong> שליחה לליבה / סנכרון (בשלב הבא — כפתור
+          <strong>אחרי רשת:</strong> שליחה לליבה / סנכרון (בשלב הבא - כפתור
           העלאה).
         </li>
         <li>

@@ -3,6 +3,46 @@ export type NavLink = {
   label: string;
 };
 
+/** Legacy ingest route - hidden from primary nav (stage 5.2); direct URL still works. */
+export const UPLOAD_LEGACY_ROUTE = {
+  href: "/upload",
+  label: "העלאת דוח",
+} as const;
+
+/** Legacy operational actions - hidden from primary nav (stage 5.3); merged into /issues. */
+export const ACTIONS_LEGACY_ROUTE = {
+  href: "/actions",
+  label: "פעולות תפעוליות",
+} as const;
+
+/** Legacy escalations - hidden from primary nav (stage 5.3); merged into /issues. */
+export const ESCALATIONS_LEGACY_ROUTE = {
+  href: "/escalations",
+  label: "נקודות סיכון",
+} as const;
+
+/** Global AI reviews - hidden from primary nav (stage 5.4); project tab only. */
+export const REVIEWS_GLOBAL_LEGACY_ROUTE = {
+  href: "/reviews",
+  label: "ביקורות AI",
+} as const;
+
+/**
+ * Routes removed from primary navigation (stage 5.2+).
+ * See docs/qc-spec/qc-freeze-list.md - DEPRECATED surfaces.
+ */
+export const PRIMARY_NAV_HIDDEN_ROUTES: readonly string[] = [
+  UPLOAD_LEGACY_ROUTE.href,
+  ACTIONS_LEGACY_ROUTE.href,
+  ESCALATIONS_LEGACY_ROUTE.href,
+  REVIEWS_GLOBAL_LEGACY_ROUTE.href,
+];
+
+export function filterPrimaryNavLinks(links: readonly NavLink[]): NavLink[] {
+  const hidden = new Set(PRIMARY_NAV_HIDDEN_ROUTES);
+  return links.filter((link) => !hidden.has(link.href));
+}
+
 export const SETTINGS_ROUTE = {
   href: "/settings",
   label: "הגדרות",
@@ -23,17 +63,37 @@ export const DEAD_LETTERS_ROUTE = {
   label: "Dead Letters",
 } as const;
 
-export const SYSTEM_NAV_LABEL = "מערכת";
+/** Admin-only system routes (stage 5.5) - hidden from non-admin system nav. */
+export const ADMIN_ONLY_SYSTEM_ROUTES = [
+  AUTOMATION_ROUTE.href,
+  DEAD_LETTERS_ROUTE.href,
+] as const;
 
-export const SYSTEM_NAV_LINKS: NavLink[] = [
-  SETTINGS_ROUTE,
+export const ADMIN_SYSTEM_NAV_LINKS: NavLink[] = [
   DEAD_LETTERS_ROUTE,
   AUTOMATION_ROUTE,
 ];
 
+export const SYSTEM_NAV_LABEL = "מערכת";
+
+/** Settings visible to all authenticated dashboard users. */
+export const SYSTEM_NAV_LINKS: NavLink[] = [SETTINGS_ROUTE];
+
+export function isAdminOnlySystemRoute(href: string): boolean {
+  const normalized = (href || "").trim().replace(/\/+$/, "") || "/";
+
+  return ADMIN_ONLY_SYSTEM_ROUTES.some(
+    (route) => normalized === route || normalized.startsWith(`${route}/`)
+  );
+}
+
 export function getSystemNavLinks(isAdmin: boolean): NavLink[] {
   if (isAdmin) {
-    return [ADMIN_USERS_ROUTE, ...SYSTEM_NAV_LINKS];
+    return [
+      ADMIN_USERS_ROUTE,
+      ...SYSTEM_NAV_LINKS,
+      ...ADMIN_SYSTEM_NAV_LINKS,
+    ];
   }
 
   return SYSTEM_NAV_LINKS;
@@ -94,18 +154,31 @@ export function isPublicRoute(pathname: string) {
 
 export const FIELD_REPORTS_ROUTE = {
   href: "/field-reports",
-  label: "הפקת דוחות",
+  label: "דוחות שטח",
 } as const;
 
-export const GLOBAL_NAV_LINKS: NavLink[] = [
+/** QC primary nav (spec 0.4 / stage 5.1) - max 4 items for dashboard sidebar. */
+export const GLOBAL_NAV_LINKS: NavLink[] = filterPrimaryNavLinks([
+  FIELD_REPORTS_ROUTE,
+  { href: "/issues", label: "ליקויים" },
+  { href: "/portfolio", label: "תיק QC" },
+  { href: "/projects", label: "פרויקטים" },
+]);
+
+/** Legacy PM navbar - public home until stage 5.8. Upload hidden in 5.2. */
+const LEGACY_HOME_NAVBAR_LINKS_SOURCE: NavLink[] = [
   { href: "/", label: "דף הבית" },
   { href: "/portfolio", label: "תיק הפרויקטים" },
   { href: "/projects", label: "פרויקטים" },
   { href: "/tenants", label: "מנהל דיירים" },
-  { href: "/upload", label: "העלאת דוח" },
-  { href: "/reviews", label: "ביקורות AI" },
-  { href: "/actions", label: "פעולות תפעוליות" },
-  { href: "/escalations", label: "נקודות סיכון" },
+  UPLOAD_LEGACY_ROUTE,
+  REVIEWS_GLOBAL_LEGACY_ROUTE,
+  ACTIONS_LEGACY_ROUTE,
+  ESCALATIONS_LEGACY_ROUTE,
 ];
 
-export const HOME_NAVBAR_LINKS: NavLink[] = [...GLOBAL_NAV_LINKS];
+export const LEGACY_HOME_NAVBAR_LINKS: NavLink[] = filterPrimaryNavLinks(
+  LEGACY_HOME_NAVBAR_LINKS_SOURCE
+);
+
+export const HOME_NAVBAR_LINKS: NavLink[] = [...LEGACY_HOME_NAVBAR_LINKS];

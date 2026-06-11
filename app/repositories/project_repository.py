@@ -29,6 +29,8 @@ OPTIONAL_PROJECT_WRITE_COLUMNS = (
     "project_end_date",
     "project_grace_end_date",
     "structure_documentation_date",
+    "illustration_url",
+    "illustration_source_he",
 )
 
 

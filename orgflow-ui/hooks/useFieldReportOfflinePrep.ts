@@ -16,6 +16,10 @@ import {
   saveOfflinePrepBundle,
   type OfflinePrepBundle,
 } from "@/lib/field-reports/offline-store";
+import {
+  hydrateOpenIssuesCache,
+  refreshOpenIssuesCacheForOrganization,
+} from "@/lib/quality-issues/open-issues-offline";
 import { useFieldReportModule } from "@/hooks/useFieldReportModule";
 
 export function useFieldReportOfflinePrep() {
@@ -58,6 +62,8 @@ export function useFieldReportOfflinePrep() {
         }
       });
 
+    void hydrateOpenIssuesCache(organizationId);
+
     return () => {
       cancelled = true;
     };
@@ -91,6 +97,18 @@ export function useFieldReportOfflinePrep() {
 
       const payload = await response.json();
       const saved = await saveOfflinePrepBundle(organizationId, payload);
+      const projectIds = (payload.projects ?? [])
+        .map((project: { id?: string | null }) => project.id?.trim())
+        .filter((projectId: string | undefined): projectId is string =>
+          Boolean(projectId)
+        );
+      if (projectIds.length > 0 && saved.expires_at) {
+        await refreshOpenIssuesCacheForOrganization({
+          organizationId,
+          projectIds,
+          expiresAt: saved.expires_at,
+        });
+      }
       const imported = await importInProgressReportsFromOfflinePrep({
         organizationId,
         userId: profile?.id ?? null,

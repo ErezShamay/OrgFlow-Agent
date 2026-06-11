@@ -45,6 +45,12 @@ function upgradeFieldReportDatabase(
     });
     syncQueue.createIndex("by-organization", "organization_id");
   }
+
+  if (!db.objectStoreNames.contains(FIELD_REPORT_STORES.open_issues)) {
+    db.createObjectStore(FIELD_REPORT_STORES.open_issues, {
+      keyPath: "organization_id",
+    });
+  }
 }
 
 /**
@@ -95,7 +101,7 @@ export async function closeFieldReportDatabase(): Promise<void> {
   dbPromise = null;
 }
 
-/** מוחק את מסד הדוחות — לשימוש בבדיקות (FR-008) בלבד. */
+/** מוחק את מסד הדוחות - לשימוש בבדיקות (FR-008) בלבד. */
 export async function deleteFieldReportDatabase(): Promise<void> {
   await closeFieldReportDatabase();
   await deleteDB(FIELD_REPORT_DB_NAME);

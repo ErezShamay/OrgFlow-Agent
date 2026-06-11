@@ -36,6 +36,11 @@ import type {
   PdfReportLine,
   VisitReportPdfInput,
 } from "./types";
+import {
+  PDF_ISSUE_MARKER_COLUMN_HEADER_HE,
+  resolvePdfIssueMarkerForLine,
+  type PdfLineIssueMarkerMap,
+} from "./pdf-issue-markers";
 
 export { formatHeaderContact, formatOrgAddress, resolveStringList };
 
@@ -47,19 +52,24 @@ const LINE_STATUS_LABELS: Record<string, string> = {
 };
 
 export function buildFindingsTableColumns(
-  lines: PdfReportLine[]
+  lines: PdfReportLine[],
+  lineIssueMarkers?: PdfLineIssueMarkerMap
 ): string[] {
   const hasCatalogLines = lines.some((line) => Boolean(line.issue_id));
   const columns = ["מיקום", "מלאכה", "סטטוס / הערות", "תיאור"];
   if (hasCatalogLines) {
     columns.push("תקן", "חומרה");
   }
+  if (lineIssueMarkers && lineIssueMarkers.size > 0) {
+    columns.push(PDF_ISSUE_MARKER_COLUMN_HEADER_HE);
+  }
   return columns;
 }
 
 export function buildFindingsTableBody(
   lines: PdfReportLine[],
-  columns: string[]
+  columns: string[],
+  lineIssueMarkers?: PdfLineIssueMarkerMap
 ): string[][] {
   const includeStandard = columns.includes("תקן");
 
@@ -74,7 +84,7 @@ export function buildFindingsTableBody(
         line.notes || "",
       ]
         .filter(Boolean)
-        .join(" — ");
+        .join(" - ");
 
       const row = [
         line.location || "",
@@ -86,6 +96,10 @@ export function buildFindingsTableBody(
       if (includeStandard) {
         row.push(line.issue_id ? line.standard_ref || "" : "");
         row.push(line.issue_id ? line.severity || "" : "");
+      }
+
+      if (columns.includes(PDF_ISSUE_MARKER_COLUMN_HEADER_HE)) {
+        row.push(resolvePdfIssueMarkerForLine(line.id, lineIssueMarkers));
       }
 
       return row;
@@ -142,7 +156,9 @@ export function buildVisitReportDocDefinition(
     inspector,
     linePhotos = [],
     logoDataUrl,
+    illustrationDataUrl,
     generatedAt = new Date(),
+    lineIssueMarkers,
   } = input;
   const profile = report.organization_profile_snapshot;
   const headerFields = report.header_fields || {};
@@ -161,10 +177,14 @@ export function buildVisitReportDocDefinition(
   );
   const tableColumns = useExplicitBlocks
     ? []
-    : buildFindingsTableColumns(report.lines);
+    : buildFindingsTableColumns(report.lines, lineIssueMarkers);
   const tableBody = useExplicitBlocks
     ? []
-    : buildFindingsTableBody(report.lines, tableColumns);
+    : buildFindingsTableBody(
+        report.lines,
+        tableColumns,
+        lineIssueMarkers
+      );
   const generatedLabel = generatedAt.toLocaleDateString("he-IL");
   const contractorNotes = resolveStringList(headerFields.contractor_notes);
   const winterRecommendations = resolveWinterRecommendationsText(
@@ -184,6 +204,7 @@ export function buildVisitReportDocDefinition(
       report,
       profile,
       logoDataUrl,
+      illustrationDataUrl,
     }),
   ];
 
@@ -194,6 +215,7 @@ export function buildVisitReportDocDefinition(
         visitType: report.visit_type,
         reportLines: report.lines,
         linePhotos,
+        lineIssueMarkers,
       })
     );
   } else {
@@ -240,7 +262,7 @@ export function buildVisitReportDocDefinition(
 
   for (const photo of appendixLinePhotos) {
     content.push(
-      pdfText(`תמונה — שורה ${photo.lineId.slice(0, 8)}`, {
+      pdfText(`תמונה - שורה ${photo.lineId.slice(0, 8)}`, {
         style: "photoCaption",
         margin: [0, 8, 0, 4],
       })
@@ -266,7 +288,7 @@ export function buildVisitReportDocDefinition(
       ? `מספר רישוי: ${inspectorLicense}`
       : "",
     orgName,
-  ].filter((line) => line && line !== "—");
+  ].filter((line) => line && line !== "-");
 
   content.push({
     stack: signatureLines.map((line) => pdfText(line)),
@@ -310,10 +332,10 @@ export function buildVisitReportDocDefinition(
 
 function stringField(value: unknown): string {
   if (value === null || value === undefined) {
-    return "—";
+    return "-";
   }
   const text = String(value).trim();
-  return text || "—";
+  return text || "-";
 }
 
 function formatLineStatus(status: string): string {
@@ -349,7 +371,7 @@ function sanitizeFilename(value: string): string {
   return value.replace(/[^\w\u0590-\u05FF.-]+/g, "-").replace(/-+/g, "-");
 }
 
-/** גוף דוח legacy — ללא header_fields.blocks מפורש (FR-2.3 backward compat). */
+/** גוף דוח legacy - ללא header_fields.blocks מפורש (FR-2.3 backward compat). */
 function appendLegacyReportBody(
   content: Content[],
   input: {

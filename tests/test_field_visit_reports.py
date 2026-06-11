@@ -158,12 +158,19 @@ class FakeVisitReportRepository:
         organization_id: str,
         *,
         status: str | None = None,
+        project_id: str | None = None,
+        include_hidden: bool = False,
     ) -> list[dict]:
         items = [
             record
             for record in self.records.values()
             if record["organization_id"] == organization_id
         ]
+
+        if project_id:
+            items = [
+                record for record in items if record["project_id"] == project_id
+            ]
 
         if status:
             items = [
@@ -1052,6 +1059,41 @@ def test_request_send_to_core_from_closed_report(monkeypatch):
         item["id"] for item in locked_only_response.json()["reports"]
     }
     assert report_id in locked_ids
+
+
+def test_list_field_visit_reports_filters_by_project(monkeypatch):
+    client = _setup_client(monkeypatch)
+    token = _token()
+
+    for project_id, visit_date in (
+        ("project-1", "2026-06-01"),
+        ("project-2", "2026-06-02"),
+    ):
+        response = client.post(
+            "/field-reports/visits",
+            headers=_headers(token),
+            json={
+                "project_id": project_id,
+                "visit_type": "STRUCTURE_SITE",
+                "visit_date": visit_date,
+            },
+        )
+        assert response.status_code == 200
+
+    filtered_response = client.get(
+        "/field-reports/visits?project_id=project-1",
+        headers=_headers(token),
+    )
+    assert filtered_response.status_code == 200
+    reports = filtered_response.json()["reports"]
+    assert len(reports) == 1
+    assert reports[0]["project_id"] == "project-1"
+
+    missing_project_response = client.get(
+        "/field-reports/visits?project_id=missing",
+        headers=_headers(token),
+    )
+    assert missing_project_response.status_code == 404
 
 
 def test_request_send_to_core_returns_conflict_when_core_pipeline_fails(monkeypatch):

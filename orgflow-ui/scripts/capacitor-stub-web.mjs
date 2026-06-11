@@ -15,7 +15,7 @@ const html = `<!DOCTYPE html>
     <title>ElayoAI</title>
   </head>
   <body>
-    <p>ElayoAI — שלד Capacitor (Build A / dev). הרץ <code>npm run build:mobile</code> ל-Build B.</p>
+    <p>ElayoAI - שלד Capacitor (Build A / dev). הרץ <code>npm run build:mobile</code> ל-Build B.</p>
   </body>
 </html>
 `;

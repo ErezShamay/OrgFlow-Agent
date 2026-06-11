@@ -23,7 +23,7 @@ export default function TenantsPage() {
       <header>
         <h1 className="of-page-title text-2xl md:text-3xl">מנהל דיירים</h1>
         <p className="of-page-desc max-w-2xl text-sm">
-          העלה קובץ Excel של רשימת דיירים — המערכת תחלץ את הנתונים, תאפשר עריכה,
+          העלה קובץ Excel של רשימת דיירים - המערכת תחלץ את הנתונים, תאפשר עריכה,
           ותפיק 4 קבצי ייבוא: טלפון (VCF), מייל (CSV), דירות לזוהו, אנשי קשר
           לזוהו.
         </p>

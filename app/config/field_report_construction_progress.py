@@ -15,6 +15,8 @@ ConstructionProgressRow = dict[str, str]
 
 STRUCTURE_SITE_PROGRESS_TITLE_HE = "סטטוס בניה-שלד"
 FINISHING_APARTMENTS_PROGRESS_TITLE_HE = "התקדמות הבנייה"
+FINISHING_LOBBY_FINDINGS_TITLE_HE = "התקדמות עבודות הגמר לובי קומה"
+FINISHING_APARTMENT_FINDINGS_TITLE_HE = "ממצאים בדירות"
 
 DEFAULT_STRUCTURE_SITE_PROGRESS_ROWS: list[ConstructionProgressRow] = [
     {"description": "הריסת המבנה", "status": "", "completion_date": ""},

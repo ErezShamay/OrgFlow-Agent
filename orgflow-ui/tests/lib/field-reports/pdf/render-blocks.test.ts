@@ -284,9 +284,9 @@ describe("renderChecklist", () => {
     );
 
     const texts = collectTexts(renderChecklist(block));
-    expect(texts).toContain("צ'קליסט גמר");
+    expect(texts).toContain("התקדמות הבנייה");
     expect(texts).toContain("בעלים");
-    expect(texts).toContain("בוצע — תקין");
+    expect(texts).toContain("בוצע - תקין");
     expect(texts).toContain("לא בוצע");
   });
 });
@@ -390,7 +390,7 @@ describe("buildVisitReportDocDefinition with explicit blocks", () => {
     });
 
     const texts = collectTexts(definition.content);
-    expect(texts).not.toContain("תמונה — שורה line-pho");
+    expect(texts).not.toContain("תמונה - שורה line-pho");
     expect(collectImages(definition.content).length).toBeGreaterThan(0);
   });
 

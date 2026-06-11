@@ -1,4 +1,4 @@
-/** תבנית UUID v4 — מזהי קליינט לדוחות ושורות (idempotency בשלב ג). */
+/** תבנית UUID v4 - מזהי קליינט לדוחות ושורות (idempotency בשלב ג). */
 const UUID_V4_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -35,12 +35,12 @@ function createUuidV4(): string {
   ].join("-");
 }
 
-/** מזהה דוח חדש במכשיר — נשמר כ-`client_report_uuid`. */
+/** מזהה דוח חדש במכשיר - נשמר כ-`client_report_uuid`. */
 export function createClientReportUuid(): string {
   return createUuidV4();
 }
 
-/** מזהה שורה חדשה במכשיר — נשמר כ-`client_line_uuid`. */
+/** מזהה שורה חדשה במכשיר - נשמר כ-`client_line_uuid`. */
 export function createClientLineUuid(): string {
   return createUuidV4();
 }

@@ -14,7 +14,7 @@ async function deleteDeviceArtifactsForReportKey(reportKey: string) {
 }
 
 /**
- * אחרי שליחה מוצלחת לליבה — מסיר עותק מקומי, PDF, תמונות ותורים.
+ * אחרי שליחה מוצלחת לליבה - מסיר עותק מקומי, PDF, תמונות ותורים.
  */
 export async function purgeFieldReportAfterCoreSend(options: {
   organizationId: string;

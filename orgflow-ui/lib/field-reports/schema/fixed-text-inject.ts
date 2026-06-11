@@ -1,5 +1,5 @@
 /**
- * הזרקה וסנכרון של בלוקי טקסט קבוע (boilerplate) — FR-4.2.
+ * הזרקה וסנכרון של בלוקי טקסט קבוע (boilerplate) - FR-4.2.
  */
 
 import { defaultFixedTextBlocks } from "./block-defaults";
@@ -14,7 +14,7 @@ export const FIXED_TEXT_BLOCK_KIND_LABELS: Record<FixedTextBlockKind, string> = 
   custom: "טקסט מותאם",
 };
 
-/** חודשי עונת גשמים — אוקטובר עד מרץ (כולל). */
+/** חודשי עונת גשמים - אוקטובר עד מרץ (כולל). */
 const WINTER_SEASON_MONTHS = new Set([10, 11, 12, 1, 2, 3]);
 
 export function isWinterSeasonDate(value: Date | string): boolean {
@@ -26,7 +26,7 @@ export function isWinterSeasonDate(value: Date | string): boolean {
 }
 
 /**
- * בלוקי boilerplate לדוח חדש — disclaimers מופעלים; חורף לפי תאריך ביקור.
+ * בלוקי boilerplate לדוח חדש - disclaimers מופעלים; חורף לפי תאריך ביקור.
  */
 export function buildFixedTextBlocksForNewReport(options?: {
   visitDate?: string;
@@ -67,7 +67,7 @@ export function resolveIncludeFixedTextBlocks(
 }
 
 /**
- * טוען בלוקים מ-header_fields או בונה מ-legacy — ללא הזרקה אוטומטית בטעינה.
+ * טוען בלוקים מ-header_fields או בונה מ-legacy - ללא הזרקה אוטומטית בטעינה.
  */
 export function resolveFixedTextBlocksFromHeader(
   raw: Record<string, unknown>,

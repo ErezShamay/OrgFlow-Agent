@@ -40,6 +40,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Do not cache /_next/static/ — Next.js uses hashed chunks; cache-first here
+  // Do not cache /_next/static/ - Next.js uses hashed chunks; cache-first here
   // causes stale modules and "module factory is not available" after deploy/HMR.
 });

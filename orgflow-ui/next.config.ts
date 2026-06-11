@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 import { isCapacitorStaticExportBuild } from "./lib/capacitor/build-mode";
 
-/** Vercel מגדיר VERCEL=1 — אין להשתמש ב-standalone/export שם (גורם ל-500). */
+/** Vercel מגדיר VERCEL=1 - אין להשתמש ב-standalone/export שם (גורם ל-500). */
 function isVercelDeploy(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(env.VERCEL);
 }
 
-/** Docker UI image — standalone נדרש ל-server.js ב-Dockerfile. */
+/** Docker UI image - standalone נדרש ל-server.js ב-Dockerfile. */
 function isDockerStandaloneBuild(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.DOCKER_BUILD === "1" || env.ORGFLOW_DOCKER_BUILD === "1";
 }

@@ -7,18 +7,30 @@ import {
 
 import BrandLogo from "@/components/ui/BrandLogo";
 import NavLinkItem from "@/components/ui/NavLinkItem";
-import { useIsAdmin } from "@/hooks/useEffectiveRole";
-import { useFieldReportModule } from "@/hooks/useFieldReportModule";
 import {
-  FIELD_REPORTS_ROUTE,
+  useEffectiveRole,
+  useIsAdmin,
+} from "@/hooks/useEffectiveRole";
+import { useFieldReportModule } from "@/hooks/useFieldReportModule";
+import { isContractorRole } from "@/lib/auth/contractor-access";
+import {
   getSystemNavLinks,
-  GLOBAL_NAV_LINKS,
   isNavLinkActive,
+  SETTINGS_ROUTE,
 } from "@/lib/navigation";
+import {
+  getQCPrimaryNavLinks,
+  getQCProjectNavLinks,
+  getQCProjectPrimaryNavLinks,
+  getQCProjectSecondaryNavLinks,
+  isQCPrimaryNavActive,
+  isQCProjectNavActive,
+} from "@/lib/qc-navigation";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const params = useParams();
+  const effectiveRole = useEffectiveRole();
   const isAdminUser = useIsAdmin();
   const { isEnabled: fieldReportsEnabled } = useFieldReportModule();
   const projectId =
@@ -26,27 +38,28 @@ export default function Sidebar() {
       ? params.id
       : null;
 
-  const systemLinks = getSystemNavLinks(isAdminUser);
+  const contractorView = isContractorRole(effectiveRole);
+  const systemLinks = contractorView
+    ? [SETTINGS_ROUTE]
+    : getSystemNavLinks(isAdminUser);
 
-  const projectLinks = projectId
-    ? [
-        {
-          href: `/projects/${projectId}`,
-          label: "סקירת הפרויקט",
-        },
-        {
-          href: `/projects/${projectId}/reviews`,
-          label: "ביקורות AI",
-        },
-        {
-          href: `/projects/${projectId}/actions`,
-          label: "פעולות תפעוליות",
-        },
-        {
-          href: `/projects/${projectId}/escalations`,
-          label: "נקודות סיכון",
-        },
-      ]
+  const primaryLinks = getQCPrimaryNavLinks({
+    role: effectiveRole,
+    fieldReportsEnabled: fieldReportsEnabled,
+  });
+
+  const projectPrimaryLinks = projectId
+    ? getQCProjectPrimaryNavLinks(projectId, effectiveRole).filter((link) => {
+        if (!fieldReportsEnabled && link.href.endsWith("/field-reports")) {
+          return false;
+        }
+
+        return true;
+      })
+    : [];
+
+  const projectSecondaryLinks = projectId
+    ? getQCProjectSecondaryNavLinks(projectId, effectiveRole)
     : [];
 
   return (
@@ -74,40 +87,49 @@ export default function Sidebar() {
           </p>
 
           <div className="space-y-1">
-            {GLOBAL_NAV_LINKS.map((link) => (
+            {primaryLinks.map((link) => (
               <NavLinkItem
                 key={link.href}
                 href={link.href}
                 label={link.label}
-                isActive={isNavLinkActive(pathname, link.href)}
+                isActive={isQCPrimaryNavActive(pathname, link.href)}
               />
             ))}
-            {fieldReportsEnabled ? (
-              <NavLinkItem
-                href={FIELD_REPORTS_ROUTE.href}
-                label={FIELD_REPORTS_ROUTE.label}
-                isActive={isNavLinkActive(
-                  pathname,
-                  FIELD_REPORTS_ROUTE.href
-                )}
-              />
-            ) : null}
           </div>
         </div>
 
-        {projectLinks.length > 0 ? (
+        {projectPrimaryLinks.length > 0 ? (
           <div>
             <p className="of-nav-section-label">
               פרויקט נוכחי
             </p>
 
             <div className="space-y-1">
-              {projectLinks.map((link) => (
+              {projectPrimaryLinks.map((link) => (
                 <NavLinkItem
                   key={link.href}
                   href={link.href}
                   label={link.label}
-                  isActive={pathname === link.href}
+                  isActive={isQCProjectNavActive(pathname, link.href)}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {projectSecondaryLinks.length > 0 ? (
+          <div>
+            <p className="of-nav-section-label">
+              משני בפרויקט
+            </p>
+
+            <div className="space-y-1">
+              {projectSecondaryLinks.map((link) => (
+                <NavLinkItem
+                  key={link.href}
+                  href={link.href}
+                  label={link.label}
+                  isActive={isQCProjectNavActive(pathname, link.href)}
                 />
               ))}
             </div>

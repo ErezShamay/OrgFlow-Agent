@@ -36,7 +36,7 @@ export function clearLegacyOfflinePrepBundle(organizationId: string) {
   localStorage.removeItem(storageKey(organizationId));
 }
 
-/** שמירת legacy — לבדיקות מיגרציה בלבד. */
+/** שמירת legacy - לבדיקות מיגרציה בלבד. */
 export function writeLegacyOfflinePrepBundle(
   organizationId: string,
   bundle: OfflinePrepBundle

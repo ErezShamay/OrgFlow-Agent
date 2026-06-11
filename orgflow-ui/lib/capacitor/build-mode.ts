@@ -1,16 +1,16 @@
 /**
  * מצבי build ל-APK (FR-030).
  *
- * - **static (B)** — ברירת מחדל: `next build` עם `output: 'export'` → `out/` בתוך APK.
+ * - **static (B)** - ברירת מחדל: `next build` עם `output: 'export'` → `out/` בתוך APK.
  *   מתאים לעבודה אופליין בשטח (IndexedDB + sync).
- * - **url (A)** — WebView טוען URL פרוס (staging/prod); `webDir` נשאר שלד ל-`cap sync`.
+ * - **url (A)** - WebView טוען URL פרוס (staging/prod); `webDir` נשאר שלד ל-`cap sync`.
  */
 
 export type CapacitorBuildMode = "static" | "url";
 
 export const CAPACITOR_STATIC_EXPORT_PLACEHOLDER_ID = "_";
 
-/** מזהה placeholder ל-`generateStaticParams` — ניווט ל-UUID אמיתי בצד לקוח. */
+/** מזהה placeholder ל-`generateStaticParams` - ניווט ל-UUID אמיתי בצד לקוח. */
 export function capacitorStaticExportParams(): Array<{ id: string }> {
   return [{ id: CAPACITOR_STATIC_EXPORT_PLACEHOLDER_ID }];
 }

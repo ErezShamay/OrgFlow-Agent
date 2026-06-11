@@ -26,7 +26,7 @@ export function shouldIncludeFixedTextInPdf(
   return headerFields.include_fixed_text_blocks !== false;
 }
 
-/** מציג המלצות חורף בפורמט legacy — רק כשאין fixed_text_blocks מובנים. */
+/** מציג המלצות חורף בפורמט legacy - רק כשאין fixed_text_blocks מובנים. */
 export function shouldRenderLegacyWinterSection(
   headerFields: Record<string, unknown>
 ): boolean {

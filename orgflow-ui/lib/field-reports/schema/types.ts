@@ -1,5 +1,5 @@
 /**
- * סכמת דוחות שטח — types מרכזיים (FR-0.1).
+ * סכמת דוחות שטח - types מרכזיים (FR-0.1).
  * לוגיקת נורמליזציה / presets בקבצים נפרדים (FR-0.2, FR-0.4).
  */
 
@@ -14,7 +14,7 @@ export const PROJECT_SCHEMES = [
 export type ProjectScheme = (typeof PROJECT_SCHEMES)[number];
 
 /**
- * מטא-דאטה של פרויקט בכותרת הדוח — תאריכים, יחידות דיור, הדמיה.
+ * מטא-דאטה של פרויקט בכותרת הדוח - תאריכים, יחידות דיור, הדמיה.
  * שדות אופציונליים לתמיכה בדוחות legacy חלקיים.
  */
 export type ProjectMetadata = {
@@ -31,10 +31,14 @@ export type ProjectMetadata = {
   gantt_forecast?: string | null;
   site_address?: string | null;
   illustration_caption_he?: string | null;
+  /** מקור התמונה, למשל: התמונה נלקחה מאתר אינטרנט "מדלן". */
+  illustration_source_he?: string | null;
+  /** URL להדמיית הפרויקט - נטען מפרטי הפרויקט (תמונה אחת). */
+  illustration_url?: string | null;
   tenant_changes_notes?: string | null;
 };
 
-/** תפקידי בעלי עניין בדוח — ממופים משדות legacy ב-FR-0.2. */
+/** תפקידי בעלי עניין בדוח - ממופים משדות legacy ב-FR-0.2. */
 export const STAKEHOLDER_ROLES = [
   "developer",
   "project_manager",
@@ -79,7 +83,7 @@ export const FIXED_TEXT_BLOCK_KINDS = [
 export type FixedTextBlockKind = (typeof FIXED_TEXT_BLOCK_KINDS)[number];
 
 /**
- * בלוק טקסט קבוע — disclaimer בטיחות, אי-התאמה, המלצות חורף.
+ * בלוק טקסט קבוע - disclaimer בטיחות, אי-התאמה, המלצות חורף.
  */
 export type FixedTextBlock = {
   id: string;
@@ -90,10 +94,11 @@ export type FixedTextBlock = {
   sort_order?: number;
 };
 
-/** preset עמודות לפי 4 וריאציות מהניתוח (עשירה / פשוטה / התקדמות / שלד). */
+/** preset עמודות לפי וריאציות מדוחות הלקוח. */
 export const COLUMN_PRESET_KEYS = [
   "rich",
   "simple",
+  "finishing",
   "progress",
   "structure",
 ] as const;
@@ -116,7 +121,7 @@ export const BLOCK_COLUMN_IDS = [
 /** מזהה עמודה בודדת בבלוק. */
 export type BlockColumnId = (typeof BLOCK_COLUMN_IDS)[number];
 
-/** הגדרת עמודה בטבלת בלוק — כותרת עברית ורוחב אופציונלי. */
+/** הגדרת עמודה בטבלת בלוק - כותרת עברית ורוחב אופציונלי. */
 export type BlockColumnDef = {
   id: BlockColumnId;
   header_he: string;
@@ -124,7 +129,7 @@ export type BlockColumnDef = {
 };
 
 /**
- * מפת presets עמודות — ערכים מלאים יוגדרו ב-FR-0.4 (`column-presets.ts`).
+ * מפת presets עמודות - ערכים מלאים יוגדרו ב-FR-0.4 (`column-presets.ts`).
  * FR-0.1 מגדיר רק את הצורה.
  */
 export type ColumnPresets = Record<ColumnPresetKey, readonly BlockColumnDef[]>;
@@ -139,7 +144,7 @@ export type ProgressRow = {
 };
 
 /**
- * שורת ממצא — תואמת שורות `lines` קיימות + שדות קיבוץ (FR-3.1).
+ * שורת ממצא - תואמת שורות `lines` קיימות + שדות קיבוץ (FR-3.1).
  */
 export type FindingRow = {
   id: string;
@@ -154,6 +159,7 @@ export type FindingRow = {
   group_key?: string | null;
   group_label_he?: string | null;
   block_id?: string | null;
+  linked_issue_id?: string | null;
   sort_order?: number;
   has_photo?: boolean;
   photo_ids?: string[];
@@ -175,33 +181,33 @@ export type ReportBlockBase = {
   sort_order?: number;
 };
 
-/** בלוק טבלת התקדמות — ממיר מ-`construction_progress[]` legacy. */
+/** בלוק טבלת התקדמות - ממיר מ-`construction_progress[]` legacy. */
 export type ProgressTableBlock = ReportBlockBase & {
   kind: "progress_table";
   column_preset: ColumnPresetKey;
   rows: ProgressRow[];
 };
 
-/** בלוק טבלת ממצאים — ממיר מ-`lines[]` legacy. */
+/** בלוק טבלת ממצאים - ממיר מ-`lines[]` legacy. */
 export type FindingsTableBlock = ReportBlockBase & {
   kind: "findings_table";
   column_preset: ColumnPresetKey;
   rows: FindingRow[];
 };
 
-/** בלוק צ'קליסט גמר — דוחות FINISHING_APARTMENTS. */
+/** בלוק צ'קליסט גמר - דוחות FINISHING_APARTMENTS. */
 export type ChecklistBlock = ReportBlockBase & {
   kind: "checklist";
   items: ChecklistItem[];
 };
 
-/** בלוק טקסט חופשי — המלצות, הערות נוספות. */
+/** בלוק טקסט חופשי - המלצות, הערות נוספות. */
 export type FreeTextBlock = ReportBlockBase & {
   kind: "free_text";
   body_he: string;
 };
 
-/** בלוק תמונה — הדמיית פרויקט. */
+/** בלוק תמונה - הדמיית פרויקט. */
 export type ImageBlock = ReportBlockBase & {
   kind: "image";
   caption_he?: string | null;
@@ -210,7 +216,7 @@ export type ImageBlock = ReportBlockBase & {
 };
 
 /**
- * בלוק בגוף הדוח — discriminated union לפי `kind`.
+ * בלוק בגוף הדוח - discriminated union לפי `kind`.
  * תבנית אחת גמישה מבוססת רכיבים (`blocks[]`).
  */
 export type ReportBlock =
@@ -224,7 +230,7 @@ export type ReportBlock =
 export type ReportBlockKind = ReportBlock["kind"];
 
 /**
- * מסמך דוח ביקור — יעד הנורמליזציה (FR-0.2).
+ * מסמך דוח ביקור - יעד הנורמליזציה (FR-0.2).
  * משלב metadata, stakeholders, blocks ושדות legacy ל-backward compatibility.
  */
 export type VisitReportDocument = {
@@ -239,9 +245,9 @@ export type VisitReportDocument = {
   main_suppliers?: SupplierRow[];
   fixed_text_blocks?: FixedTextBlock[];
   blocks?: ReportBlock[];
-  /** שדות header גולמיים — נשמרים לתאימות לאחור. */
+  /** שדות header גולמיים - נשמרים לתאימות לאחור. */
   header_fields_raw?: Record<string, unknown>;
-  /** שורות legacy — עד מיגרציה מלאה ל-blocks. */
+  /** שורות legacy - עד מיגרציה מלאה ל-blocks. */
   lines?: FindingRow[];
   catalog_version?: string | null;
   status?: string | null;

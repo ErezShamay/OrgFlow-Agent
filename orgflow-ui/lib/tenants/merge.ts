@@ -33,7 +33,7 @@ function splitOwnerNames(name: string): string[] {
   const names = name
     .split(/[;,\n\r]+/)
     .map((part) => part.trim())
-    .filter((part) => part && !/^[-–—\d\s]+$/.test(part));
+    .filter((part) => part && !/^[-–-\d\s]+$/.test(part));
   return names.length ? names : [name];
 }
 

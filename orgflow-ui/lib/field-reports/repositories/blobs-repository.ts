@@ -64,7 +64,7 @@ function isLinePhoto(record: BlobRecord): boolean {
 }
 
 /**
- * שומר תמונת שורה — `reportId` / `lineId` הם מזהי קליינט (או שרת לתאימות).
+ * שומר תמונת שורה - `reportId` / `lineId` הם מזהי קליינט (או שרת לתאימות).
  */
 export async function saveLinePhotoBlob(
   reportId: string,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { ELAYOAI_APP_NAME } from "@/lib/elayoai/keys";
+import { ELAYOAI_APP_NAME, ELAYOAI_APP_TAGLINE } from "@/lib/elayoai/keys";
 
 export default function BrandLogo({
   size = "md",
@@ -44,7 +44,7 @@ export default function BrandLogo({
       scroll={false}
       onClick={handleClick}
       className="group flex items-center gap-3"
-      aria-label={`${ELAYOAI_APP_NAME} — דף הבית`}
+      aria-label={`${ELAYOAI_APP_NAME} - דף הבית`}
     >
       <div
         className={`
@@ -75,7 +75,7 @@ export default function BrandLogo({
 
         {showTagline ? (
           <p className="text-xs text-[var(--of-color-text-muted)]">
-            AI לניהול בנייה ותפעול שטח
+            {ELAYOAI_APP_TAGLINE}
           </p>
         ) : null}
       </div>

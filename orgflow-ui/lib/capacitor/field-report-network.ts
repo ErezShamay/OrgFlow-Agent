@@ -10,7 +10,7 @@ let nativeListener: PluginListenerHandle | null = null;
 
 const connectivityListeners = new Set<(connected: boolean) => void>();
 
-/** מקור `navigatorOnline` ב-APK — `@capacitor/network` (FR-033). */
+/** מקור `navigatorOnline` ב-APK - `@capacitor/network` (FR-033). */
 export function useCapacitorFieldReportNetwork(): boolean {
   return isCapacitorNativePlatform();
 }
@@ -62,7 +62,7 @@ async function ensureCapacitorNetworkWatch(): Promise<void> {
 }
 
 /**
- * מאזין לשינויי חיבור ב-native. ב-web — מחזיר ביטול ריק (הקורא משתמש ב-window).
+ * מאזין לשינויי חיבור ב-native. ב-web - מחזיר ביטול ריק (הקורא משתמש ב-window).
  */
 export function subscribeCapacitorNetworkConnectivity(
   listener: (connected: boolean) => void

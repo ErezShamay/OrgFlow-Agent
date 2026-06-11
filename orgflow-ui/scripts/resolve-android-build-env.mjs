@@ -66,7 +66,7 @@ export function resolveAndroidHome() {
 }
 
 /**
- * משתני סביבה לבניית APK — JAVA_HOME 21, ANDROID_HOME, PATH.
+ * משתני סביבה לבניית APK - JAVA_HOME 21, ANDROID_HOME, PATH.
  */
 export function resolveAndroidBuildEnv(baseEnv = process.env) {
   const env = { ...baseEnv };
@@ -80,7 +80,7 @@ export function resolveAndroidBuildEnv(baseEnv = process.env) {
     notes.push(`JAVA_HOME=${javaHome}`);
   } else {
     notes.push(
-      "JAVA_HOME: not found — brew install openjdk@21 (macOS) or set JAVA_HOME"
+      "JAVA_HOME: not found - brew install openjdk@21 (macOS) or set JAVA_HOME"
     );
   }
 
@@ -97,7 +97,7 @@ export function resolveAndroidBuildEnv(baseEnv = process.env) {
     notes.push(`ANDROID_HOME=${androidHome}`);
   } else {
     notes.push(
-      "ANDROID_HOME: not found — install Android Studio / SDK or set ANDROID_HOME"
+      "ANDROID_HOME: not found - install Android Studio / SDK or set ANDROID_HOME"
     );
   }
 

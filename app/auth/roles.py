@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.schemas.qc_permissions import qc_inviteable_roles
+
 PLATFORM_ADMIN_ROLE = "PLATFORM_ADMIN"
 ORG_ADMIN_ROLE = "ADMIN"
 
@@ -11,11 +13,15 @@ USER_MANAGEMENT_ROLES = (
 ORG_SCOPED_INVITE_ROLES = (
     ORG_ADMIN_ROLE,
     "SUPERVISOR",
+    "DEVELOPER",
+    "CONTRACTOR",
     "VIEWER",
 )
 
 CLIENT_ADMIN_INVITE_ROLES = (
     "SUPERVISOR",
+    "DEVELOPER",
+    "CONTRACTOR",
     "VIEWER",
 )
 
@@ -39,10 +45,9 @@ def can_manage_users(role: str | None) -> bool:
 
 
 def inviteable_roles(actor_role: str | None) -> tuple[str, ...]:
-    if is_platform_admin(actor_role):
-        return PLATFORM_INVITE_ROLES
-    if is_org_admin(actor_role):
-        return CLIENT_ADMIN_INVITE_ROLES
+    normalized = normalize_role(actor_role)
+    if normalized in {PLATFORM_ADMIN_ROLE, ORG_ADMIN_ROLE}:
+        return qc_inviteable_roles(actor_role)
     return ()
 
 

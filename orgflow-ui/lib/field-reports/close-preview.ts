@@ -30,13 +30,13 @@ export function buildClosePreview(
 
   if (emptyLines.length) {
     warnings.push(
-      `${emptyLines.length} שורות ללא תיאור — מומלץ למלא לפני הפקת PDF.`
+      `${emptyLines.length} שורות ללא תיאור - מומלץ למלא לפני הפקת PDF.`
     );
   }
 
   if (catalogWarnings.length) {
     warnings.push(
-      `${catalogWarnings.length} שורות עם אזהרת מפרט — מומלץ לבדוק לפני סגירה.`
+      `${catalogWarnings.length} שורות עם אזהרת מפרט - מומלץ לבדוק לפני סגירה.`
     );
   }
 

@@ -45,7 +45,7 @@ export function applyEnvValues(values, { override = false } = {}) {
 }
 
 /**
- * טוען env לבניית APK — `.env.capacitor.local` → `.env.capacitor` → `.env.local`.
+ * טוען env לבניית APK - `.env.capacitor.local` → `.env.capacitor` → `.env.local`.
  * FR-034
  */
 export function loadCapacitorBuildEnv(options = {}) {

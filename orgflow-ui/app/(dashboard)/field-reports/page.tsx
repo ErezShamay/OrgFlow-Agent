@@ -237,7 +237,7 @@ export default function FieldReportsPage() {
         </p>
         {status?.storage_available === false ? (
           <p className="text-sm text-amber-700 dark:text-amber-400">
-            המיגרציה למסד הנתונים טרם הורצה — נדרשת הגדרת תשתית.
+            המיגרציה למסד הנתונים טרם הורצה - נדרשת הגדרת תשתית.
           </p>
         ) : null}
         <Link href="/" className="text-sm text-brand hover:underline">
@@ -285,7 +285,7 @@ export default function FieldReportsPage() {
             מוכן לעבודה ללא רשת עד{" "}
             {offlinePrep.expiresAt
               ? new Date(offlinePrep.expiresAt).toLocaleString("he-IL")
-              : "—"}
+              : "-"}
             {offlinePrep.catalogVersion
               ? ` · קטלוג ${offlinePrep.catalogVersion}`
               : ""}
@@ -317,7 +317,7 @@ export default function FieldReportsPage() {
 
       {inProgressCount > 0 && statusFilter !== "IN_PROGRESS" ? (
         <p className="text-sm text-zinc-600">
-          {inProgressCount} דוחות בעבודה — ניתן לערוך דוח אחד בכל רגע במכשיר.
+          {inProgressCount} דוחות בעבודה - ניתן לערוך דוח אחד בכל רגע במכשיר.
           <button
             type="button"
             className="mr-2 text-brand hover:underline"

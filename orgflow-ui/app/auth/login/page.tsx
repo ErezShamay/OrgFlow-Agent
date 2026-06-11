@@ -97,7 +97,7 @@ export default function LoginPage() {
       if (!isSupabaseConfigured()) {
         throw new Error(
           configWarning
-          || "Supabase לא מוגדר — בנו APK עם .env.capacitor.local"
+          || "Supabase לא מוגדר - בנו APK עם .env.capacitor.local"
         );
       }
 

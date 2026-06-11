@@ -68,7 +68,7 @@ function createLocalStorageMock() {
   };
 }
 
-/** סימולציית רענון דף / סגירת טאב — סגירת חיבור IndexedDB. */
+/** סימולציית רענון דף / סגירת טאב - סגירת חיבור IndexedDB. */
 async function simulatePageRefresh() {
   await closeFieldReportDatabase();
 }
@@ -112,17 +112,17 @@ async function createFullOfflineFieldReport(fetchSpy: ReturnType<typeof vi.fn>) 
     ...localReport,
     header_fields: {
       ...localReport.header_fields,
-      contractor_notes: ["כותרת שטח — Gate ב"],
+      contractor_notes: ["כותרת שטח - Gate ב"],
     },
     local_status: "LOCAL_IN_PROGRESS",
   });
 
   const lineDescriptions = [
-    "שורה 1 — ממצא",
-    "שורה 2 — ממצא",
-    "שורה 3 — ממצא",
-    "שורה 4 — ממצא",
-    "שורה 5 — ממצא",
+    "שורה 1 - ממצא",
+    "שורה 2 - ממצא",
+    "שורה 3 - ממצא",
+    "שורה 4 - ממצא",
+    "שורה 5 - ממצא",
   ];
 
   const lineUuids: string[] = [];
@@ -160,7 +160,7 @@ async function createFullOfflineFieldReport(fetchSpy: ReturnType<typeof vi.fn>) 
   const beforeClose = (await getLocalReport(clientReportUuid))!;
   expect(beforeClose.lines).toHaveLength(5);
   expect(beforeClose.header_fields.contractor_notes).toEqual([
-    "כותרת שטח — Gate ב",
+    "כותרת שטח - Gate ב",
   ]);
 
   const dataSource = resolveFieldReportDataSource(OFFLINE_NETWORK, {
@@ -189,7 +189,7 @@ async function createFullOfflineFieldReport(fetchSpy: ReturnType<typeof vi.fn>) 
 
 /**
  * קריטריוני Gate שלב ב (§6 בתוכנית, FR-019).
- * סימולציה ללא רשת — prep, עריכה, סגירה, רענון, ייבוא משרד.
+ * סימולציה ללא רשת - prep, עריכה, סגירה, רענון, ייבוא משרד.
  */
 describe("phase B gate acceptance (FR-019)", () => {
   beforeEach(async () => {
@@ -206,7 +206,7 @@ describe("phase B gate acceptance (FR-019)", () => {
     vi.clearAllMocks();
   });
 
-  it("§6.1 — airplane mode: header, 5 lines, 3 photos, close, PDF without API", async () => {
+  it("§6.1 - airplane mode: header, 5 lines, 3 photos, close, PDF without API", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
@@ -243,7 +243,7 @@ describe("phase B gate acceptance (FR-019)", () => {
     expect(await hasReportPdfBlob(clientReportUuid)).toBe(true);
   });
 
-  it("§6.2 — page refresh: report, lines, photos, and PDF persist in IndexedDB", async () => {
+  it("§6.2 - page refresh: report, lines, photos, and PDF persist in IndexedDB", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
@@ -256,9 +256,9 @@ describe("phase B gate acceptance (FR-019)", () => {
     expect(reloaded?.local_status).toBe("LOCAL_CLOSED");
     expect(reloaded?.lines).toHaveLength(5);
     expect(reloaded?.header_fields.contractor_notes).toEqual([
-      "כותרת שטח — Gate ב",
+      "כותרת שטח - Gate ב",
     ]);
-    expect(reloaded?.lines[4].description).toBe("שורה 5 — ממצא");
+    expect(reloaded?.lines[4].description).toBe("שורה 5 - ממצא");
 
     expect(
       (await listLinePhotosForLine(clientReportUuid, lineUuids[0])).map(
@@ -277,7 +277,7 @@ describe("phase B gate acceptance (FR-019)", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("§6.3 — office IN_PROGRESS report imported at prep, opens offline without API", async () => {
+  it("§6.3 - office IN_PROGRESS report imported at prep, opens offline without API", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
@@ -296,7 +296,7 @@ describe("phase B gate acceptance (FR-019)", () => {
         {
           id: "line-office-1",
           sort_order: 1,
-          description: "ממצא ממשרד — Gate ב",
+          description: "ממצא ממשרד - Gate ב",
           has_photo: false,
         },
       ],
@@ -327,7 +327,7 @@ describe("phase B gate acceptance (FR-019)", () => {
     expect(offlineLoad.source).toBe("local");
     expect(offlineLoad.report.project_name).toBe("פרויקט משרד");
     expect(offlineLoad.report.lines[0].description).toBe(
-      "ממצא ממשרד — Gate ב"
+      "ממצא ממשרד - Gate ב"
     );
     expect(offlineLoad.dataSource.canCallVisitReportApi).toBe(false);
     expect(fetchSpy).not.toHaveBeenCalled();

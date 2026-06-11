@@ -66,7 +66,7 @@ export type CreateLocalVisitReportParams = {
   projectPrefill?: ProjectPrefillSource | null;
 };
 
-/** יוצר דוח מקומי עם UUID — מקור אמת בשטח (FR-011). */
+/** יוצר דוח מקומי עם UUID - מקור אמת בשטח (FR-011). */
 export async function createLocalVisitReport(
   params: CreateLocalVisitReportParams
 ): Promise<LocalVisitReportRecord> {
@@ -104,7 +104,7 @@ export type SyncNewVisitReportToServerResult =
   | { ok: false; message: string };
 
 /**
- * יצירה בשרת (אופציונלי במצב מקוון) — מעדכן `server_report_id` בדוח המקומי.
+ * יצירה בשרת (אופציונלי במצב מקוון) - מעדכן `server_report_id` בדוח המקומי.
  * כשל לא מבטל את הדוח המקומי.
  */
 export async function syncNewVisitReportToServer(

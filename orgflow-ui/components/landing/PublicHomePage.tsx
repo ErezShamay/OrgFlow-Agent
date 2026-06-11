@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {
-  Bot,
+  AlertTriangle,
   Building2,
-  FileSearch,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
   Layers,
-  Shield,
   Sparkles,
-  Zap,
 } from "lucide-react";
 
 import HeroDashboardPreview from "@/components/landing/HeroDashboardPreview";
@@ -16,45 +16,45 @@ import BrandLogo from "@/components/ui/BrandLogo";
 
 const FEATURES = [
   {
-    icon: Bot,
-    title: "ביקורות AI אוטומטיות",
+    icon: ClipboardList,
+    title: "דוחות ביקור בשטח",
     description:
-      "ניתוח דוחות הנדסיים, זיהוי חריגות וסיכונים — בזמן אמת ובדיוק גבוה.",
+      "עריכה בשטח ו-offline - תמונות, צ'קליסט ורישום ממצאים בדוח ביקור אחד.",
     accent: "from-brand to-brand-light",
   },
   {
-    icon: FileSearch,
-    title: "ניתוח חריגות חכם",
+    icon: AlertTriangle,
+    title: "מעקב ליקויים",
     description:
-      "מיפוי, סיווג ומעקב אחר חריגות בפרויקט — עם המלצות פעולה מיידיות.",
+      "registry חי בין ביקורים - חומרה, מיקום, מלאכה ומעקב סטטוס לכל ליקוי.",
     accent: "from-brand-gold to-amber-500",
   },
   {
-    icon: Shield,
-    title: "פיקוח הנדסי רציף",
+    icon: FileText,
+    title: "PDF מקצועי",
     description:
-      "שקיפות מלאה על מצב הפרויקט, נקודות סיכון וסטטוס ביצוע לכל שלב.",
+      "הפקת דוח ביקור מקצועי - כמו בדוגמאות לקוח, עם עברית, תמונות וסימון ליקויים.",
     accent: "from-teal-500 to-brand-light",
   },
   {
     icon: Building2,
     title: "התחדשות עירונית",
     description:
-      "מותאם לפרויקטי בנייה, פינוי-בינוי ותמ\"א — עם תהליכי עבודה מוכרים.",
+      "תמ\"א, שלבי ביקור (שלד וגמר) ומפרט הנדסי - ליקויים מקושרים לסעיפי קטלוג.",
     accent: "from-brand to-brand-gold",
   },
   {
-    icon: Zap,
-    title: "אוטומציה תפעולית",
+    icon: CheckCircle2,
+    title: "סגירת ליקויים",
     description:
-      "הפקת פעולות, התראות ודוחות — ללא עבודה ידנית חוזרת.",
+      "מעקב ביקור לביקור - תיקון קבלן, אימות מפקח וסימון ליקוי חוזר.",
     accent: "from-brand-gold to-brand-gold-dark",
   },
   {
     icon: Layers,
-    title: "ניהול רב-פרויקטים",
+    title: "תיק בקרת איכות",
     description:
-      "תצוגת פורטפolio מרכזית לכל החברות והפרויקטים — במקום אחד.",
+      "דירוג פרויקטים לפי ליקויים פתוחים, חומרה ולחץ QC - תמונת מצב ליזם ומפקח.",
     accent: "from-brand-dark to-brand",
   },
 ] as const;
@@ -62,43 +62,63 @@ const FEATURES = [
 const WORKFLOW_STEPS = [
   {
     step: "01",
-    title: "הקשר פרויקט וקליטת חומר",
+    title: "מפקח יוצר דוח ביקור בשטח",
     description:
-      "בוחרים ארגון ופרויקט, מעלים דוח הנדסי או מסמך תפעולי — "
-      + "המערכת מקשרת את הקלט לפרויקט הנכון ומפעילה עיבוד.",
+      "צילום תמונות, צ'קליסט ורישום ממצאים בדוח - "
+      + "גם offline, ישירות מהאתר.",
   },
   {
     step: "02",
-    title: "ממצאים וביקורת AI",
+    title: "סגירת דוח → ליקויים ב-registry",
     description:
-      "ה-AI מחלץ ממצאים, בונה פרשנות עם השפעה עסקית, "
-      + "רמת סיכון ופעולה מומלצת — הביקורות ממתינות לאישור "
-      + "בלוח ביקורות AI.",
+      "בסגירת דוח הביקור, כל ממצא הופך לליקוי חי "
+      + "ב-registry - עם חומרה, מיקום ותמונות.",
   },
   {
     step: "03",
-    title: "אישור ויצירת פעולות",
+    title: "מעקב סגירה - קבלן ומפקח",
     description:
-      "מנהל מאשר או דוחה את הביקורת; באישור נוצרות "
-      + "פעולות תפעוליות (מעקב, ביקורת באתר, הסלמה ועוד) "
-      + "המקושרות לפרשנות.",
+      "הקבלן מעלה תמונת תיקון; המפקח מאמת בביקור הבא "
+      + "ומסמן ליקוי כסגור - או חוזר.",
   },
   {
     step: "04",
-    title: "מעקב, הסלמה וסגירה",
+    title: "תיק QC - תמונת מצב",
     description:
-      "עוקבים אחר פעולות פתוחות ונקודות סיכון ב-workspace "
-      + "הפרויקט, ברמת הארגון ובתיק הפרויקטים — כולל הסלמה "
-      + "אוטומטית בפיגור יעד, עד סגירה מלאה.",
+      "דירוג פרויקטים לפי ליקויים קריטיים, KPIs של סגירה "
+      + "ודוחות ביקור - תמונת מצב ליזם ומפקח.",
   },
 ] as const;
 
 const WORKFLOW_PILLARS = [
-  { value: "ביקורות AI", label: "פרשנות, אישור ודחייה מנהלתית" },
-  { value: "פעולות תפעוליות", label: "מעקב סטטוס, השלמה וחסימה" },
-  { value: "נקודות סיכון", label: "הסלמה ידנית ואוטומטית לפי SLA" },
-  { value: "אוטומציה", label: "תורים, ניטור בריאות ו-Dead Letters" },
+  { value: "דוחות שטח", label: "עריכה offline, PDF" },
+  { value: "ליקויים", label: "מעקב חי בין ביקורים" },
+  { value: "סגירה ואימות", label: "קבלן + מפקח" },
+  { value: "תיק QC", label: "תמונת מצב לפי חומרה" },
 ] as const;
+
+const PLATFORM_BULLETS = [
+  "ליקויים פתוחים לפי חומרה",
+  "דוחות PDF",
+  "מעקב בין ביקורים",
+  "עבודה offline",
+] as const;
+
+const PLATFORM_FIELD_CARD = {
+  eyebrow: "בקרת איכות בשטח",
+  title: "מוכן לשטח",
+  description:
+    "דוחות ביקור, צילום ממצאים ומעקב ליקויים - "
+    + "גם offline, ישירות מהאתר.",
+  status: "מחובר ופעיל",
+} as const;
+
+const FINAL_CTA = {
+  headline: "מוכנים לשלוט באיכות?",
+  subheadline: "התחברו וצרו דוח ביקור ראשון",
+} as const;
+
+const FOOTER_TAGLINE = "בקרת איכות לפרויקטי בנייה" as const;
 
 export default function PublicHomePage() {
   return (
@@ -165,7 +185,7 @@ export default function PublicHomePage() {
               "
             >
               <Sparkles className="h-4 w-4" />
-              מערכת תפעול הנדסי מבוססת AI
+              בקרת איכות לפרויקטי בנייה
             </div>
 
             <h1
@@ -179,14 +199,14 @@ export default function PublicHomePage() {
                 lg:text-7xl
               "
             >
-              פיקוח הנדסי
+              בקרת איכות
               <span
                 className="
                   of-landing-gradient-text
                   block
                 "
               >
-                ברמת Enterprise
+                בשטח
               </span>
             </h1>
 
@@ -201,9 +221,8 @@ export default function PublicHomePage() {
                 md:text-xl
               "
             >
-              פלטפורמת AI לתפעול פיקוח הנדסי — מדוחות וחריגות
-              ועד פעולות, מעקב והסלמות
-              בפרויקטי בנייה והתחדשות עירונית.
+              מדוח ביקור בשטח → ליקויים חיים בין ביקורים →
+              סגירה ואימות → תיק בקרת איכות לכל הפרויקטים.
             </p>
 
             <div
@@ -356,8 +375,8 @@ export default function PublicHomePage() {
                 dark:text-zinc-400
               "
             >
-              מנוע AI תפעולי שמחבר בין דוחות, חריגות,
-              פעולות ומעקב — לפרויקטים מורכבים.
+              פיקוח שמתחיל בשטח - מדוח ביקור וליקויים
+              ועד סגירה ותיק QC לפרויקטים מורכבים.
             </p>
           </div>
 
@@ -480,7 +499,7 @@ export default function PublicHomePage() {
                 md:text-4xl
               "
             >
-              מקליטת דוח ועד סגירת פעולה
+              מביקור בשטח ועד ליקוי סגור
             </h2>
             <p
               className="
@@ -491,8 +510,8 @@ export default function PublicHomePage() {
                 dark:text-zinc-400
               "
             >
-              אותו מסלול שעוברים בו במערכת: פרויקט → ביקורת AI →
-              פעולות תפעוליות → מעקב והסלמה.
+              אותו מסלול שעוברים בו במערכת: דוח ביקור בשטח →
+              ליקויים ב-registry → סגירה ואימות → תיק QC.
             </p>
           </div>
 
@@ -606,9 +625,8 @@ export default function PublicHomePage() {
                 md:text-4xl
               "
             >
-              ElayoAI —
-              מערכת ההפעלה
-              לפרויקטים שלך
+              ElayoAI -
+              פלטפורמת בקרת איכות
             </h2>
             <p
               className="
@@ -619,9 +637,9 @@ export default function PublicHomePage() {
                 dark:text-zinc-400
               "
             >
-              ממשק אחיד לניהול ביקורות, חריגות,
-              פעולות תפעוליות והתראות — עם ניטור
-              בזמן אמת ודוחות מנהלים.
+              ממשק אחיד לדוחות שטח, מעקב ליקויים,
+              סגירה ואימות ותיק בקרת איכות - מהביקור
+              הראשון ועד תמונת מצב לכל הפרויקטים.
             </p>
 
             <ul
@@ -630,12 +648,7 @@ export default function PublicHomePage() {
                 space-y-4
               "
             >
-              {[
-                "דשבורד KPI לכל פרויקט",
-                "מעקב חריגות ואскלציות",
-                "התראות ועדכונים בזמן אמת",
-                "אוטומציה ותורים חכמים",
-              ].map((item) => (
+              {PLATFORM_BULLETS.map((item) => (
                 <li
                   key={item}
                   className="
@@ -712,7 +725,7 @@ export default function PublicHomePage() {
             />
 
             <p className="relative text-sm font-medium text-white/80">
-              Operational AI Engine
+              {PLATFORM_FIELD_CARD.eyebrow}
             </p>
             <p
               className="
@@ -722,7 +735,7 @@ export default function PublicHomePage() {
                 font-black
               "
             >
-              מוכן לעבודה
+              {PLATFORM_FIELD_CARD.title}
             </p>
             <p
               className="
@@ -732,8 +745,7 @@ export default function PublicHomePage() {
                 text-white/80
               "
             >
-              המערכת פעילה, מאובטחת ומחוברת
-              לכל שכבות התפעול — מהדוח ועד הפעולה.
+              {PLATFORM_FIELD_CARD.description}
             </p>
 
             <div
@@ -777,7 +789,7 @@ export default function PublicHomePage() {
                 />
               </span>
               <span className="text-sm font-semibold">
-                System Online
+                {PLATFORM_FIELD_CARD.status}
               </span>
             </div>
           </div>
@@ -846,7 +858,7 @@ export default function PublicHomePage() {
               md:text-4xl
             "
           >
-            מוכנים לשלוט בפרויקט?
+            {FINAL_CTA.headline}
           </h2>
           <p
             className="
@@ -858,8 +870,7 @@ export default function PublicHomePage() {
               text-white/80
             "
           >
-            התחברו למערכת וקבלו גישה מיידית
-            לסביבת העבודה התפעולית.
+            {FINAL_CTA.subheadline}
           </p>
 
           <LandingSystemCtaLink
@@ -898,7 +909,7 @@ export default function PublicHomePage() {
           </div>
 
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            פלטפורמת AI לניהול תפעול הנדסי
+            {FOOTER_TAGLINE}
           </p>
         </div>
       </footer>

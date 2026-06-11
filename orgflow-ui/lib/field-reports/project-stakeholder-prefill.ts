@@ -2,7 +2,7 @@ import { stakeholderRoleLabelHe } from "./stakeholder-role-labels";
 import { STAKEHOLDER_ROLES } from "./schema/types";
 import type { Stakeholder, StakeholderRole } from "./schema/types";
 
-/** שדות stakeholder בישות פרויקט — לטעינה מ-workspace. */
+/** שדות stakeholder בישות פרויקט - לטעינה מ-workspace. */
 export type ProjectStakeholderSource = {
   developer_name?: string | null;
   developer_pm_name?: string | null;
@@ -53,7 +53,7 @@ export function stakeholdersFromProject(
 }
 
 /**
- * ממזג prefill לתוך רשימה קיימת — לא דורס שם שכבר מולא בדוח.
+ * ממזג prefill לתוך רשימה קיימת - לא דורס שם שכבר מולא בדוח.
  */
 export function mergeStakeholderPrefill(
   existing: Stakeholder[],

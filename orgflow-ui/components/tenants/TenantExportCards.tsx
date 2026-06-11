@@ -18,7 +18,7 @@ const cards = [
   {
     key: "phone",
     title: "אנשי קשר לטלפון (VCF)",
-    desc: "שם דייר + דירה + כתובת פרויקט — מוכן לייבוא לטלפון",
+    desc: "שם דייר + דירה + כתובת פרויקט - מוכן לייבוא לטלפון",
     file: "contacts-phone.vcf",
     run: (tenants: Tenant[], projectAddress: string) =>
       downloadVcf(buildPhoneContactsVcf(tenants, projectAddress), "contacts-phone.vcf"),

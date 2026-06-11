@@ -15,7 +15,7 @@ export const FIELD_REPORTS_PING_PATH = "/field-reports/module-status";
 
 export const DEFAULT_FIELD_REPORT_PING_TIMEOUT_MS = 5000;
 
-/** מרווח בדיקה תקופית (PWA + ping; native — גם Capacitor Network events). */
+/** מרווח בדיקה תקופית (PWA + ping; native - גם Capacitor Network events). */
 export const DEFAULT_FIELD_REPORT_NETWORK_POLL_MS = 120_000;
 
 export type FieldReportNetworkConnectivity =
@@ -69,7 +69,7 @@ export function readNavigatorOnline(
 }
 
 /**
- * Ping קל ל-`/field-reports/module-status` — בודק שה-API זמין (לא רק `navigator.onLine`).
+ * Ping קל ל-`/field-reports/module-status` - בודק שה-API זמין (לא רק `navigator.onLine`).
  */
 export async function pingFieldReportsApi(options?: {
   timeoutMs?: number;
@@ -110,7 +110,7 @@ export function resolveFieldReportConnectivity(
 }
 
 /**
- * בדיקת רשת מלאה — `navigator` + ping (מקור אמת לסנכרון ול-data-source).
+ * בדיקת רשת מלאה - `navigator` + ping (מקור אמת לסנכרון ול-data-source).
  */
 export async function probeFieldReportNetworkStatus(
   options?: ProbeFieldReportNetworkOptions
@@ -155,7 +155,7 @@ export function fieldReportNetworkStatusLabelHe(
     case "offline":
       return "אין חיבור רשת";
     case "captive":
-      return "רשת מקומית — השרת לא נגיש";
+      return "רשת מקומית - השרת לא נגיש";
     case "online":
       return "מחובר לשרת";
   }
@@ -166,7 +166,7 @@ export type FieldReportNetworkStatusListener = (
 ) => void;
 
 /**
- * מאזין לשינויי רשת — `online` + בדיקה תקופית (§7 ג.8).
+ * מאזין לשינויי רשת - `online` + בדיקה תקופית (§7 ג.8).
  * מחזיר פונקציית ביטול.
  */
 export function subscribeFieldReportNetworkStatus(

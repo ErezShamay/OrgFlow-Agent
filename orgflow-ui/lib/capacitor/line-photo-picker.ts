@@ -16,13 +16,13 @@ const LINE_PHOTO_QUALITY = 90;
 /**
  * צילום ב-APK: תמיד `<input capture>` בתוך ה-WebView.
  * מצלמת Capacitor (`Camera.takePhoto`) פותחת אפליקציה חיצונית, טוענת מחדש את
- * ה-WebView ומעבירה לדף הבית — לא משתמשים בה ב-UI.
+ * ה-WebView ומעבירה לדף הבית - לא משתמשים בה ב-UI.
  */
 export function useNativeLinePhotoCamera(): boolean {
   return false;
 }
 
-/** גלריה ב-APK — Photo Picker של Capacitor (ללא מצלמה מערכת). */
+/** גלריה ב-APK - Photo Picker של Capacitor (ללא מצלמה מערכת). */
 export function useNativeLinePhotoGallery(): boolean {
   return isCapacitorNativePlatform();
 }
@@ -34,7 +34,7 @@ export function useNativeLinePhotoPicker(): boolean {
 
 /**
  * צילום תמונת שורה במצלמת המכשיר (Capacitor native).
- * ב-UI לא נקרא — נשאר לבדיקות / שימוש ישיר.
+ * ב-UI לא נקרא - נשאר לבדיקות / שימוש ישיר.
  */
 export async function takeLinePhotoWithNativeCamera(): Promise<File | null> {
   if (!isCapacitorNativePlatform()) {

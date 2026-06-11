@@ -22,7 +22,7 @@ vi.mock("@/lib/api/client", () => ({
 const ORG_ID = "org-visit-view";
 const CLIENT_UUID = "a1111111-1111-4111-8111-111111111111";
 const SERVER_ID = "server-report-99";
-/** מזהה שרת בפורמט UUID — לא ניתן לבלבל עם `isClientUuid` בלבד. */
+/** מזהה שרת בפורמט UUID - לא ניתן לבלבל עם `isClientUuid` בלבד. */
 const SERVER_UUID = "d4444444-4444-4444-8444-444444444444";
 
 describe("visit-report-view (FR-012)", () => {

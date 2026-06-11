@@ -30,6 +30,9 @@ export type PdfReportLine = {
 export type PdfVisitReport = {
   id: string;
   client_report_uuid?: string;
+  project_id?: string | null;
+  server_report_id?: string | null;
+  status?: string | null;
   project_name?: string | null;
   visit_type: string;
   visit_type_label_he: string;
@@ -56,5 +59,7 @@ export type VisitReportPdfInput = {
   inspector?: PdfInspectorProfile | null;
   linePhotos?: LinePhotoData[];
   logoDataUrl?: string | null;
+  illustrationDataUrl?: string | null;
   generatedAt?: Date;
+  lineIssueMarkers?: ReadonlyMap<string, string>;
 };

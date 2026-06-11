@@ -33,9 +33,10 @@ export type VisitReportLineView = {
   group_key?: string | null;
   group_label_he?: string | null;
   block_id?: string | null;
+  linked_issue_id?: string | null;
 };
 
-/** צורת דוח ל-UI (עמוד דוח + עורך) — תואם לתשובת API עם שדות מקומיים. */
+/** צורת דוח ל-UI (עמוד דוח + עורך) - תואם לתשובת API עם שדות מקומיים. */
 export type VisitReportView = {
   id: string;
   client_report_uuid: string;
@@ -118,6 +119,7 @@ export function localLineToView(line: LocalVisitReportLine): VisitReportLineView
     group_key: line.group_key ?? null,
     group_label_he: line.group_label_he ?? null,
     block_id: line.block_id ?? null,
+    linked_issue_id: line.linked_issue_id ?? null,
   };
 }
 
@@ -154,7 +156,7 @@ export function localVisitReportToView(
   };
 }
 
-/** מזהה לנתיב `/field-reports/{id}` — UUID מקומי או מזהה שרת. */
+/** מזהה לנתיב `/field-reports/{id}` - UUID מקומי או מזהה שרת. */
 export async function resolveLocalVisitReport(
   routeId: string
 ): Promise<LocalVisitReportRecord | null> {
@@ -171,7 +173,7 @@ export async function resolveLocalVisitReport(
 }
 
 /**
- * מזהה שרת לקריאות API — גם כש-`routeId` הוא UUID (מפתח Supabase).
+ * מזהה שרת לקריאות API - גם כש-`routeId` הוא UUID (מפתח Supabase).
  * לא משתמשים ב-`isClientUuid`: מזהה מקומי ומזהה שרת יכולים להיות באותו פורמט.
  */
 export function resolveVisitReportApiId(

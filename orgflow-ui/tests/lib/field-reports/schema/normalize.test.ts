@@ -94,7 +94,7 @@ describe("normalizeReportBlocks", () => {
     expect(blocks[0]).toMatchObject({
       kind: "findings_table",
       title_he: "ממצאים / עבודות",
-      column_preset: "rich",
+      column_preset: "simple",
       rows: [
         {
           id: "line-1",

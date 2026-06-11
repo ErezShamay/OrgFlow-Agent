@@ -32,7 +32,7 @@ function nowIso() {
 }
 
 /**
- * סוגר דוח מקומי — `LOCAL_CLOSED`, `closed_at`, `sync_status=pending` (§6 ב.6).
+ * סוגר דוח מקומי - `LOCAL_CLOSED`, `closed_at`, `sync_status=pending` (§6 ב.6).
  */
 export async function closeLocalVisitReport(
   clientReportUuid: string,

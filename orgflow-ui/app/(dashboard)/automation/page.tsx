@@ -215,7 +215,7 @@ function formatRate(
     value === null
     || value === undefined
   ) {
-    return "—";
+    return "-";
   }
 
   return `${value}%`;

@@ -1,5 +1,6 @@
 import Sidebar from "@/app/components/sidebar";
 
+import ContractorRouteGuard from "@/components/auth/ContractorRouteGuard";
 import UserMenu from "@/components/auth/UserMenu";
 import OrgSwitcher from "@/components/admin/OrgSwitcher";
 import DashboardProviders from "@/components/dashboard/DashboardProviders";
@@ -40,7 +41,7 @@ export default function DashboardLayout({
         </header>
 
         <main className="of-dashboard-main flex-1 overflow-auto">
-          {children}
+          <ContractorRouteGuard>{children}</ContractorRouteGuard>
         </main>
       </div>
     </div>

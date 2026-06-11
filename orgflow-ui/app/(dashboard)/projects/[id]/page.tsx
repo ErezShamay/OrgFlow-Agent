@@ -11,6 +11,7 @@ import LoadingState from "@/components/ui/LoadingState";
 import PageLoadingOverlay from "@/components/ui/PageLoadingOverlay";
 import ProjectFieldReportLink from "@/components/field-reports/ProjectFieldReportLink";
 import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline";
+import ProjectVisitIssueDiffSummary from "@/components/quality-issues/ProjectVisitIssueDiffSummary";
 
 import ProjectDetailsEditor from "@/components/projects/ProjectDetailsEditor";
 import ProjectInsightsPanel from "@/components/projects/ProjectInsightsPanel";
@@ -19,6 +20,7 @@ import {
   AI_REVIEWS_KPI_LABEL,
   normalizeRtlOperationalSummary,
 } from "@/lib/ui/bidi-text";
+import { isContractorLimitedProjectView } from "@/lib/auth/contractor-project-view";
 import { canEditProjects } from "@/lib/auth/permissions";
 
 export default function ProjectDetailsPage() {
@@ -29,6 +31,7 @@ export default function ProjectDetailsPage() {
     params.id as string;
 
   const effectiveRole = useEffectiveRole();
+  const contractorLimitedView = isContractorLimitedProjectView(effectiveRole);
 
   const {
     project,
@@ -160,12 +163,16 @@ export default function ProjectDetailsPage() {
             </h1>
 
             <p className="of-page-desc mt-4">
-              סביבת עבודה תפעולית לפרויקט
+              {contractorLimitedView
+                ? "ליקויים פתוחים לטיפול בפרויקט"
+                : "סביבת עבודה תפעולית לפרויקט"}
             </p>
 
-            <div className="mt-3">
-              <ProjectFieldReportLink projectId={projectId} />
-            </div>
+            {contractorLimitedView ? null : (
+              <div className="mt-3">
+                <ProjectFieldReportLink projectId={projectId} />
+              </div>
+            )}
 
           </div>
 
@@ -198,6 +205,13 @@ export default function ProjectDetailsPage() {
 
       </div>
 
+      <ProjectVisitIssueDiffSummary
+        projectId={projectId}
+        role={effectiveRole}
+      />
+
+      {contractorLimitedView ? null : (
+        <>
       {/* KPI CARDS */}
 
       <div
@@ -793,6 +807,8 @@ export default function ProjectDetailsPage() {
         </div>
 
       </div>
+        </>
+      )}
 
     </main>
   );

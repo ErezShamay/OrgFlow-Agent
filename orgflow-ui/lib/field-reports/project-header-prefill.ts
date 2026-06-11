@@ -7,7 +7,7 @@ import {
 } from "./project-stakeholder-prefill";
 import type { ProjectMetadata, ProjectScheme } from "./schema/types";
 
-/** מקור prefill מישות פרויקט — mirrors backend field_report_project_prefill (FR-4.3). */
+/** מקור prefill מישות פרויקט - mirrors backend field_report_project_prefill (FR-4.3). */
 export type ProjectPrefillSource = ProjectStakeholderSource & {
   city?: string | null;
   scheme?: string | null;
@@ -16,6 +16,8 @@ export type ProjectPrefillSource = ProjectStakeholderSource & {
   project_end_date?: string | null;
   project_grace_end_date?: string | null;
   structure_documentation_date?: string | null;
+  illustration_url?: string | null;
+  illustration_source_he?: string | null;
 };
 
 const VALID_SCHEMES = new Set<ProjectScheme>([
@@ -38,7 +40,7 @@ function isValidScheme(value: string | null | undefined): value is ProjectScheme
   return Boolean(value && VALID_SCHEMES.has(value as ProjectScheme));
 }
 
-/** בונה metadata לכותרת דוח — רק שדות זמינים בפרויקט. */
+/** בונה metadata לכותרת דוח - רק שדות זמינים בפרויקט. */
 export function projectMetadataFromProject(
   project: ProjectPrefillSource
 ): Partial<ProjectMetadata> {
@@ -78,6 +80,16 @@ export function projectMetadataFromProject(
     metadata.housing_units_count = project.housing_units_count;
   }
 
+  const illustrationUrl = pickText(project.illustration_url);
+  if (illustrationUrl) {
+    metadata.illustration_url = illustrationUrl;
+  }
+
+  const illustrationSource = pickText(project.illustration_source_he);
+  if (illustrationSource) {
+    metadata.illustration_source_he = illustrationSource;
+  }
+
   return metadata;
 }
 
@@ -104,7 +116,7 @@ function mergeMetadataPrefill(
 }
 
 /**
- * ממלא שדות כותרת ריקים מפרויקט — לא דורס ערכים שכבר הוזנו בדוח.
+ * ממלא שדות כותרת ריקים מפרויקט - לא דורס ערכים שכבר הוזנו בדוח.
  * השדות נשארים ניתנים לעריכה ב-UI.
  */
 export function applyProjectPrefillToHeaderFields(
@@ -211,5 +223,9 @@ export function projectPrefillSourceFromRecord(
       pickText(String(project.project_grace_end_date ?? "")) || null,
     structure_documentation_date:
       pickText(String(project.structure_documentation_date ?? "")) || null,
+    illustration_url:
+      pickText(String(project.illustration_url ?? "")) || null,
+    illustration_source_he:
+      pickText(String(project.illustration_source_he ?? "")) || null,
   };
 }

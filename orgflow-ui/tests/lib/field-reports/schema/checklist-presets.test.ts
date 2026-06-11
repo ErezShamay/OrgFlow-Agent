@@ -29,16 +29,20 @@ describe("defaultFinishingChecklistBlock", () => {
 });
 
 describe("FINISHING_APARTMENTS default blocks", () => {
-  it("includes checklist between progress and findings", () => {
+  it("starts with checklist under התקדמות הבנייה", () => {
     const blocks = defaultReportBlocksForVisitType("FINISHING_APARTMENTS");
 
     expect(blocks.map((block) => block.kind)).toEqual([
-      "progress_table",
       "checklist",
+      "findings_table",
       "findings_table",
     ]);
 
     const checklist = blocks.find((block) => block.kind === "checklist");
+    expect(checklist).toMatchObject({
+      kind: "checklist",
+      title_he: "התקדמות הבנייה",
+    });
     expect(checklist && checklist.kind === "checklist" ? checklist.items.length : 0).toBe(
       6
     );

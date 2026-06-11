@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { POST_LOGIN_ROUTE } from "@/lib/navigation";
+import { FIELD_REPORTS_ROUTE, POST_LOGIN_ROUTE } from "@/lib/navigation";
 
 type LandingSystemCtaVariant = "hero" | "footer";
 
@@ -57,8 +57,27 @@ export default function LandingSystemCtaLink({
 }) {
   const { user, loading } = useAuth();
   const isAuthenticated = !loading && Boolean(user);
-  const href = isAuthenticated ? POST_LOGIN_ROUTE : "/auth/login";
-  const label = isAuthenticated ? "מעבר למערכת" : "התחברות למערכת";
+
+  const { href, label } =
+    variant === "hero"
+      ? isAuthenticated
+        ? {
+            href: FIELD_REPORTS_ROUTE.href,
+            label: "התחל דוח שטח",
+          }
+        : {
+            href: "/auth/login",
+            label: "כניסה למערכת",
+          }
+      : isAuthenticated
+        ? {
+            href: POST_LOGIN_ROUTE,
+            label: "מעבר למערכת",
+          }
+        : {
+            href: "/auth/login",
+            label: "התחברות למערכת",
+          };
 
   return (
     <Link

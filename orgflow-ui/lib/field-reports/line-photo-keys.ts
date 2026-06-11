@@ -1,7 +1,7 @@
-/** מזהה תמונה מקומית ראשית — תואם גרסאות 1–2 של line-photo-store. */
+/** מזהה תמונה מקומית ראשית - תואם גרסאות 1–2 של line-photo-store. */
 export const PRIMARY_LINE_PHOTO_ID = "primary";
 
-/** מפתח אחסון legacy (`reportId:lineId:photoId`) — לתאימות sync ו-parse. */
+/** מפתח אחסון legacy (`reportId:lineId:photoId`) - לתאימות sync ו-parse. */
 export function photoStorageKey(
   reportId: string,
   lineId: string,

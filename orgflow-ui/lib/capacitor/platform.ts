@@ -24,7 +24,7 @@ export function isCapacitorAndroid(): boolean {
   return Capacitor.getPlatform() === "android";
 }
 
-/** WebView של APK — `https://localhost`, `http://localhost`, או `capacitor://`. */
+/** WebView של APK - `https://localhost`, `http://localhost`, או `capacitor://`. */
 export function isCapacitorWebViewShell(): boolean {
   if (typeof window === "undefined") {
     return false;
@@ -42,7 +42,7 @@ export function isCapacitorWebViewShell(): boolean {
   return protocol === "https:" || protocol === "http:";
 }
 
-/** שמירה/שחזור נתיב ומצלמה — native או WebView shell (גם לפני טעינת bridge). */
+/** שמירה/שחזור נתיב ומצלמה - native או WebView shell (גם לפני טעינת bridge). */
 export function canUseCapacitorWebStorage(): boolean {
   return isCapacitorNativePlatform() || isCapacitorWebViewShell();
 }

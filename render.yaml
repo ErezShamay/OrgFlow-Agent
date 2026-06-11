@@ -1,9 +1,9 @@
-# Render Blueprint — OrgFlow API (חינמי / preview)
+# Render Blueprint - OrgFlow API (חינמי / preview)
 # https://render.com/docs/blueprint-spec
 #
 # פריסה: Dashboard → New → Blueprint → בחר repo זה.
 # אחרי ה-URL של Vercel: עדכן FRONTEND_URL + CORS_EXTRA_ORIGINS (אופציונלי).
-# OPENAI_API_KEY — Render יבקש בפריסה הראשונה (sync: false, לא נשמר ב-git).
+# OPENAI_API_KEY - Render יבקש בפריסה הראשונה (sync: false, לא נשמר ב-git).
 
 services:
   - type: web

@@ -200,7 +200,7 @@ async function mockSuccessfulCoreSync(
 
 /**
  * קריטריוני Gate שלב ה (§9 בתוכנית, FR-038).
- * השקה — משרד→שטח→סנכרון→ליבה, טאבלט משותף, נפח תמונות, תיעוד וניטור.
+ * השקה - משרד→שטח→סנכרון→ליבה, טאבלט משותף, נפח תמונות, תיעוד וניטור.
  */
 describe("phase E gate acceptance (FR-038)", () => {
   beforeEach(async () => {
@@ -219,7 +219,7 @@ describe("phase E gate acceptance (FR-038)", () => {
     vi.clearAllMocks();
   });
 
-  it("§9.1 — office prep → field offline → office sync → core (project_id, queue empty)", async () => {
+  it("§9.1 - office prep → field offline → office sync → core (project_id, queue empty)", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
@@ -271,7 +271,7 @@ describe("phase E gate acceptance (FR-038)", () => {
 
     const line = (await upsertLine(clientReportUuid, {
       sort_order: 1,
-      description: "ממצא שטח — Gate ה",
+      description: "ממצא שטח - Gate ה",
       has_photo: true,
     }))!.lines[0];
 
@@ -322,7 +322,7 @@ describe("phase E gate acceptance (FR-038)", () => {
     expect(listFieldReportSyncErrorLog()).toHaveLength(0);
   });
 
-  it("§9.2 — shared tablet: user A blocked on logout when queue pending; user B allowed", async () => {
+  it("§9.2 - shared tablet: user A blocked on logout when queue pending; user B allowed", async () => {
     const clientUuid = "c3333333-3333-4333-8333-333333333333";
 
     await saveLocalReport({
@@ -364,7 +364,7 @@ describe("phase E gate acceptance (FR-038)", () => {
     ).resolves.toBeUndefined();
   });
 
-  it(`§9.3 — volume: ${VOLUME_PHOTOS_TOTAL} photos (${VOLUME_LINE_COUNT}×${MAX_LINE_PHOTOS}) sync and indexed blob size`, async () => {
+  it(`§9.3 - volume: ${VOLUME_PHOTOS_TOTAL} photos (${VOLUME_LINE_COUNT}×${MAX_LINE_PHOTOS}) sync and indexed blob size`, async () => {
     const localReport = await createLocalVisitReport({
       organizationId: ORG_ID,
       userId: USER_A,
@@ -434,7 +434,7 @@ describe("phase E gate acceptance (FR-038)", () => {
     expect(dataSource.mode).toBe("hybrid");
   });
 
-  it("§9.4 — inspector guide and launch QA docs cover prep, field, sync, logout", () => {
+  it("§9.4 - inspector guide and launch QA docs cover prep, field, sync, logout", () => {
     const inspectorGuide = path.join(
       REPO_ROOT,
       "docs/field-reports-inspector-guide.md"
@@ -459,7 +459,7 @@ describe("phase E gate acceptance (FR-038)", () => {
     expect(qaText).toContain("field-reports-inspector-guide.md");
   });
 
-  it("§9.5 — sync error monitor wired: failure logs, success clears (FR-037)", async () => {
+  it("§9.5 - sync error monitor wired: failure logs, success clears (FR-037)", async () => {
     const clientUuid = "e5555555-5555-4555-8555-555555555555";
     const clientLineUuid = "f6666666-6666-4666-8666-666666666666";
 
@@ -530,7 +530,7 @@ describe("phase E gate acceptance (FR-038)", () => {
           return {
             ok: false,
             json: async () => ({
-              error: { message: "שגיאת ליבה — Gate ה" },
+              error: { message: "שגיאת ליבה - Gate ה" },
             }),
           } as Response;
         }

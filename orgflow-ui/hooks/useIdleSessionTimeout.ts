@@ -71,7 +71,7 @@ export function useIdleSessionTimeout(
         );
         router.replace("/");
       } catch {
-        // onIdle נכשל או נחסם (למשל דוחות ממתינים לסנכרון) — נשארים מחוברים.
+        // onIdle נכשל או נחסם (למשל דוחות ממתינים לסנכרון) - נשארים מחוברים.
       } finally {
         signingOutRef.current = false;
       }

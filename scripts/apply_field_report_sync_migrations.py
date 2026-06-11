@@ -66,7 +66,7 @@ def main() -> int:
 
     print("Verifying columns before migration...")
     if verify_columns():
-        print("All required columns already exist — nothing to apply.")
+        print("All required columns already exist - nothing to apply.")
         return 0
 
     for migration in MIGRATIONS:

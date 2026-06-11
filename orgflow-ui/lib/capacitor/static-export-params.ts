@@ -12,7 +12,7 @@ function isExplicitCapacitorStaticExportBuild(
 }
 
 /**
- * Placeholder `/_` routes — רק ל-`npm run build:mobile` (ELAYOAI_CAPACITOR_BUILD=static).
+ * Placeholder `/_` routes - רק ל-`npm run build:mobile` (ELAYOAI_CAPACITOR_BUILD=static).
  * ב-Vercel / `npm run build` רגיל מחזירים [] (דינמי ב-runtime).
  */
 export function dashboardDynamicSegmentParams(

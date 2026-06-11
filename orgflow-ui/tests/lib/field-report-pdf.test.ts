@@ -28,6 +28,20 @@ describe("buildFindingsTableColumns", () => {
       buildFindingsTableColumns([{ id: "1", sort_order: 0 }])
     ).toEqual(["מיקום", "מלאכה", "סטטוס / הערות", "תיאור"]);
   });
+
+  it("adds issue marker column when registry markers exist", () => {
+    const markers = new Map<string, string>([["line-1", "חדש"]]);
+
+    expect(
+      buildFindingsTableColumns([{ id: "1", sort_order: 0 }], markers)
+    ).toEqual([
+      "מיקום",
+      "מלאכה",
+      "סטטוס / הערות",
+      "תיאור",
+      "סטטוס ליקוי",
+    ]);
+  });
 });
 
 describe("buildFindingsTableBody", () => {
@@ -65,6 +79,31 @@ describe("buildFindingsTableBody", () => {
     expect(body[0][4]).toBe("");
     expect(body[1][4]).toBe('ת"י 466 חלק 1');
     expect(body[1][5]).toBe("High");
+  });
+
+  it("appends issue marker values when marker column is present", () => {
+    const markers = new Map<string, string>([
+      ["1", "פתוח מביקור קודם"],
+      ["2", "נסגר"],
+    ]);
+    const columns = [
+      "מיקום",
+      "מלאכה",
+      "סטטוס / הערות",
+      "תיאור",
+      "סטטוס ליקוי",
+    ];
+    const body = buildFindingsTableBody(
+      [
+        { id: "1", sort_order: 0, description: "א" },
+        { id: "2", sort_order: 1, description: "ב" },
+      ],
+      columns,
+      markers
+    );
+
+    expect(body[0][4]).toBe("פתוח מביקור קודם");
+    expect(body[1][4]).toBe("נסגר");
   });
 });
 

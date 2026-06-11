@@ -4,7 +4,7 @@ import { isCapacitorAndroid } from "@/lib/capacitor/platform";
  * Supabase ל-UI (anon בלבד).
  *
  * - בדפדפן Next.js חושף רק `NEXT_PUBLIC_*`.
- * - `SUPABASE_URL` / `SUPABASE_ANON_KEY` (בלי NEXT_PUBLIC) — fallback ל-SSR/build בלבד;
+ * - `SUPABASE_URL` / `SUPABASE_ANON_KEY` (בלי NEXT_PUBLIC) - fallback ל-SSR/build בלבד;
  *   לא מחליף את הצורך ב-NEXT_PUBLIC_* ב-Vercel ל-login בדפדפן.
  * - לעולם לא להשתמש ב-`SUPABASE_KEY` (service_role) כאן.
  */

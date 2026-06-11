@@ -2,7 +2,7 @@
 Pydantic models for field visit report document structure (FR-0.3).
 
 Mirrors TypeScript types in orgflow-ui/lib/field-reports/schema/types.ts.
-Used for documentation, validation helpers, and future normalization — not
+Used for documentation, validation helpers, and future normalization - not
 as a strict API envelope (header_fields remains a dict on requests).
 """
 
@@ -37,7 +37,7 @@ FixedTextBlockKind = Literal[
     "custom",
 ]
 
-ColumnPresetKey = Literal["rich", "simple", "progress", "structure"]
+ColumnPresetKey = Literal["rich", "simple", "finishing", "progress", "structure"]
 
 BlockColumnId = Literal[
     "location",
@@ -114,6 +114,8 @@ class ProjectMetadata(BaseModel):
     gantt_forecast: str | None = None
     site_address: str | None = None
     illustration_caption_he: str | None = None
+    illustration_source_he: str | None = None
+    illustration_url: str | None = None
     tenant_changes_notes: str | None = None
 
 
@@ -135,7 +137,7 @@ class SupplierRow(BaseModel):
 
 
 class FixedTextBlock(BaseModel):
-    """בלוק טקסט קבוע — disclaimer בטיחות, אי-התאמה, המלצות חורף."""
+    """בלוק טקסט קבוע - disclaimer בטיחות, אי-התאמה, המלצות חורף."""
 
     id: str
     kind: FixedTextBlockKind
@@ -164,7 +166,7 @@ class ProgressRow(BaseModel):
 
 
 class FindingRow(BaseModel):
-    """שורת ממצא — תואמת שורות lines קיימות."""
+    """שורת ממצא - תואמת שורות lines קיימות."""
 
     id: str
     location: str | None = None
@@ -178,6 +180,7 @@ class FindingRow(BaseModel):
     group_key: str | None = None
     group_label_he: str | None = None
     block_id: str | None = None
+    linked_issue_id: str | None = None
     sort_order: int | None = None
     has_photo: bool = False
     photo_ids: list[str] | None = None
@@ -232,7 +235,7 @@ class FreeTextBlock(ReportBlockBase):
 
 
 class ImageBlock(ReportBlockBase):
-    """בלוק תמונה — הדמיית פרויקט."""
+    """בלוק תמונה - הדמיית פרויקט."""
 
     kind: Literal["image"] = "image"
     caption_he: str | None = None
@@ -252,7 +255,7 @@ ReportBlock = Annotated[
 
 class VisitReportDocument(BaseModel):
     """
-    מסמך דוח ביקור — יעד הנורמליזציה.
+    מסמך דוח ביקור - יעד הנורמליזציה.
     משלב metadata, stakeholders, blocks ושדות legacy.
     """
 
@@ -302,7 +305,7 @@ def warn_unknown_header_field_keys(
 ) -> list[str]:
     """
     Emit warnings for header_fields keys not in KNOWN_HEADER_FIELD_KEYS.
-    Does not raise — backward compatible with arbitrary client payloads.
+    Does not raise - backward compatible with arbitrary client payloads.
     """
     if not header_fields:
         return []

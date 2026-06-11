@@ -34,7 +34,7 @@ export default function ReportChecklistBlockEditor({
   if (items.length === 0) {
     return (
       <p className="text-sm text-zinc-500">
-        אין פריטים בצ&apos;קליסט — טען תבנית גמר או הוסף סעיף צ&apos;קליסט מחדש.
+        אין פריטים בצ&apos;קליסט - טען תבנית גמר או הוסף סעיף צ&apos;קליסט מחדש.
       </p>
     );
   }

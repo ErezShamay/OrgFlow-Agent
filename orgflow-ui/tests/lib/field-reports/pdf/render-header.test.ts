@@ -41,8 +41,8 @@ describe("renderVisitReportHeader", () => {
     expect(texts).toContain("תאריך התחלת הפרויקט: 01.01.2024");
     expect(texts).toContain("תאריך ביקור באתר: 01.06.2026");
     expect(texts).toContain('בפרויקט ייבנו סה"כ 42 יחידות דיור');
-    expect(texts).toContain("שם החברה היזמית: יזם בע״מ");
-    expect(texts).toContain('עו"ד ב"כ הדיירים: עו״ד כהן');
+    expect(texts).toContain('שם החברה היזמית: יזם בע"מ');
+    expect(texts).toContain('עו"ד ב"כ הדיירים: עו"ד כהן');
     expect(texts).toContain("כתובת אתר: רחוב הרצל 1");
     expect(texts).toContain("עדכונים לפרויקט:");
     expect(texts).toContain("עדכון לפרויקט");

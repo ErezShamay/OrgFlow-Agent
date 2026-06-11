@@ -6,7 +6,7 @@ export type LineGroupKind = "none" | "apartment" | "floor" | "area";
 
 export type LineGroupSelection = {
   kind: LineGroupKind;
-  /** מספר דירה/קומה או שם אזור — ריק כש-kind הוא none. */
+  /** מספר דירה/קומה או שם אזור - ריק כש-kind הוא none. */
   value: string;
 };
 
@@ -24,7 +24,7 @@ export function defaultLineGroupSelection(): LineGroupSelection {
   return { kind: "none", value: "" };
 }
 
-/** מפתח יציב לשמירה — e.g. `apartment:3`, `floor:2`, `area:מרפסות`. */
+/** מפתח יציב לשמירה - e.g. `apartment:3`, `floor:2`, `area:מרפסות`. */
 export function buildGroupKey(selection: LineGroupSelection): string | null {
   if (selection.kind === "none") {
     return null;
@@ -38,7 +38,7 @@ export function buildGroupKey(selection: LineGroupSelection): string | null {
   return `${selection.kind}:${value}`;
 }
 
-/** תווית עברית ל-PDF ו-UI — e.g. `דירה 3`, `קומה 2`. */
+/** תווית עברית ל-PDF ו-UI - e.g. `דירה 3`, `קומה 2`. */
 export function buildGroupLabelHe(selection: LineGroupSelection): string | null {
   if (selection.kind === "none") {
     return null;
@@ -70,7 +70,7 @@ export function lineGroupFieldsFromSelection(
   };
 }
 
-/** מפענח group_key שמור — לעריכת שורה קיימת. */
+/** מפענח group_key שמור - לעריכת שורה קיימת. */
 export function parseGroupKey(
   groupKey: string | null | undefined
 ): LineGroupSelection {

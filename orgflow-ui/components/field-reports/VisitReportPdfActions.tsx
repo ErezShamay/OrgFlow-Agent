@@ -44,7 +44,7 @@ export default function VisitReportPdfActions({
           }}
         />
         <span className="text-sm text-zinc-600">
-          ניתן לעדכן PDF לפני סגירה — נשמרת גרסה אחרונה בלבד במכשיר.
+          לפני עדכון תוצג תצוגה מקדימה לאישור - נשמרת גרסה אחרונה בלבד במכשיר.
         </span>
       </div>
     );
@@ -89,7 +89,7 @@ export default function VisitReportPdfActions({
       <span className="text-sm text-zinc-600">
         {hasLocalPdf
           ? "ניתן להוריד שוב את ה-PDF גם ללא רשת."
-          : "הפקה ראשונה דורשת גופן מקומי; לאחר מכן ההורדה זמינה גם בלי רשת."}
+          : "לפני הפקה ראשונה תוצג תצוגה מקדימה לאישור; לאחר שמירה ההורדה זמינה גם בלי רשת."}
       </span>
     </div>
   );

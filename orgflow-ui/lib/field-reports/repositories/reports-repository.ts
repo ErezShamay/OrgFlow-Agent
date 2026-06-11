@@ -64,6 +64,7 @@ function normalizeLine(
     group_key: line.group_key ?? null,
     group_label_he: line.group_label_he ?? null,
     block_id: line.block_id ?? null,
+    linked_issue_id: line.linked_issue_id ?? null,
     has_photo: line.has_photo,
     photo_ids: line.photo_ids,
   };
@@ -178,7 +179,7 @@ export async function listLocalReportsForOrganization(
 }
 
 /**
- * מוסיף או מעדכן שורה בדוח — לפי `client_line_uuid`.
+ * מוסיף או מעדכן שורה בדוח - לפי `client_line_uuid`.
  */
 export async function upsertLine(
   clientReportUuid: string,

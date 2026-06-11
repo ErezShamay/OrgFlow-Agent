@@ -259,7 +259,7 @@ export default function NewFieldVisitReportPage() {
         </Link>
         <h1 className="of-page-title text-2xl">דוח ביקור חדש</h1>
         <p className="of-page-desc text-sm">
-          דוח שבועי אחד לפרויקט — אם קיים דוח בעבודה, יש להמשיך אותו.
+          דוח שבועי אחד לפרויקט - אם קיים דוח בעבודה, יש להמשיך אותו.
         </p>
         <p className="text-xs text-zinc-500">
           {fieldReportDataSourceModeLabelHe(dataSourceMode)}

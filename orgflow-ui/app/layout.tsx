@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Suspense } from "react";
 
-import { ELAYOAI_APP_NAME } from "@/lib/elayoai/keys";
+import { ELAYOAI_APP_DESCRIPTION, ELAYOAI_APP_NAME } from "@/lib/elayoai/keys";
 import { CAPACITOR_ROUTE_RESTORE_SCRIPT } from "@/lib/capacitor/route-restore-script";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme-init-script";
 import { Toaster } from "sonner";
@@ -24,8 +24,7 @@ export const viewport = {
 
 export const metadata: Metadata = {
   title: ELAYOAI_APP_NAME,
-  description:
-    "AI Operations Platform for Construction Management",
+  description: ELAYOAI_APP_DESCRIPTION,
   manifest: "/manifest.webmanifest",
   applicationName: ELAYOAI_APP_NAME,
   icons: {

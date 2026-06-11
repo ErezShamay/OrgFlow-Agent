@@ -1,5 +1,5 @@
 /**
- * אחסון blocks[] ב-header_fields — CRUD, סנכרון legacy (FR-2.1).
+ * אחסון blocks[] ב-header_fields - CRUD, סנכרון legacy (FR-2.1).
  */
 
 import {
@@ -22,12 +22,12 @@ export const LEGACY_PROGRESS_BLOCK_ID = "legacy-progress-table";
 export const LEGACY_FINDINGS_BLOCK_ID = "legacy-findings-table";
 
 export type NormalizeBlocksOptions = {
-  /** שורות דוח — ליצירת findings block כשאין blocks (derive read-only). */
+  /** שורות דוח - ליצירת findings block כשאין blocks (derive read-only). */
   lines?: unknown[] | null;
 };
 
 /**
- * טוען blocks מ-header_fields — מ-blocks מפורשים או ממיר מ-legacy.
+ * טוען blocks מ-header_fields - מ-blocks מפורשים או ממיר מ-legacy.
  */
 export function normalizeBlocksFromHeader(
   raw: Record<string, unknown>,
@@ -57,7 +57,7 @@ export function findFindingsTableBlock(
 
 /**
  * ממיר שורות בלוק התקדמות ל-`construction_progress`.
- * לא מסנן שורות ריקות — כדי ש«הוסף שורה» יישאר ב-UI עד מילוי (סינון רק ב-API/PDF).
+ * לא מסנן שורות ריקות - כדי ש«הוסף שורה» יישאר ב-UI עד מילוי (סינון רק ב-API/PDF).
  */
 export function progressRowsToConstructionProgress(
   rows: ProgressRow[]
@@ -126,6 +126,14 @@ export function dualWriteHeaderBlocksAndProgress(
   construction_progress: ConstructionProgressRow[],
   visitType: string
 ): { blocks: ReportBlock[]; construction_progress: ConstructionProgressRow[] } {
+  const usesFinishingChecklist =
+    visitType === "FINISHING_APARTMENTS"
+    && blocks.some((block) => block.kind === "checklist");
+
+  if (usesFinishingChecklist) {
+    return { blocks, construction_progress };
+  }
+
   const progressRows = constructionProgressToProgressRows(construction_progress);
   const syncedBlocks = replaceProgressTableRows(blocks, progressRows, visitType);
   const syncedProgress = progressRowsToConstructionProgress(
@@ -189,7 +197,7 @@ export function reorderBlocks(
 }
 
 /**
- * ממיר שורות דוח ל-FindingRow[] — derive read-only לבלוק ממצאים (לא כותב ל-lines).
+ * ממיר שורות דוח ל-FindingRow[] - derive read-only לבלוק ממצאים (לא כותב ל-lines).
  */
 export function deriveFindingRowsFromReportLines(
   lines: unknown[] | null | undefined

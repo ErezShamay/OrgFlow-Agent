@@ -71,7 +71,7 @@ export function migrateElayoAiStorage(): void {
   migrateOrgflowPrefixedLocalStorage();
 }
 
-/** מיגרציית IndexedDB + localStorage — לפני שימוש בדוחות שטח. */
+/** מיגרציית IndexedDB + localStorage - לפני שימוש בדוחות שטח. */
 export async function migrateElayoAiPersistence(): Promise<void> {
   migrateElayoAiStorage();
 

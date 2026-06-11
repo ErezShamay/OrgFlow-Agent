@@ -97,7 +97,7 @@ async function runOfflinePrep() {
   });
 }
 
-/** דוח שטח סגור — prep → יצירה → שורה → סגירה → תור. */
+/** דוח שטח סגור - prep → יצירה → שורה → סגירה → תור. */
 async function createFieldReportReadyForSync() {
   await runOfflinePrep();
 
@@ -213,7 +213,7 @@ describe("phase C gate acceptance (FR-028)", () => {
     vi.clearAllMocks();
   });
 
-  it("§7.1 — field report created on device syncs with correct project_id to core", async () => {
+  it("§7.1 - field report created on device syncs with correct project_id to core", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     const { clientReportUuid } = await createFieldReportReadyForSync();
 
@@ -256,7 +256,7 @@ describe("phase C gate acceptance (FR-028)", () => {
     expect(await loadPendingSendRequests(ORG_ID)).toHaveLength(0);
   });
 
-  it("§7.2 — retry after disconnect: same idempotency, single request-send, no duplicate queue", async () => {
+  it("§7.2 - retry after disconnect: same idempotency, single request-send, no duplicate queue", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     const { clientReportUuid } = await createFieldReportReadyForSync();
 
@@ -302,7 +302,7 @@ describe("phase C gate acceptance (FR-028)", () => {
           return {
             ok: false,
             json: async () => ({
-              error: { message: "ניתוק רשת — שליחה נכשלה" },
+              error: { message: "ניתוק רשת - שליחה נכשלה" },
             }),
           } as Response;
         }
@@ -339,7 +339,7 @@ describe("phase C gate acceptance (FR-028)", () => {
     expect(requestSendCount).toBe(2);
   });
 
-  it("§7.3 — sync progress phases and per-report errors for SyncPanel", async () => {
+  it("§7.3 - sync progress phases and per-report errors for SyncPanel", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     const { clientReportUuid } = await createFieldReportReadyForSync();
 
@@ -374,7 +374,7 @@ describe("phase C gate acceptance (FR-028)", () => {
         return {
           ok: false,
           json: async () => ({
-            error: { message: "שגיאת ליבה — Gate ג" },
+            error: { message: "שגיאת ליבה - Gate ג" },
           }),
         } as Response;
       }

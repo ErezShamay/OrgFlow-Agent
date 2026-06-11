@@ -34,7 +34,7 @@ const FOREGROUND_PX = {
   "mipmap-xxxhdpi": 432,
 };
 
-/** מסכי splash — [width, height] לכל תיקייה. */
+/** מסכי splash - [width, height] לכל תיקייה. */
 const SPLASH_SIZES = {
   "drawable/splash.png": [480, 320],
   "drawable-port-mdpi/splash.png": [320, 480],

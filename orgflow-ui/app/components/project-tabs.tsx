@@ -4,36 +4,25 @@ import Link from "next/link";
 
 import { usePathname } from "next/navigation";
 
+import { getQCProjectNavLinks } from "@/lib/qc-navigation";
+
 export default function ProjectTabs({
   projectId,
+  role,
 }: {
   projectId: string;
+  role?: string | null;
 }) {
   const pathname = usePathname();
-
-  const tabs = [
-    {
-      label: "סקירה",
-      href: `/projects/${projectId}`,
-    },
-    {
-      label: "ביקורות AI",
-      href: `/projects/${projectId}/reviews`,
-    },
-    {
-      label: "נקודות סיכון",
-      href: `/projects/${projectId}/escalations`,
-    },
-    {
-      label: "פעולות",
-      href: `/projects/${projectId}/actions`,
-    },
-  ];
+  const tabs = getQCProjectNavLinks(projectId, role);
 
   return (
     <div className="mb-10 flex flex-wrap gap-3">
       {tabs.map((tab) => {
-        const isActive = pathname === tab.href;
+        const isActive =
+          tab.href === `/projects/${projectId}`
+            ? pathname === tab.href
+            : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
 
         return (
           <Link

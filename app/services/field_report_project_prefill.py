@@ -1,4 +1,4 @@
-"""Prefill דוח שטח מישות פרויקט — metadata + stakeholders (FR-4.3)."""
+"""Prefill דוח שטח מישות פרויקט - metadata + stakeholders (FR-4.3)."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def _pick_name(project: dict, *keys: str) -> str | None:
 
 
 def project_metadata_from_project(project: dict) -> dict:
-    """בונה project_metadata לכותרת דוח — רק שדות זמינים בפרויקט."""
+    """בונה project_metadata לכותרת דוח - רק שדות זמינים בפרויקט."""
     metadata: dict = {}
 
     scheme = project.get("scheme")
@@ -62,6 +62,8 @@ def project_metadata_from_project(project: dict) -> dict:
         "project_end_date",
         "project_grace_end_date",
         "structure_documentation_date",
+        "illustration_url",
+        "illustration_source_he",
     ):
         value = project.get(key)
         if value is None or value == "":

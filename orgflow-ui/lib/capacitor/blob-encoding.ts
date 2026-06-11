@@ -1,4 +1,4 @@
-/** המרת Blob ל-base64 גולמי (ללא prefix) — Filesystem native דורש מחרוזת. */
+/** המרת Blob ל-base64 גולמי (ללא prefix) - Filesystem native דורש מחרוזת. */
 export async function blobToBase64(blob: Blob): Promise<string> {
   const buffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(buffer);

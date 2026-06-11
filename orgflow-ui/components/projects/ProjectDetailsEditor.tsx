@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import ProjectIllustrationUpload from "@/components/projects/ProjectIllustrationUpload";
 import Button from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api/client";
 import { showToast } from "@/lib/ui/toast";
@@ -20,6 +21,8 @@ export type EditableProjectDetails = {
   site_manager_name?: string | null;
   city?: string | null;
   housing_units_count?: number | null;
+  illustration_url?: string | null;
+  illustration_source_he?: string | null;
 };
 
 type ProjectDetailsEditorProps = {
@@ -169,7 +172,7 @@ export default function ProjectDetailsEditor({
             <p className="mt-2 text-sm leading-relaxed text-zinc-500">
               {canEdit
                 ? "יזם, קבלן, עורכי דין, מפקח ושאר אנשי הקשר בפרויקט"
-                : "צפייה בלבד — לעריכה נדרשת הרשאת מנהל, מפקח או מנהל תפעול"}
+                : "צפייה בלבד - לעריכה נדרשת הרשאת מנהל, מפקח או מנהל תפעול"}
             </p>
           </div>
 
@@ -186,6 +189,14 @@ export default function ProjectDetailsEditor({
         </div>
 
         <div className="space-y-8">
+          <ProjectIllustrationUpload
+            projectId={project.id}
+            illustrationUrl={project.illustration_url}
+            illustrationSourceHe={project.illustration_source_he}
+            canEdit={canEdit}
+            onUploaded={onSaved}
+          />
+
           <DetailsSection title="פרטים כלליים">
             <InfoCard title="שם הפרויקט" value={displayValue(project.project_name)} />
             <InfoCard title="עיר" value={displayValue(project.city)} />
@@ -220,7 +231,7 @@ export default function ProjectDetailsEditor({
             <InfoCard title="מפקח מלווה" value={displayValue(project.supervisor_name)} />
             <InfoCard
               title="אימייל מפקח מלווה"
-              value={project.supervisor_email?.trim() || "—"}
+              value={project.supervisor_email?.trim() || "-"}
             />
             <InfoCard title="אדריכל" value={displayValue(project.architect_name)} />
             <InfoCard

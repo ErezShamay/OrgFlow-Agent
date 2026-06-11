@@ -74,23 +74,23 @@ export async function resolveLinePhotos(
   return photos;
 }
 
-export async function resolveLogoDataUrl(
-  logoUrl: string | null | undefined
+export async function resolveRemoteImageDataUrl(
+  imageUrl: string | null | undefined
 ): Promise<string | null> {
-  if (!logoUrl) {
+  if (!imageUrl) {
     return null;
   }
 
-  if (logoUrl.startsWith("data:")) {
-    return logoUrl;
+  if (imageUrl.startsWith("data:")) {
+    return imageUrl;
   }
 
-  if (logoUrl.startsWith("/")) {
-    return fetchRemoteImageDataUrl(logoUrl);
+  if (imageUrl.startsWith("/")) {
+    return fetchRemoteImageDataUrl(imageUrl);
   }
 
   try {
-    const response = await fetch(logoUrl);
+    const response = await fetch(imageUrl);
     if (!response.ok) {
       return null;
     }
@@ -98,4 +98,30 @@ export async function resolveLogoDataUrl(
   } catch {
     return null;
   }
+}
+
+export async function resolveLogoDataUrl(
+  logoUrl: string | null | undefined
+): Promise<string | null> {
+  return resolveRemoteImageDataUrl(logoUrl);
+}
+
+export async function resolveIllustrationDataUrl(
+  headerFields: Record<string, unknown>
+): Promise<string | null> {
+  const metadata = headerFields.project_metadata;
+  const nestedUrl =
+    metadata
+    && typeof metadata === "object"
+    && !Array.isArray(metadata)
+    && typeof (metadata as Record<string, unknown>).illustration_url === "string"
+      ? String((metadata as Record<string, unknown>).illustration_url).trim()
+      : "";
+
+  const flatUrl =
+    typeof headerFields.illustration_url === "string"
+      ? headerFields.illustration_url.trim()
+      : "";
+
+  return resolveRemoteImageDataUrl(nestedUrl || flatUrl || null);
 }

@@ -102,7 +102,7 @@ async function migrateLegacyPdfToBlobs(
 }
 
 /**
- * מפתח PDF — `client_report_uuid` (או מזהה נתיב כשאין עדיין דוח טעון).
+ * מפתח PDF - `client_report_uuid` (או מזהה נתיב כשאין עדיין דוח טעון).
  */
 export function visitReportPdfStorageKey(
   report: { id: string; client_report_uuid?: string }

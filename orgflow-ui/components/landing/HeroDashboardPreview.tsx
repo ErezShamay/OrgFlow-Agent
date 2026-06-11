@@ -67,7 +67,7 @@ export default function HeroDashboardPreview() {
               פרויקט פעיל
             </p>
             <p className="mt-1 text-lg font-bold">
-              מגדלי הים — שלב א&apos;
+              האורנים 7 הוד השרון
             </p>
           </div>
 
@@ -97,9 +97,9 @@ export default function HeroDashboardPreview() {
           "
         >
           {[
-            { label: "ביקורות AI", value: "148", icon: BarChart3 },
-            { label: "חריגות", value: "12", icon: AlertTriangle },
-            { label: "סגירות", value: "94%", icon: CheckCircle2 },
+            { label: "דוחות שטח", value: "24", icon: BarChart3 },
+            { label: "ליקויים פתוחים", value: "12", icon: AlertTriangle },
+            { label: "% סגירה", value: "87%", icon: CheckCircle2 },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -165,7 +165,7 @@ export default function HeroDashboardPreview() {
             "
           >
             <p className="text-sm font-semibold">
-              מגמת סגירת חריגות
+              מגמת סגירת ליקויים
             </p>
             <TrendingUp
               className="
@@ -220,10 +220,10 @@ export default function HeroDashboardPreview() {
           "
         >
           <p className="text-xs text-zinc-500">
-            חריגה חדשה
+            ליקוי חדש
           </p>
           <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
-            עיכוב ביצוע
+            אינסטלציה
           </p>
         </div>
 
@@ -245,10 +245,10 @@ export default function HeroDashboardPreview() {
           "
         >
           <p className="text-xs text-zinc-500">
-            AI Insight
+            נסגר בביקור
           </p>
-          <p className="text-sm font-bold text-brand dark:text-brand-light">
-            3 פעולות מומלצות
+          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+            תמונת תיקון
           </p>
         </div>
       </div>

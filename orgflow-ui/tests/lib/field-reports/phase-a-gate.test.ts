@@ -41,7 +41,7 @@ function createLocalStorageMock() {
 
 /**
  * קריטריוני Gate שלב א (§5 בתוכנית, FR-009).
- * ממופה לבדיקות אוטומטיות — ללא קריאות רשת.
+ * ממופה לבדיקות אוטומטיות - ללא קריאות רשת.
  */
 describe("phase A gate acceptance (FR-009)", () => {
   beforeEach(async () => {
@@ -57,7 +57,7 @@ describe("phase A gate acceptance (FR-009)", () => {
     vi.unstubAllGlobals();
   });
 
-  it("§5.1 — offline prep bundle persists in IndexedDB catalog for 7 days", async () => {
+  it("§5.1 - offline prep bundle persists in IndexedDB catalog for 7 days", async () => {
     const saved = await saveFromOfflinePrep(ORG_ID, {
       offline_max_days: 7,
       catalog_version: "gate-v1",
@@ -84,7 +84,7 @@ describe("phase A gate acceptance (FR-009)", () => {
     expect(reloaded?.expires_at).toBe(saved.expires_at);
   });
 
-  it("§5.2 — local report is created with client UUID without network", async () => {
+  it("§5.2 - local report is created with client UUID without network", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
@@ -107,7 +107,7 @@ describe("phase A gate acceptance (FR-009)", () => {
     expect(report.local_status).toBe("LOCAL_DRAFT");
   });
 
-  it("§5.3 — report survives closing and reopening the database connection", async () => {
+  it("§5.3 - report survives closing and reopening the database connection", async () => {
     const reportUuid = "d4444444-4444-4444-8444-444444444444";
 
     await saveLocalReport({

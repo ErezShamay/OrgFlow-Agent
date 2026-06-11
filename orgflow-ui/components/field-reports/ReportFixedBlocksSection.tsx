@@ -77,7 +77,7 @@ export default function ReportFixedBlocksSection({
         <div>
           <h2 className="text-lg font-semibold">טקסטים קבועים לדוח</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            disclaimers, המלצות חורף (אוקטובר–מרץ) והערות — יופיעו ב-PDF לפני
+            disclaimers, המלצות חורף (אוקטובר–מרץ) והערות - יופיעו ב-PDF לפני
             החתימה.
           </p>
         </div>

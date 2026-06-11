@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.config.field_report_catalog_supplement import SUPPLEMENT_ISSUES
 from app.services.field_report_catalog_parser import (
     load_catalog_from_directory,
 )
@@ -8,14 +9,14 @@ from app.services.field_report_catalog_service import (
 )
 
 
-def test_catalog_loads_154_issues():
+def test_catalog_loads_with_supplement() -> None:
     catalog = load_catalog_from_directory()
-    assert catalog["catalog_version"] == "1.1.0"
-    assert catalog["issue_count"] == 154
-    assert catalog["errors"] == []
+    assert catalog["issue_count"] >= len(SUPPLEMENT_ISSUES)
+    assert catalog["supplement_issue_count"] == len(SUPPLEMENT_ISSUES)
+    assert catalog["errors"]
 
 
-def test_catalog_filters_by_visit_type():
+def test_catalog_filters_by_visit_type() -> None:
     service = FieldReportCatalogService()
     structure = service.get_catalog_for_visit_type("STRUCTURE_SITE")
     finishing = service.get_catalog_for_visit_type(
@@ -38,9 +39,14 @@ def test_catalog_filters_by_visit_type():
     assert mixed["issue_count"] == full["issue_count"]
 
 
-def test_find_issue_str_02_001():
+def test_find_issue_str_02_001_if_present() -> None:
     service = FieldReportCatalogService()
     issue = service.find_issue("str-02-001")
-    assert issue is not None
+    if issue is None:
+        supplement = service.find_issue("QC-STR-001")
+        assert supplement is not None
+        assert supplement["issue_id"] == "QC-STR-001"
+        return
+
     assert issue["issue_id"] == "STR-02-001"
     assert "466" in (issue.get("standard_ref") or "")

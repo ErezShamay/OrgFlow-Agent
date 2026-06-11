@@ -66,7 +66,7 @@ export default function CapacitorRoutePersistence() {
   return null;
 }
 
-/** לפני מצלמה / גלריה — חובה לשמור נתיב לשחזור אחרי יציאה לאפליקציית המצלמה. */
+/** לפני מצלמה / גלריה - חובה לשמור נתיב לשחזור אחרי יציאה לאפליקציית המצלמה. */
 export function persistCapacitorRouteNow(): void {
   if (typeof window === "undefined") {
     return;

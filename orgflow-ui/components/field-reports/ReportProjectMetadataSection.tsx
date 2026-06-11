@@ -43,7 +43,7 @@ export default function ReportProjectMetadataSection({
       <div>
         <h2 className="text-lg font-semibold">פרטי פרויקט</h2>
         <p className="mt-1 text-sm text-zinc-500">
-          נטען מפרטי הפרויקט — ניתן לערוך לפני שליחת הדוח.
+          נטען מפרטי הפרויקט - ניתן לערוך לפני שליחת הדוח.
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export default function ReportProjectMetadataSection({
             disabled={disabled}
             onChange={(event) => onSchemeChange(event.target.value)}
           >
-            <option value="">— בחר סוג פרויקט —</option>
+            <option value="">- בחר סוג פרויקט -</option>
             {PROJECT_SCHEME_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}

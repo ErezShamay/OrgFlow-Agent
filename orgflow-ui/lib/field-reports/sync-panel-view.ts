@@ -48,7 +48,7 @@ export function syncPanelUploadDisabledReason(
   }
 
   if (!input.canSync) {
-    return "אין חיבור לשרת — נסה שוב כשהרשת זמינה";
+    return "אין חיבור לשרת - נסה שוב כשהרשת זמינה";
   }
 
   return null;
@@ -70,7 +70,7 @@ export function buildSyncProgressLabel(
     return phaseLabel;
   }
 
-  return `דוח ${activeIndex} מתוך ${total} — ${phaseLabel}`;
+  return `דוח ${activeIndex} מתוך ${total} - ${phaseLabel}`;
 }
 
 export function buildSyncRunSummary(

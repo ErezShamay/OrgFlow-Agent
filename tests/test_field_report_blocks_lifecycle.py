@@ -66,14 +66,31 @@ def _client_with_photos(monkeypatch, tmp_path: Path):
 def _blocks_payload(visit_type: str) -> list[dict]:
     blocks = default_report_blocks_for_visit_type(visit_type)
     progress = next(
-        block for block in blocks if block["kind"] == "progress_table"
+        (block for block in blocks if block["kind"] == "progress_table"),
+        None,
     )
-    progress["rows"] = [
+    if progress is not None:
+        progress["rows"] = [
+            {
+                "id": "progress-row-1",
+                "description": "ביסוס",
+                "status": "בוצע",
+                "completion_date": "01.06.26",
+                "sort_order": 0,
+            }
+        ]
+        return blocks
+
+    lobby_findings = next(
+        block for block in blocks if block["kind"] == "findings_table"
+    )
+    lobby_findings["rows"] = [
         {
-            "id": "progress-row-1",
-            "description": "ביסוס",
+            "id": "lobby-row-1",
+            "location": "לובי",
+            "trade": "חיפוי קירות",
             "status": "בוצע",
-            "completion_date": "01.06.26",
+            "description": "ביצוע חיפוי בלובי הקומתי",
             "sort_order": 0,
         }
     ]
@@ -147,7 +164,7 @@ def test_new_format_blocks_grouping_photo_close_lifecycle(
     patched_blocks = patch_response.json()["header_fields"]["blocks"]
     assert len(patched_blocks) >= 2
     block_kinds = {block["kind"] for block in patched_blocks}
-    assert block_kinds >= {"progress_table", "findings_table", "checklist"}
+    assert block_kinds >= {"findings_table", "checklist"}
 
     line = client.post(
         f"/field-reports/visits/{report_id}/lines",
@@ -190,18 +207,14 @@ def test_new_format_blocks_grouping_photo_close_lifecycle(
     document = _document_from_closed_report(detail)
 
     assert len(document.blocks) >= 2
-    progress_blocks = [
-        block
-        for block in document.blocks
-        if isinstance(block, ProgressTableBlock)
-    ]
     findings_blocks = [
         block
         for block in document.blocks
         if isinstance(block, FindingsTableBlock)
     ]
-    assert progress_blocks[0].rows[0].description == "ביסוס"
     assert findings_blocks
+    assert findings_blocks[0].column_preset == "finishing"
+    assert findings_blocks[0].rows[0].location == "לובי"
 
     assert len(document.lines) == 1
     assert document.lines[0].group_key == "apartment:3"
@@ -209,10 +222,11 @@ def test_new_format_blocks_grouping_photo_close_lifecycle(
     assert document.lines[0].has_photo is True
     assert document.lines[0].photo_ids
 
-    assert document.header_fields_raw.get("construction_progress")
+    assert document.header_fields_raw.get("blocks")
+    assert document.header_fields_raw.get("construction_progress") == []
 
 
-def test_legacy_format_lifecycle_without_blocks(monkeypatch):
+def test_structure_site_create_seeds_default_blocks(monkeypatch):
     client = _setup_client(monkeypatch)
     token = _token()
 
@@ -227,7 +241,8 @@ def test_legacy_format_lifecycle_without_blocks(monkeypatch):
     ).json()
     report_id = created["id"]
     header = created["header_fields"]
-    assert header.get("blocks") in (None, [])
+    assert header.get("blocks")
+    assert len(header["blocks"]) >= 2
     assert header["construction_progress"]
 
     client.post(
@@ -249,7 +264,7 @@ def test_legacy_format_lifecycle_without_blocks(monkeypatch):
         f"/field-reports/visits/{report_id}",
         headers=_headers(token),
     ).json()
-    assert not detail["header_fields"].get("blocks")
+    assert detail["header_fields"].get("blocks")
     assert detail["header_fields"]["construction_progress"]
     assert detail["lines"][0]["group_key"] is None
     assert detail["lines"][0]["description"] == "ממצא שלד"

@@ -1,5 +1,5 @@
 /**
- * FR-5.2 — PDF bytes non-empty for new (blocks) and legacy report shapes.
+ * FR-5.2 - PDF bytes non-empty for new (blocks) and legacy report shapes.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";

@@ -10,7 +10,7 @@ export const REPORT_BLOCK_KIND_LABELS: Record<ReportBlockKind, string> = {
   image: "תמונה / הדמיה",
 };
 
-/** אפשרויות הוספת סעיף — ללא כפילות מיותרת של אותו kind (אופציונלי). */
+/** אפשרויות הוספת סעיף - ללא כפילות מיותרת של אותו kind (אופציונלי). */
 export const ADDABLE_BLOCK_KINDS: readonly ReportBlockKind[] = [
   "progress_table",
   "findings_table",
@@ -22,6 +22,7 @@ export const ADDABLE_BLOCK_KINDS: readonly ReportBlockKind[] = [
 const COLUMN_PRESET_LABELS: Record<ColumnPresetKey, string> = {
   rich: "עשירה",
   simple: "פשוטה",
+  finishing: "גמר דירות",
   progress: "התקדמות",
   structure: "שלד",
 };

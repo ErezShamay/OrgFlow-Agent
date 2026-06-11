@@ -151,7 +151,7 @@ export default function ReportProgressBlockEditor({
                   if (!field || field === "id" || field === "sort_order") {
                     return (
                       <td key={column.id} className="px-2 py-2">
-                        —
+                        -
                       </td>
                     );
                   }

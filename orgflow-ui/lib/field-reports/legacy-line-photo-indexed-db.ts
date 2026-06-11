@@ -1,6 +1,6 @@
 import { LEGACY_ORGFLOW_FIELD_REPORT_LINE_PHOTOS_DB } from "@/lib/elayoai/keys";
 
-/** מסד IndexedDB ישן — לפני איחוד ל-`elayoai-field-reports` (FR-007). */
+/** מסד IndexedDB ישן - לפני איחוד ל-`elayoai-field-reports` (FR-007). */
 export const LEGACY_LINE_PHOTO_DB_NAME =
   LEGACY_ORGFLOW_FIELD_REPORT_LINE_PHOTOS_DB;
 export const LEGACY_LINE_PHOTO_DB_VERSION = 2;
@@ -72,7 +72,7 @@ export async function readAllLegacyLinePhotos(): Promise<LegacyStoredLinePhoto[]
   return records;
 }
 
-/** כותב רשומה ל-store הישן — לבדיקות מיגרציה (FR-007). */
+/** כותב רשומה ל-store הישן - לבדיקות מיגרציה (FR-007). */
 export async function writeLegacyLinePhotoForTests(
   record: LegacyStoredLinePhoto
 ): Promise<void> {

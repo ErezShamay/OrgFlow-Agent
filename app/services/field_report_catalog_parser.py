@@ -3,6 +3,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from app.config.field_report_catalog_supplement import (
+    SUPPLEMENT_CATALOG_VERSION,
+    SUPPLEMENT_CATEGORIES_UNIQUE,
+    SUPPLEMENT_FAMILIES,
+    SUPPLEMENT_ISSUES,
+)
+
 VERSION_RE = re.compile(
     r"^#\s*Version:\s*(\S+)",
     re.MULTILINE,
@@ -268,7 +275,7 @@ def load_catalog_from_directory(
     else:
         catalog_version = None
 
-    return {
+    catalog = {
         "catalog_version": catalog_version,
         "families": families,
         "categories": categories,
@@ -276,6 +283,79 @@ def load_catalog_from_directory(
         "issue_count": len(issues),
         "errors": errors,
     }
+    return merge_catalog_supplement(catalog)
+
+
+def merge_catalog_supplement(catalog: dict) -> dict:
+    """Roadmap 6.4 - append embedded supplement issues/categories."""
+    merged = dict(catalog)
+    issues = list(catalog.get("issues") or [])
+    categories = list(catalog.get("categories") or [])
+    families = list(catalog.get("families") or [])
+    global_issue_ids = {
+        str(issue.get("issue_id") or "").upper()
+        for issue in issues
+        if issue.get("issue_id")
+    }
+
+    supplement_added = 0
+    for issue in SUPPLEMENT_ISSUES:
+        issue_id = str(issue["issue_id"]).upper()
+        if issue_id in global_issue_ids:
+            continue
+        issues.append(dict(issue))
+        global_issue_ids.add(issue_id)
+        supplement_added += 1
+
+    existing_categories = {
+        (str(item.get("top_family")), str(item.get("category_id")))
+        for item in categories
+    }
+    for category in SUPPLEMENT_CATEGORIES_UNIQUE:
+        key = (category["top_family"], category["category_id"])
+        if key in existing_categories:
+            continue
+        categories.append(dict(category))
+        existing_categories.add(key)
+
+    family_counts = {
+        str(item.get("top_family")): int(item.get("issue_count") or 0)
+        for item in families
+    }
+    for family in SUPPLEMENT_FAMILIES:
+        top_family = family["top_family"]
+        family_counts[top_family] = family_counts.get(top_family, 0) + int(
+            family["issue_count"]
+        )
+
+    if not families:
+        families = [
+            {
+                "top_family": top_family,
+                "source_file": "field_report_catalog_supplement.py",
+                "issue_count": count,
+            }
+            for top_family, count in sorted(family_counts.items())
+        ]
+    else:
+        for family in families:
+            top_family = str(family.get("top_family") or "")
+            if top_family in family_counts:
+                family["issue_count"] = family_counts[top_family]
+
+    base_version = catalog.get("catalog_version")
+    if supplement_added > 0:
+        if base_version:
+            merged["catalog_version"] = f"{base_version}+{SUPPLEMENT_CATALOG_VERSION}"
+        else:
+            merged["catalog_version"] = SUPPLEMENT_CATALOG_VERSION
+
+    merged["issues"] = issues
+    merged["categories"] = categories
+    merged["families"] = families
+    merged["issue_count"] = len(issues)
+    merged["supplement_issue_count"] = supplement_added
+    return merged
 
 
 def _first_match(pattern: re.Pattern[str], text: str) -> str | None:

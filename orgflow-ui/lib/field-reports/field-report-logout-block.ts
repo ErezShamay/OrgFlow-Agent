@@ -36,7 +36,7 @@ function isPendingLocalReport(report: LocalVisitReportRecord): boolean {
     return true;
   }
 
-  // טיוטה בעבודה — לא חוסמת יציאה; רק דוח סגור מקומית ממתין להעלאה.
+  // טיוטה בעבודה - לא חוסמת יציאה; רק דוח סגור מקומית ממתין להעלאה.
   return report.local_status === "LOCAL_CLOSED";
 }
 
@@ -86,7 +86,7 @@ function buildLogoutBlockMessage(pendingReportCount: number): string {
       ? "דוח אחד ממתין להעלאה"
       : `${pendingReportCount} דוחות ממתינים להעלאה`;
 
-  return `לא ניתן להתנתק — ${countLabel}. סנכרן או שלח לליבה לפני יציאה.`;
+  return `לא ניתן להתנתק - ${countLabel}. סנכרן או שלח לליבה לפני יציאה.`;
 }
 
 export async function summarizeFieldReportLogoutBlock(

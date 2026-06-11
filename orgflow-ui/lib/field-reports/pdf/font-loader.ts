@@ -29,7 +29,7 @@ async function cacheFont(base64: string): Promise<void> {
   try {
     localStorage.setItem(FONT_CACHE_KEY, base64);
   } catch {
-    // Ignore quota errors — PDF can still work this session.
+    // Ignore quota errors - PDF can still work this session.
   }
 }
 

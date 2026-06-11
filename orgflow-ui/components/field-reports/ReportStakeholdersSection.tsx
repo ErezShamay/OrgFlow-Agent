@@ -191,7 +191,7 @@ export default function ReportStakeholdersSection({
         <div>
           <h2 className="text-lg font-semibold">בעלי עניין</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            נטען אוטומטית מפרטי הפרויקט — ניתן לערוך לפני שליחת הדוח.
+            נטען אוטומטית מפרטי הפרויקט - ניתן לערוך לפני שליחת הדוח.
           </p>
           {showEmptyLegacyHint ? (
             <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
@@ -288,7 +288,7 @@ export default function ReportStakeholdersSection({
 
       {!disabled && stakeholders.length === 0 ? (
         <p className="text-sm text-zinc-500">
-          אין רשומות — הוסף תפקיד או לחץ «מלא מפרויקט».
+          אין רשומות - הוסף תפקיד או לחץ «מלא מפרויקט».
         </p>
       ) : null}
 
@@ -336,7 +336,7 @@ export default function ReportStakeholdersSection({
         {suppliersOpen ? (
           <div className="mt-3 space-y-3">
             {mainSuppliers.length === 0 ? (
-              <p className="text-sm text-zinc-500">אין ספקים — ניתן להוסיף.</p>
+              <p className="text-sm text-zinc-500">אין ספקים - ניתן להוסיף.</p>
             ) : (
               <ul className="space-y-3">
                 {mainSuppliers.map((supplier) => (

@@ -340,7 +340,7 @@ export default function UploadPage() {
 
       if (failureCount === 0) {
         showToast(
-          `הועלו בהצלחה ${successCount} דוחות — הם יופיעו בארכיון מסמכי הפרויקט`,
+          `הועלו בהצלחה ${successCount} דוחות - הם יופיעו בארכיון מסמכי הפרויקט`,
           "success"
         );
       } else if (successCount === 0) {
@@ -388,7 +388,7 @@ export default function UploadPage() {
         <div className="mb-10">
           <h1 className="of-page-title">העלאת דוח שבועי</h1>
           <p className="of-page-desc mt-4">
-            העלאת דוחות לצורך ניתוח AI תפעולי — ניתן לבחור מספר קבצים בבת אחת
+            העלאת דוחות לצורך ניתוח AI תפעולי - ניתן לבחור מספר קבצים בבת אחת
           </p>
         </div>
 
@@ -417,7 +417,7 @@ export default function UploadPage() {
           </div>
 
           <div className="mb-8">
-            <p className="mb-3 font-semibold">שלב 1 — בחירת מסמכים</p>
+            <p className="mb-3 font-semibold">שלב 1 - בחירת מסמכים</p>
 
             <input
               ref={fileInputRef}
@@ -432,7 +432,7 @@ export default function UploadPage() {
 
             <label
               htmlFor={uploading ? undefined : "weekly-report-file"}
-              aria-label="אזור העלאת קבצים — לחץ או גרור קבצים"
+              aria-label="אזור העלאת קבצים - לחץ או גרור קבצים"
               onDragOver={(event) => {
                 event.preventDefault();
                 if (!uploading) {
@@ -634,7 +634,7 @@ export default function UploadPage() {
           ) : null}
 
           <div className="flex flex-col gap-3 border-t border-zinc-200 pt-8 dark:border-zinc-800">
-            <p className="font-semibold">שלב 2 — שליחה לניתוח</p>
+            <p className="font-semibold">שלב 2 - שליחה לניתוח</p>
 
             <Button
               type="button"

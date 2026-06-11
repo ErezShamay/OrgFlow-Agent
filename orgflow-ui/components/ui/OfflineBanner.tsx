@@ -36,7 +36,7 @@ export default function OfflineBanner() {
       "
     >
       {onFieldReports
-        ? "אין רשת — דוחות שטח נשמרים במכשיר; המשך בדוח שפתחת."
+        ? "אין רשת - דוחות שטח נשמרים במכשיר; המשך בדוח שפתחת."
         : t("common.offline")}
     </div>
   );

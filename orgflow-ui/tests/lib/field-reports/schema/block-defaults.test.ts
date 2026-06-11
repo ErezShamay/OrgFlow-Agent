@@ -33,22 +33,31 @@ describe("DEFAULT_BLOCKS_BY_VISIT_TYPE", () => {
     );
   });
 
-  it("uses checklist and simple findings preset for FINISHING_APARTMENTS", () => {
+  it("uses Hagana-style finishing blocks: checklist, lobby and apartment findings", () => {
     const blocks = defaultReportBlocksForVisitType("FINISHING_APARTMENTS");
     const checklist = blocks.find((block) => block.kind === "checklist");
-    const findings = blocks.find((block) => block.kind === "findings_table");
+    const findings = blocks.filter((block) => block.kind === "findings_table");
 
     expect(blocks.map((block) => block.kind)).toEqual([
-      "progress_table",
       "checklist",
       "findings_table",
+      "findings_table",
     ]);
+    expect(checklist).toMatchObject({
+      kind: "checklist",
+      title_he: "התקדמות הבנייה",
+    });
     expect(checklist && checklist.kind === "checklist" ? checklist.items.length : 0).toBe(
       6
     );
-    expect(findings).toMatchObject({
-      kind: "findings_table",
-      column_preset: "simple",
+    expect(findings[0]).toMatchObject({
+      title_he: "התקדמות עבודות הגמר לובי קומה",
+      column_preset: "finishing",
+      rows: [],
+    });
+    expect(findings[1]).toMatchObject({
+      title_he: "ממצאים בדירות",
+      column_preset: "finishing",
       rows: [],
     });
   });

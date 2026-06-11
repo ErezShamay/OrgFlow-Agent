@@ -202,8 +202,8 @@ export default function CircuitBreakersPage() {
         "
       >
         <Panel title="AI Failover">
-          <p>Primary: {dashboard?.ai_failover.primary_provider || "—"}</p>
-          <p>Selected: {dashboard?.ai_failover.selected_provider || "—"}</p>
+          <p>Primary: {dashboard?.ai_failover.primary_provider || "-"}</p>
+          <p>Selected: {dashboard?.ai_failover.selected_provider || "-"}</p>
           <p>
             Failover active:{" "}
             {dashboard?.ai_failover.failover_active ? "Yes" : "No"}
@@ -257,7 +257,7 @@ export default function CircuitBreakersPage() {
                 <td className="p-4">{breaker.state}</td>
                 <td className="p-4">{breaker.failure_count || 0}</td>
                 <td className="p-4 text-sm">
-                  {breaker.cooldown_until || "—"}
+                  {breaker.cooldown_until || "-"}
                 </td>
                 <td className="p-4">
                   {breaker.state === "OPEN" && (

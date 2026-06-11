@@ -56,6 +56,13 @@ def test_invite_user_rejects_duplicate_client_admin():
         )
 
 
+def test_allowed_roles_for_admin_include_contractor():
+    roles = UserManagementService._allowed_roles_for_inviter("ADMIN")
+
+    assert "CONTRACTOR" in roles
+    assert "DEVELOPER" in roles
+
+
 def test_invite_user_rejects_invalid_role():
     service = UserManagementService(
         profile_repository=MagicMock(

@@ -61,6 +61,124 @@ class NotificationTool:
 
         return reminders
 
+    def build_critical_stale_issue_messages(
+        self,
+        digests,
+    ):
+        reminders = []
+
+        for digest in digests:
+            supervisor_email = digest.get("supervisor_email")
+            supervisor_name = digest.get("supervisor_name") or "מפקח"
+            issues = digest.get("issues") or []
+
+            if not issues:
+                continue
+
+            lines = []
+            for issue in issues:
+                location = issue.get("location")
+                trade = issue.get("trade")
+                days_open = issue.get("days_open")
+                detail_parts = [
+                    part
+                    for part in (
+                        f"מיקום: {location}" if location else None,
+                        f"מלאכה: {trade}" if trade else None,
+                        f"פתוח {days_open} ימים" if days_open is not None else None,
+                    )
+                    if part
+                ]
+                detail_suffix = f" ({', '.join(detail_parts)})" if detail_parts else ""
+                lines.append(
+                    f"- {issue.get('project_name')}: "
+                    f"{issue.get('title')}{detail_suffix}"
+                )
+
+            issue_count = len(issues)
+            subject = (
+                f"התראת ליקוי קריטי - {issue_count} ליקויים פתוחים מעל 7 ימים"
+            )
+            body = (
+                f"שלום {supervisor_name},\n\n"
+                f"לפי מערכת OrgFlow, יש {issue_count} ליקוי/ים קריטיים "
+                f"פתוחים מעל 7 ימים:\n\n"
+                f"{chr(10).join(lines)}\n\n"
+                f"אנא טפלו בליקויים בהקדם או עדכנו סטטוס בדוח הביקור הבא.\n\n"
+                f"תודה,\n"
+                f"OrgFlow QC"
+            )
+
+            reminders.append(
+                {
+                    "to": supervisor_email,
+                    "subject": subject,
+                    "body": body,
+                    "issues": issues,
+                }
+            )
+
+        return reminders
+
+    def build_open_report_reminder_messages(
+        self,
+        digests,
+    ):
+        reminders = []
+
+        for digest in digests:
+            supervisor_email = digest.get("supervisor_email")
+            supervisor_name = digest.get("supervisor_name") or "מפקח"
+            reports = digest.get("reports") or []
+
+            if not reports:
+                continue
+
+            lines = []
+            for report in reports:
+                visit_date = report.get("visit_date")
+                visit_type = report.get("visit_type")
+                days_open = report.get("days_open")
+                detail_parts = [
+                    part
+                    for part in (
+                        f"תאריך ביקור: {visit_date}" if visit_date else None,
+                        f"סוג: {visit_type}" if visit_type else None,
+                        f"פתוח {days_open} ימים" if days_open is not None else None,
+                    )
+                    if part
+                ]
+                detail_suffix = f" ({', '.join(detail_parts)})" if detail_parts else ""
+                lines.append(
+                    f"- {report.get('project_name')}: "
+                    f"דוח ביקור{detail_suffix}"
+                )
+
+            report_count = len(reports)
+            subject = (
+                f"תזכורת - {report_count} דוח/ות ביקור פתוחים מעל 3 ימים"
+            )
+            body = (
+                f"שלום {supervisor_name},\n\n"
+                f"לפי מערכת OrgFlow, יש {report_count} דוח/ות ביקור "
+                f"במצב 'בעבודה' שלא נסגרו מעל 3 ימים:\n\n"
+                f"{chr(10).join(lines)}\n\n"
+                f"אנא סגרו את הדוח/ות בהקדם כדי שהליקויים ייכנסו ל-registry.\n\n"
+                f"תודה,\n"
+                f"OrgFlow QC"
+            )
+
+            reminders.append(
+                {
+                    "to": supervisor_email,
+                    "subject": subject,
+                    "body": body,
+                    "reports": reports,
+                }
+            )
+
+        return reminders
+
     def send_reminders(
         self,
         reminders

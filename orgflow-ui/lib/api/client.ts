@@ -205,7 +205,7 @@ export async function exchangeBackendToken(
       apiBaseUrl: baseUrl,
     });
     throw new TokenExchangeError(
-      "Token exchange failed — no response from API",
+      "Token exchange failed - no response from API",
       0
     );
   }

@@ -13,6 +13,15 @@ const RICH_COLUMNS: readonly BlockColumnDef[] = [
   { id: "photos", header_he: "תמונות" },
 ] as const;
 
+/** גמר דירות: מיקום · מלאכה · הערות · סטטוס/תיאור · תמונות (דוח ההגנה). */
+const FINISHING_COLUMNS: readonly BlockColumnDef[] = [
+  { id: "location", header_he: "מיקום" },
+  { id: "trade", header_he: "מלאכה" },
+  { id: "notes", header_he: "הערות" },
+  { id: "status", header_he: "סטטוס / תיאור" },
+  { id: "photos", header_he: "תמונות" },
+] as const;
+
 /** פשוטה: תיאור · הערות/לטיפול · תמונות */
 const SIMPLE_COLUMNS: readonly BlockColumnDef[] = [
   { id: "description", header_he: "תיאור" },
@@ -33,10 +42,11 @@ const STRUCTURE_COLUMNS: readonly BlockColumnDef[] = [
   { id: "status", header_he: "סטטוס / תאריך סיום" },
 ] as const;
 
-/** מפת presets עמודות — תואמת כותרות ב-PDF לדוגמה. */
+/** מפת presets עמודות - תואמת כותרות ב-PDF לדוגמה. */
 export const COLUMN_PRESETS: ColumnPresets = {
   rich: RICH_COLUMNS,
   simple: SIMPLE_COLUMNS,
+  finishing: FINISHING_COLUMNS,
   progress: PROGRESS_COLUMNS,
   structure: STRUCTURE_COLUMNS,
 };

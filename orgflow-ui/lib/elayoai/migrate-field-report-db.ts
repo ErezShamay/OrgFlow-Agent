@@ -117,6 +117,15 @@ export async function migrateLegacyFieldReportDatabase(): Promise<void> {
                 });
                 syncQueue.createIndex("by-organization", "organization_id");
               }
+              continue;
+            }
+
+            if (storeName === FIELD_REPORT_STORES.open_issues) {
+              if (!database.objectStoreNames.contains(storeName)) {
+                database.createObjectStore(storeName, {
+                  keyPath: "organization_id",
+                });
+              }
             }
           }
         },

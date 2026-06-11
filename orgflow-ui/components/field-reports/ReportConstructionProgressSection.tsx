@@ -59,11 +59,11 @@ export default function ReportConstructionProgressSection({
       <div>
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-zinc-500">
-          טבלת התקדמות ל-PDF — תיאור עבודה, סטטוס ותאריך. ניתן למלא בשטח או
+          טבלת התקדמות ל-PDF - תיאור עבודה, סטטוס ותאריך. ניתן למלא בשטח או
           במשרד.
           {visitType === "FINISHING_APARTMENTS" ? (
             <span className="mt-1 block text-amber-800 dark:text-amber-200">
-              מטריצת דירות מלאה (בעלים / חשמל / אינסטלציה לפי דירה) — בשלב 6.1.
+              מטריצת דירות מלאה (בעלים / חשמל / אינסטלציה לפי דירה) - בשלב 6.1.
             </span>
           ) : null}
         </p>

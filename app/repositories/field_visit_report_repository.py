@@ -50,6 +50,7 @@ class FieldVisitReportRepository:
         organization_id: str,
         *,
         status: str | None = None,
+        project_id: str | None = None,
         include_hidden: bool = False,
     ) -> list[dict]:
         if not self.is_storage_available():
@@ -62,6 +63,9 @@ class FieldVisitReportRepository:
             .eq("organization_id", organization_id)
             .order("updated_at", desc=True)
         )
+
+        if project_id:
+            query = query.eq("project_id", project_id)
 
         if status:
             query = query.eq("status", status)

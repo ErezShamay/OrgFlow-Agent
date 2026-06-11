@@ -13,7 +13,7 @@ const COVER_NUMBERED_KINDS: FixedTextBlockKind[] = [
   "safety_disclaimer",
 ];
 
-/** סעיפים שמופיעים בעמוד השער כרשימה ממוספרת — לא בסוף הדוח. */
+/** סעיפים שמופיעים בעמוד השער כרשימה ממוספרת - לא בסוף הדוח. */
 export function isCoverNumberedFixedTextKind(
   kind: FixedTextBlockKind
 ): boolean {

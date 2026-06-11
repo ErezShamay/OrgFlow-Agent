@@ -14,7 +14,7 @@ type PdfFilesystemMeta = {
   generatedAt: string;
 };
 
-/** שמירת PDF ב-Filesystem ב-APK; ב-web — IndexedDB blobs בלבד. */
+/** שמירת PDF ב-Filesystem ב-APK; ב-web - IndexedDB blobs בלבד. */
 export function useNativeVisitReportPdfFilesystem(): boolean {
   return isCapacitorNativePlatform();
 }
@@ -39,7 +39,7 @@ export function sanitizeVisitReportPdfFilename(filename: string): string {
 }
 
 /**
- * מעתיק PDF ל-Directory.Data (מראה ל-blobs — לפתיחה ב-viewer וגיבוי).
+ * מעתיק PDF ל-Directory.Data (מראה ל-blobs - לפתיחה ב-viewer וגיבוי).
  */
 export async function syncVisitReportPdfToFilesystem(
   reportId: string,
@@ -145,7 +145,7 @@ export async function deleteVisitReportPdfFromFilesystem(
 }
 
 /**
- * פתיחת PDF ב-native (לא `<a download>` — לא אמין ב-WebView).
+ * פתיחת PDF ב-native (לא `<a download>` - לא אמין ב-WebView).
  * Web: מחזיר false כדי שהקורא ישתמש ב-anchor download.
  */
 export async function openVisitReportPdfOnNative(

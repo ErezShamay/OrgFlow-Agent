@@ -14,12 +14,14 @@ import ReportStakeholdersSection from "@/components/field-reports/ReportStakehol
 import ReportLineEditor, {
   type LineSaveOptions,
 } from "@/components/field-reports/ReportLineEditor";
+import QuickFindingPhotoButton from "@/components/field-reports/QuickFindingPhotoButton";
 import LineGroupSelector from "@/components/field-reports/LineGroupSelector";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import { toast } from "sonner";
 import { useFieldReportModule } from "@/hooks/useFieldReportModule";
+import { useFieldReportNetworkStatus } from "@/hooks/useFieldReportNetworkStatus";
 import { apiFetch } from "@/lib/api/client";
 import { catalogFamilyLabelHe } from "@/lib/field-reports/catalog-labels";
 import {
@@ -54,7 +56,13 @@ import {
   FR_TOUCH_TEXTAREA,
 } from "@/lib/field-reports/touch-input-class";
 import { useFieldReportDataSource } from "@/hooks/useFieldReportDataSource";
-import { isClientUuid } from "@/lib/field-reports/ids";
+import { createClientLineUuid, isClientUuid } from "@/lib/field-reports/ids";
+import {
+  deleteLinePhotoLocally,
+  saveLinePhotoLocally,
+} from "@/lib/field-reports/line-photo-store";
+import { uploadLinePhotoForReport } from "@/lib/field-reports/line-photo-upload";
+import { buildQuickFindingLinePayload } from "@/lib/field-reports/quick-finding-photo";
 import {
   clientVisitReportUuid,
   localVisitReportToView,
@@ -87,6 +95,7 @@ type ReportLine = {
   group_key?: string | null;
   group_label_he?: string | null;
   block_id?: string | null;
+  linked_issue_id?: string | null;
 };
 
 type VisitReport = VisitReportView & {
@@ -94,7 +103,7 @@ type VisitReport = VisitReportView & {
 };
 
 const LINE_STATUS_OPTIONS = [
-  { value: "", label: "—" },
+  { value: "", label: "-" },
   { value: "IN_PROGRESS", label: "בתהליך" },
   { value: "DONE", label: "בוצע" },
   { value: "NEEDS_ACTION", label: "יש להשלים" },
@@ -103,7 +112,7 @@ const LINE_STATUS_OPTIONS = [
 type VisitReportEditorProps = {
   report: VisitReport;
   onReportChange: (report: VisitReport) => void;
-  /** דוח נטען מ-IndexedDB — מכריח שמירת שורות/כותרת מקומית גם כשה-ping ל-API מצליח. */
+  /** דוח נטען מ-IndexedDB - מכריח שמירת שורות/כותרת מקומית גם כשה-ping ל-API מצליח. */
   hasLocalRecord?: boolean;
 };
 
@@ -124,12 +133,14 @@ export default function VisitReportEditor({
     serverReportId: report.server_report_id ?? null,
   });
   const { status: moduleStatus } = useFieldReportModule();
+  const { canSync } = useFieldReportNetworkStatus();
   const organizationId = moduleStatus?.organization_id || "";
   const [saving, setSaving] = useState(false);
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "offline"
   >("idle");
   const [lineSaving, setLineSaving] = useState(false);
+  const [linkingRowId, setLinkingRowId] = useState<string | null>(null);
   const [lineAutosaveState, setLineAutosaveState] = useState<
     "idle" | "saving" | "saved"
   >("idle");
@@ -195,7 +206,7 @@ export default function VisitReportEditor({
 
       const serverId = report.server_report_id;
       if (!serverId) {
-        throw new Error("אין מזהה שרת לדוח — שמירה מקומית בלבד");
+        throw new Error("אין מזהה שרת לדוח - שמירה מקומית בלבד");
       }
 
       const response = await apiFetch(
@@ -443,7 +454,7 @@ export default function VisitReportEditor({
       applyCatalogPayload(payload);
 
       if (!payload.issues?.length) {
-        throw new Error("המפרט ריק — בצע «הכנה לא מקוון» מחדש כשיש רשת.");
+        throw new Error("המפרט ריק - בצע «הכנה לא מקוון» מחדש כשיש רשת.");
       }
 
       openCatalogPicker();
@@ -499,7 +510,7 @@ export default function VisitReportEditor({
     event.preventDefault();
 
     if (!report.is_editable) {
-      toast.warning("הדוח אינו בעריכה — לא ניתן להוסיף שורה");
+      toast.warning("הדוח אינו בעריכה - לא ניתן להוסיף שורה");
       return;
     }
 
@@ -587,7 +598,7 @@ export default function VisitReportEditor({
 
   async function addCatalogLine(issue: CatalogIssue) {
     if (!report.is_editable) {
-      toast.warning("הדוח אינו בעריכה — לא ניתן להוסיף שורה");
+      toast.warning("הדוח אינו בעריכה - לא ניתן להוסיף שורה");
       return;
     }
 
@@ -650,6 +661,176 @@ export default function VisitReportEditor({
           ? err.message
           : "הוספת ממצא מהמפרט נכשלה"
       );
+    } finally {
+      setLineSaving(false);
+    }
+  }
+
+  async function addQuickFindingFromPhoto(file: File) {
+    if (!report.is_editable) {
+      toast.warning("הדוח אינו בעריכה - לא ניתן להוסיף ממצא");
+      return;
+    }
+
+    setLineSaving(true);
+    setError("");
+
+    try {
+      const linePayload = buildQuickFindingLinePayload({
+        group: pendingLineGroup,
+        sequence: report.lines.length + 1,
+      });
+      const lineId = linePayload.client_line_uuid;
+      let photoReportKey = report.server_report_id ?? clientReportUuid;
+      let photoLineId = lineId;
+      let hadPhotoBefore = false;
+
+      if (await shouldSaveLinesLocally()) {
+        const updated = await upsertLine(clientReportUuid, linePayload);
+
+        if (!updated) {
+          throw new Error("יצירת שורת ממצא במכשיר נכשלה");
+        }
+
+        const view = localVisitReportToView(updated) as VisitReport;
+        const createdLine =
+          view.lines.find((line) => line.id === lineId)
+          ?? view.lines[view.lines.length - 1];
+
+        if (!createdLine) {
+          throw new Error("יצירת שורת ממצא במכשיר נכשלה");
+        }
+
+        photoLineId = createdLine.id;
+        photoReportKey = clientReportUuid;
+        hadPhotoBefore = Boolean(createdLine.has_photo);
+        onReportChange(view);
+      } else {
+        const serverId = report.server_report_id;
+        if (!serverId) {
+          throw new Error("אין מזהה שרת לדוח");
+        }
+
+        const response = await apiFetch(
+          `/field-reports/visits/${serverId}/lines`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: linePayload.location ?? null,
+              description: linePayload.description,
+              group_key: linePayload.group_key ?? null,
+              group_label_he: linePayload.group_label_he ?? null,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(
+            payload.error?.message
+              || payload.message
+              || "יצירת שורת ממצא נכשלה"
+          );
+        }
+
+        const createdLine = await response.json();
+        photoLineId = String(createdLine.id);
+        photoReportKey = serverId;
+        hadPhotoBefore = Boolean(createdLine.has_photo);
+        onReportChange({
+          ...report,
+          lines: [...report.lines, createdLine],
+          line_count: report.lines.length + 1,
+        });
+      }
+
+      const localPhotoId = await saveLinePhotoLocally(
+        photoReportKey,
+        photoLineId,
+        file,
+        { pendingUpload: !canSync }
+      );
+
+      if (canSync) {
+        try {
+          const uploadedLine = await uploadLinePhotoForReport(
+            photoReportKey,
+            photoLineId,
+            file,
+            {
+              photoId: localPhotoId,
+              useLegacySinglePhotoEndpoint: !hadPhotoBefore,
+            }
+          );
+          await deleteLinePhotoLocally(
+            photoReportKey,
+            photoLineId,
+            localPhotoId
+          );
+
+          const photoIds = Array.isArray(uploadedLine.photo_ids)
+            ? uploadedLine.photo_ids.map(String)
+            : [localPhotoId];
+          const photos = Array.isArray(uploadedLine.photos)
+            ? uploadedLine.photos.map((photo) => ({
+                id: String((photo as { id: string }).id),
+                url: String((photo as { url: string }).url),
+              }))
+            : [];
+
+          updateLinePhotosState(photoLineId, {
+            has_photo: Boolean(uploadedLine.has_photo),
+            photo_ids: photoIds,
+            photos,
+            photo_url:
+              typeof uploadedLine.photo_url === "string"
+                ? uploadedLine.photo_url
+                : null,
+          });
+        } catch (uploadError: unknown) {
+          await saveLinePhotoLocally(photoReportKey, photoLineId, file, {
+            pendingUpload: true,
+            photoId: localPhotoId,
+          });
+          updateLinePhotosState(photoLineId, {
+            has_photo: true,
+            photo_ids: [localPhotoId],
+            photos: [],
+            photo_url: null,
+          });
+          if (await shouldSaveLinesLocally()) {
+            await persistLinePhotosLocally(photoLineId, {
+              has_photo: true,
+              photo_ids: [localPhotoId],
+            });
+          }
+          throw uploadError;
+        }
+      } else {
+        updateLinePhotosState(photoLineId, {
+          has_photo: true,
+          photo_ids: [localPhotoId],
+          photos: [],
+          photo_url: null,
+        });
+
+        if (await shouldSaveLinesLocally()) {
+          await persistLinePhotosLocally(photoLineId, {
+            has_photo: true,
+            photo_ids: [localPhotoId],
+          });
+        }
+      }
+
+      toast.success("נוספה שורת ממצא עם תמונה");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "יצירת שורת ממצא מתמונה נכשלה";
+      setError(message);
+      toast.error(message);
     } finally {
       setLineSaving(false);
     }
@@ -730,6 +911,18 @@ export default function VisitReportEditor({
     }
   }
 
+  async function linkFindingRow(
+    lineId: string,
+    linkedIssueId: string | null
+  ) {
+    setLinkingRowId(lineId);
+    try {
+      await saveLine(lineId, { linked_issue_id: linkedIssueId });
+    } finally {
+      setLinkingRowId(null);
+    }
+  }
+
   async function convertLineToFreeText(lineId: string) {
     await saveLine(lineId, { issue_id: null });
   }
@@ -792,7 +985,7 @@ export default function VisitReportEditor({
         {useLocalReports ? (
           <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900 dark:bg-amber-950/50 dark:text-amber-100">
             {dataSourceMode === "local-only"
-              ? "אופליין — נשמר במכשיר"
+              ? "אופליין - נשמר במכשיר"
               : "נשמר במכשיר"}
           </span>
         ) : (
@@ -808,7 +1001,7 @@ export default function VisitReportEditor({
           <span className="text-emerald-700">נשמר</span>
         ) : null}
         {saveState === "offline" ? (
-          <span className="text-amber-800">נשמר במכשיר — יסונכרן ברשת</span>
+          <span className="text-amber-800">נשמר במכשיר - יסונכרן ברשת</span>
         ) : null}
         {useLocalReports && lineAutosaveState === "saving" ? (
           <span className="text-zinc-500">שומר שורות...</span>
@@ -827,7 +1020,7 @@ export default function VisitReportEditor({
 
       {catalogLineWarnings > 0 ? (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          {catalogLineWarnings} שורות עם אזהרת מפרט — בדוק לפני סגירת הדוח.
+          {catalogLineWarnings} שורות עם אזהרת מפרט - בדוק לפני סגירת הדוח.
         </p>
       ) : null}
 
@@ -899,7 +1092,14 @@ export default function VisitReportEditor({
               לכל שורת ממצא בנפרד (לא בטבלת ההתקדמות למטה).
             </p>
           </div>
-          {report.is_editable ? (
+        {report.is_editable ? (
+          <div className="space-y-3">
+            <QuickFindingPhotoButton
+              reportId={report.server_report_id ?? clientReportUuid}
+              disabled={!report.is_editable}
+              busy={lineSaving}
+              onPhotoCaptured={addQuickFindingFromPhoto}
+            />
             <div className="space-y-2">
               <Button
                 variant="secondary"
@@ -916,7 +1116,8 @@ export default function VisitReportEditor({
                 </p>
               ) : null}
             </div>
-          ) : null}
+          </div>
+        ) : null}
         </div>
 
         {report.is_editable ? (
@@ -950,10 +1151,10 @@ export default function VisitReportEditor({
 
         {report.lines.length === 0 ? (
           <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/80 px-4 py-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-            <p className="font-medium">אין שורות ממצאים — אין עדיין לאן לצרף תמונות</p>
+            <p className="font-medium">אין שורות ממצאים - אין עדיין לאן לצרף תמונות</p>
             <p className="mt-2 text-amber-900/90 dark:text-amber-200/90">
-              הוסף שורה חופשית למטה (עם תיאור) או «בחר ממצא מהמפרט». אחרי
-              השמירה יופיעו כפתורי «צלם תמונה» ו«בחר מהגלריה» בתוך השורה.
+              השתמש ב«צלם ממצא» למעלה (2 לחיצות), או הוסף שורה חופשית למטה /
+              «בחר ממצא מהמפרט».
             </p>
           </div>
         ) : (
@@ -961,12 +1162,16 @@ export default function VisitReportEditor({
             {report.lines.map((line) => (
               <ReportLineEditor
                 key={line.id}
-                reportId={clientReportUuid}
+                reportId={report.server_report_id ?? clientReportUuid}
+                projectId={report.project_id}
+                organizationId={organizationId}
                 line={line}
                 editable={report.is_editable}
                 saving={lineSaving}
+                linking={linkingRowId === line.id}
                 autosave={useLocalReports}
                 onSave={saveLine}
+                onLinkRow={linkFindingRow}
                 onConvertToFreeText={convertLineToFreeText}
                 onDelete={deleteLine}
                 onPhotosChange={updateLinePhotosState}
@@ -1071,6 +1276,11 @@ export default function VisitReportEditor({
         blocks={headerFields.blocks}
         visitType={report.visit_type}
         disabled={!report.is_editable}
+        projectId={report.project_id}
+        organizationId={organizationId}
+        reportId={report.server_report_id ?? clientReportUuid}
+        linkingRowId={linkingRowId}
+        onLinkFindingRow={linkFindingRow}
         hasExplicitBlocks={hasExplicitBlocks}
         onChange={(blocks) =>
           setHeaderFields((current) =>

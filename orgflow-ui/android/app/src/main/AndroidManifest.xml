@@ -56,5 +56,5 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- Camera intent — no storage permission unless saveToGallery (we do not). -->
+    <!-- Camera intent - no storage permission unless saveToGallery (we do not). -->
 </manifest>

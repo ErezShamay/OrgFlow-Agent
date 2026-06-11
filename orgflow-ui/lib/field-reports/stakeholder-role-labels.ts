@@ -1,6 +1,6 @@
 import { STAKEHOLDER_ROLES, type StakeholderRole } from "./schema/types";
 
-/** תוויות עברית לתפקידי בעלי עניין — dropdown ב-UI (FR-1.3). */
+/** תוויות עברית לתפקידי בעלי עניין - dropdown ב-UI (FR-1.3). */
 export const STAKEHOLDER_ROLE_LABELS_HE: Record<StakeholderRole, string> = {
   developer: "יזם",
   project_manager: "מנהל פרויקט מטעם יזם",
@@ -11,7 +11,7 @@ export const STAKEHOLDER_ROLE_LABELS_HE: Record<StakeholderRole, string> = {
   architect: "אדריכל הפרויקט",
 };
 
-/** אפשרויות תפקיד ל-select — סדר קבוע לפי STAKEHOLDER_ROLES. */
+/** אפשרויות תפקיד ל-select - סדר קבוע לפי STAKEHOLDER_ROLES. */
 export const STAKEHOLDER_ROLE_OPTIONS: ReadonlyArray<{
   value: StakeholderRole;
   label: string;

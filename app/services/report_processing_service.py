@@ -7,6 +7,9 @@ from datetime import UTC, datetime
 from app.db.supabase_client import supabase
 from app.repositories.workspace_activity_repository import WorkspaceActivityRepository
 from app.repositories.weekly_report_repository import WeeklyReportRepository
+from app.services.quality_issue_upload_finding_service import (
+    QualityIssueUploadFindingService,
+)
 from app.services.report_text_extraction_service import ReportTextExtractionService
 
 
@@ -18,6 +21,7 @@ class ReportProcessingService:
 
     def __init__(self):
         self.report_repository = WeeklyReportRepository()
+        self.upload_finding_materialization = QualityIssueUploadFindingService()
         self.report_attachments: dict[str, list[dict]] = {}
         self.report_tags: dict[str, list[str]] = {}
         self.report_index: dict[str, dict] = {}
@@ -141,7 +145,7 @@ class ReportProcessingService:
             email_subject=versioned_subject,
         )
 
-        interpretation = self._persist_upload_interpretation(
+        upload_persist = self._persist_upload_interpretation(
             project_id=project_id,
             report_id=str(created_report.get("id")),
             filename=filename,
@@ -150,6 +154,12 @@ class ReportProcessingService:
             classification=classification,
             metadata=metadata,
             ai_insights=ai_insights,
+        )
+        interpretation = (
+            upload_persist.get("interpretation") if upload_persist else None
+        )
+        quality_issue_id = (
+            upload_persist.get("quality_issue_id") if upload_persist else None
         )
         index_entry = self.index_report(
             project_id=project_id,
@@ -196,6 +206,7 @@ class ReportProcessingService:
             "report_version": report_version,
             "report_id": created_report.get("id"),
             "ai_interpretation_id": interpretation.get("id") if interpretation else None,
+            "quality_issue_id": quality_issue_id,
             "ocr_text_length": len(extracted_text),
             "ocr_preview": text_preview,
             "classification": classification,
@@ -581,6 +592,20 @@ class ReportProcessingService:
         if not created_finding:
             return None
 
+        materialization = (
+            self.upload_finding_materialization.materialize_from_upload_finding(
+                project_id=project_id,
+                report_id=report_id,
+                finding=created_finding,
+            )
+        )
+        if materialization and materialization.issue_id:
+            self._link_finding_to_quality_issue(
+                finding_id=str(created_finding.get("id")),
+                issue_id=materialization.issue_id,
+                metadata=created_finding.get("metadata") or metadata,
+            )
+
         interpretation_response = (
             supabase.table("ai_interpretations")
             .insert(
@@ -605,11 +630,37 @@ class ReportProcessingService:
             .execute()
         )
 
-        return (
+        interpretation = (
             interpretation_response.data[0]
             if interpretation_response.data
             else None
         )
+
+        return {
+            "interpretation": interpretation,
+            "quality_issue_id": (
+                materialization.issue_id if materialization else None
+            ),
+        }
+
+    def _link_finding_to_quality_issue(
+        self,
+        *,
+        finding_id: str,
+        issue_id: str,
+        metadata: dict,
+    ) -> None:
+        merged_metadata = {
+            **(metadata or {}),
+            "quality_issue_id": issue_id,
+            "qc_materialized": True,
+        }
+        try:
+            supabase.table("findings").update(
+                {"metadata": merged_metadata}
+            ).eq("id", finding_id).execute()
+        except Exception:
+            return
 
     def list_project_uploaded_reports(self, project_id: str) -> dict:
         reports = self.report_repository.get_reports_by_project(project_id)

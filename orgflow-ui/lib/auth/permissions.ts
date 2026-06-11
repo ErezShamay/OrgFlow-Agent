@@ -1,6 +1,7 @@
 import {
   normalizeRole,
 } from "@/lib/auth/role";
+import { qcInviteableRoles } from "@/lib/quality-issues/permissions";
 
 export const PLATFORM_ADMIN_ROLE = "PLATFORM_ADMIN";
 export const ORG_ADMIN_ROLE = "ADMIN";
@@ -42,11 +43,7 @@ export function inviteableRoles(
   }
 ) {
   if (isPlatformAdmin(role)) {
-    const roles = [
-      ORG_ADMIN_ROLE,
-      "SUPERVISOR",
-      "VIEWER",
-    ] as const;
+    const roles = [...qcInviteableRoles(role)];
 
     if (options?.hasClientAdmin) {
       return roles.filter(
@@ -58,10 +55,7 @@ export function inviteableRoles(
   }
 
   if (isOrgAdmin(role)) {
-    return [
-      "SUPERVISOR",
-      "VIEWER",
-    ] as const;
+    return [...qcInviteableRoles(role)];
   }
 
   return [] as const;

@@ -1,6 +1,6 @@
 import type { LocalVisitReportRecord } from "@/lib/field-reports/repositories/reports-repository";
 
-/** גוף `PUT /field-reports/visits/sync` — ממופה מדוח מקומי. */
+/** גוף `PUT /field-reports/visits/sync` - ממופה מדוח מקומי. */
 export type VisitReportSyncRequestBody = {
   client_report_uuid: string;
   project_id: string;

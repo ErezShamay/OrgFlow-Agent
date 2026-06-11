@@ -16,7 +16,7 @@ export function isCapacitorCameraError(
   );
 }
 
-/** המשתמש ביטל את המצלמה / הגלריה — לא שגיאת אפליקציה. */
+/** המשתמש ביטל את המצלמה / הגלריה - לא שגיאת אפליקציה. */
 export function isCapacitorCameraUserCancelled(err: unknown): boolean {
   if (!isCapacitorCameraError(err)) {
     return false;

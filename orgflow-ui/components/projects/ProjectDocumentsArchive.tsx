@@ -319,7 +319,7 @@ export default function ProjectDocumentsArchive({
       <div className="mb-8">
         <h2 className="text-3xl font-bold">ארכיון מסמכי הפרויקט</h2>
         <p className="mt-3 text-zinc-500">
-          כל המסמכים והדוחות של הפרויקט במקום אחד — דוחות שטח שנשלחו
+          כל המסמכים והדוחות של הפרויקט במקום אחד - דוחות שטח שנשלחו
           לליבה (PDF להורדה) ודוחות שהועלו לניתוח AI (תקציר טקסט).
         </p>
       </div>
@@ -373,7 +373,7 @@ export default function ProjectDocumentsArchive({
             עדיין אין מסמכים בפרויקט זה.
           </p>
           <p className="mt-2 text-xs text-zinc-500">
-            העלה דוח מדף «העלאת דוח», או שלח דוח שטח לליבה — והם יופיעו כאן.
+            צרו דוח שטח וסגרו אותו - המסמכים יופיעו כאן.
           </p>
         </div>
       ) : filter === "field" && fieldReportsEnabled ? (
@@ -717,7 +717,7 @@ function UploadPreviewPanel({ report }: { report: UploadedReport }) {
       ) : null}
 
       <p className="text-xs text-zinc-500">
-        הקובץ המקורי שהועלה אינו זמין להורדה — המערכת שומרת את תוצאות
+        הקובץ המקורי שהועלה אינו זמין להורדה - המערכת שומרת את תוצאות
         הניתוח בלבד.
       </p>
     </div>

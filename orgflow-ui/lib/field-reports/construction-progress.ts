@@ -1,4 +1,4 @@
-/** Construction-progress table (task 3C.6) — mirrors app/config/field_report_construction_progress.py */
+/** Construction-progress table (task 3C.6) - mirrors app/config/field_report_construction_progress.py */
 
 export type ConstructionProgressRow = {
   description: string;
@@ -8,6 +8,13 @@ export type ConstructionProgressRow = {
 
 export const STRUCTURE_SITE_PROGRESS_TITLE_HE = "סטטוס בניה-שלד";
 export const FINISHING_APARTMENTS_PROGRESS_TITLE_HE = "התקדמות הבנייה";
+
+/** טבלת ממצאים לאזורים משותפים - לובי / קומה (דוח גמר דירות). */
+export const FINISHING_LOBBY_FINDINGS_TITLE_HE =
+  "התקדמות עבודות הגמר לובי קומה";
+
+/** טבלת ממצאים לדירות - מקובצת לפי «דירה N» ב-PDF. */
+export const FINISHING_APARTMENT_FINDINGS_TITLE_HE = "ממצאים בדירות";
 
 export const PROGRESS_STATUS_SUGGESTIONS = [
   "בוצע",

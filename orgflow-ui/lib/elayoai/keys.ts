@@ -3,6 +3,21 @@ export const ELAYOAI_APP_ID = "com.elayoai.app";
 
 export const ELAYOAI_APP_NAME = "ElayoAI";
 
+/** תגית משנה מתחת ללוגו (עברית). */
+export const ELAYOAI_APP_TAGLINE = "בקרת איכות לפרויקטי בנייה";
+
+/** תיאור SEO - פלטפורמת בקרת איכות (אנגלית). */
+export const ELAYOAI_APP_DESCRIPTION =
+  "Quality Control Platform for Construction Projects";
+
+/** שם מלא ל-PWA manifest (עברית). */
+export const ELAYOAI_MANIFEST_NAME =
+  "ElayoAI - בקרת איכות לפרויקטי בנייה";
+
+/** תיאור PWA manifest (עברית). */
+export const ELAYOAI_MANIFEST_DESCRIPTION =
+  "דוחות שטח, מעקב ליקויים, סגירה ואימות ותיק בקרת איכות";
+
 /** מפתחות localStorage / sessionStorage (ElayoAI). */
 export const ELAYOAI_THEME_KEY = "elayoai-theme";
 export const ELAYOAI_LOCALE_KEY = "elayoai-locale";
@@ -33,7 +48,7 @@ export const ELAYOAI_FIELD_REPORTS_LINE_PHOTOS_MIGRATED_KEY =
 export const ELAYOAI_FIELD_REPORT_DB_MIGRATED_MARKER =
   "elayoai-field-reports:db-migrated-v1";
 
-/** מפתחות OrgFlow ישנים — לקריאה / מיגרציה בלבד. */
+/** מפתחות OrgFlow ישנים - לקריאה / מיגרציה בלבד. */
 export const LEGACY_ORGFLOW_THEME_KEY = "orgflow-theme";
 export const LEGACY_ORGFLOW_LOCALE_KEY = "orgflow-locale";
 export const LEGACY_ORGFLOW_ACCESS_TOKEN_KEY = "orgflow_access_token";

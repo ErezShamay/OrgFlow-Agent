@@ -112,7 +112,7 @@ export async function processPendingSendRequest(
     await setPhase("pdf");
     const storedPdf = await loadVisitReportPdfLocally(reportId);
     if (!storedPdf?.blob) {
-      throw new Error("PDF לא נמצא במכשיר — יש להפיק מחדש לפני שליחה");
+      throw new Error("PDF לא נמצא במכשיר - יש להפיק מחדש לפני שליחה");
     }
 
     await setPhase("request_send");

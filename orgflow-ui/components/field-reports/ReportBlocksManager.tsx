@@ -38,6 +38,14 @@ type ReportBlocksManagerProps = {
   blocks: ReportBlock[];
   visitType: string;
   disabled: boolean;
+  projectId?: string | null;
+  organizationId?: string | null;
+  reportId?: string | null;
+  linkingRowId?: string | null;
+  onLinkFindingRow?: (
+    rowId: string,
+    linkedIssueId: string | null
+  ) => void | Promise<void>;
   /** האם blocks[] נשמר במפורש ב-header_fields (לא רק derive). */
   hasExplicitBlocks: boolean;
   onChange: (blocks: ReportBlock[]) => void;
@@ -51,6 +59,11 @@ export default function ReportBlocksManager({
   blocks,
   visitType,
   disabled,
+  projectId = null,
+  organizationId = null,
+  reportId = null,
+  linkingRowId = null,
+  onLinkFindingRow,
   hasExplicitBlocks,
   onChange,
 }: ReportBlocksManagerProps) {
@@ -111,17 +124,17 @@ export default function ReportBlocksManager({
         <h2 className="text-lg font-semibold">סעיפי גוף הדוח</h2>
         <p className="mt-1 text-sm text-zinc-500">
           הוסף וסדר בלוקים (התקדמות, ממצאים, טקסט). שורות ממצאים ב-API נשארות
-          בסעיף למטה — תואם דוחות קיימים.
+          בסעיף למטה - תואם דוחות קיימים.
         </p>
         <p className="mt-2 text-sm text-brand">
-          לצירוף תמונות: השתמש בסעיף «שורות ממצאים» (מעל) — לא בשורות
+          לצירוף תמונות: השתמש בסעיף «שורות ממצאים» (מעל) - לא בשורות
           בטבלת ההתקדמות כאן.
         </p>
       </div>
 
       {sortedBlocks.length === 0 ? (
         <p className="text-sm text-zinc-500">
-          אין סעיפים — הוסף סעיף או טען תבנית לפי סוג הביקור.
+          אין סעיפים - הוסף סעיף או טען תבנית לפי סוג הביקור.
         </p>
       ) : (
         <ul className="space-y-4">
@@ -201,6 +214,11 @@ export default function ReportBlocksManager({
                 <ReportFindingsBlockEditor
                   block={block as FindingsTableBlock}
                   disabled={disabled}
+                  projectId={projectId}
+                  organizationId={organizationId}
+                  reportId={reportId}
+                  linkingRowId={linkingRowId}
+                  onLinkRow={onLinkFindingRow}
                   lineDerived={isFindingsLineDerived(block as FindingsTableBlock)}
                   onChange={(next) =>
                     patchBlock(block.id, () => next)
@@ -254,7 +272,7 @@ export default function ReportBlocksManager({
                     }
                   />
                   <p className="text-xs text-zinc-500">
-                    העלאת תמונה לבלוק — בשלב עתידי (FR-2.3 / PDF).
+                    העלאת תמונה לבלוק - בשלב עתידי (FR-2.3 / PDF).
                   </p>
                 </label>
               ) : null}

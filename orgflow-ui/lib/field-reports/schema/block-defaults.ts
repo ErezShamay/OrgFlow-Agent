@@ -1,11 +1,13 @@
 /**
- * ברירות מחדל לבלוקי דוח — presets לפי visit_type וטקסטים קבועים (FR-0.4).
+ * ברירות מחדל לבלוקי דוח - presets לפי visit_type וטקסטים קבועים (FR-0.4).
  */
 
 import {
   constructionProgressTitleHe,
   defaultConstructionProgressRows,
+  FINISHING_APARTMENT_FINDINGS_TITLE_HE,
   FINISHING_APARTMENTS_PROGRESS_TITLE_HE,
+  FINISHING_LOBBY_FINDINGS_TITLE_HE,
   STRUCTURE_SITE_PROGRESS_TITLE_HE,
 } from "../construction-progress";
 import { DEFAULT_WINTER_RECOMMENDATIONS_HE } from "../pdf-block-defaults";
@@ -18,7 +20,7 @@ import type {
   ReportBlockKind,
 } from "./types";
 
-/** visit_type משולב (FR-4.1) — קטלוג מלא + progress + findings. */
+/** visit_type משולב (FR-4.1) - קטלוג מלא + progress + findings. */
 export const VISIT_TYPE_MIXED = "MIXED";
 
 export const DEFAULT_NON_CONFORMANCE_DISCLAIMER_HE =
@@ -48,29 +50,28 @@ const STRUCTURE_SITE_BLOCK_TEMPLATES: readonly BlockTemplate[] = [
   {
     kind: "findings_table",
     id: "default-findings-table",
-    title_he: "ממצאים",
-    column_preset: "rich",
+    title_he: "ממצאים נוספים",
+    column_preset: "simple",
   },
 ];
 
 const FINISHING_APARTMENTS_BLOCK_TEMPLATES: readonly BlockTemplate[] = [
   {
-    kind: "progress_table",
-    id: "default-progress-table",
-    title_he: FINISHING_APARTMENTS_PROGRESS_TITLE_HE,
-    column_preset: "progress",
-    include_default_progress_rows: true,
-  },
-  {
     kind: "checklist",
     id: "default-finishing-checklist",
-    title_he: "צ'קליסט גמר",
+    title_he: FINISHING_APARTMENTS_PROGRESS_TITLE_HE,
   },
   {
     kind: "findings_table",
-    id: "default-findings-table",
-    title_he: "ממצאים",
-    column_preset: "simple",
+    id: "default-lobby-findings",
+    title_he: FINISHING_LOBBY_FINDINGS_TITLE_HE,
+    column_preset: "finishing",
+  },
+  {
+    kind: "findings_table",
+    id: "default-apartment-findings",
+    title_he: FINISHING_APARTMENT_FINDINGS_TITLE_HE,
+    column_preset: "finishing",
   },
 ];
 
@@ -90,7 +91,7 @@ const MIXED_BLOCK_TEMPLATES: readonly BlockTemplate[] = [
   },
 ];
 
-/** תבניות בלוקים לפי visit_type — ללא שורות ממצאים (rows ריק). */
+/** תבניות בלוקים לפי visit_type - ללא שורות ממצאים (rows ריק). */
 export const DEFAULT_BLOCKS_BY_VISIT_TYPE: Record<
   string,
   readonly BlockTemplate[]
@@ -170,12 +171,12 @@ export function defaultReportBlocksForVisitType(visitType: string): ReportBlock[
   );
 }
 
-/** כותרת ברירת מחדל לטבלת התקדמות — fallback כשאין preset ייעודי. */
+/** כותרת ברירת מחדל לטבלת התקדמות - fallback כשאין preset ייעודי. */
 export function defaultProgressBlockTitleHe(visitType: string): string {
   return constructionProgressTitleHe(visitType);
 }
 
-/** טקסטים קבועים (boilerplate) כמו בדוחות הלקוח — לשימוש ביצירת דוח חדש (FR-4.2). */
+/** טקסטים קבועים (boilerplate) כמו בדוחות הלקוח - לשימוש ביצירת דוח חדש (FR-4.2). */
 export function defaultFixedTextBlocks(): FixedTextBlock[] {
   return [
     {

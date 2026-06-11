@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import FindingSimilarIssuesHint from "@/components/quality-issues/FindingSimilarIssuesHint";
 import Button from "@/components/ui/Button";
 import LinePhotoCapture, {
   type LinePhotosChangePayload,
@@ -42,25 +43,29 @@ export type EditableReportLine = {
   group_key?: string | null;
   group_label_he?: string | null;
   block_id?: string | null;
+  linked_issue_id?: string | null;
 };
 
 const LINE_STATUS_OPTIONS = [
-  { value: "", label: "—" },
+  { value: "", label: "-" },
   { value: "IN_PROGRESS", label: "בתהליך" },
   { value: "DONE", label: "בוצע" },
   { value: "NEEDS_ACTION", label: "יש להשלים" },
 ];
 
 export type LineSaveOptions = {
-  /** auto-save — ללא חסימת UI מלאה */
+  /** auto-save - ללא חסימת UI מלאה */
   silent?: boolean;
 };
 
 type ReportLineEditorProps = {
   reportId: string;
+  projectId?: string | null;
+  organizationId?: string | null;
   line: EditableReportLine;
   editable: boolean;
   saving: boolean;
+  linking?: boolean;
   autosave?: boolean;
   autosaveDelayMs?: number;
   onSave: (
@@ -68,6 +73,10 @@ type ReportLineEditorProps = {
     payload: Record<string, unknown>,
     options?: LineSaveOptions
   ) => Promise<void>;
+  onLinkRow?: (
+    lineId: string,
+    linkedIssueId: string | null
+  ) => void | Promise<void>;
   onConvertToFreeText: (lineId: string) => Promise<void>;
   onDelete: (lineId: string) => Promise<void>;
   onPhotosChange: (lineId: string, payload: LinePhotosChangePayload) => void;
@@ -75,12 +84,16 @@ type ReportLineEditorProps = {
 
 export default function ReportLineEditor({
   reportId,
+  projectId = null,
+  organizationId = null,
   line,
   editable,
   saving,
+  linking = false,
   autosave = false,
   autosaveDelayMs = FIELD_REPORT_LOCAL_AUTOSAVE_MS,
   onSave,
+  onLinkRow,
   onConvertToFreeText,
   onDelete,
   onPhotosChange,
@@ -237,6 +250,30 @@ export default function ReportLineEditor({
           }
         />
       </label>
+      <FindingSimilarIssuesHint
+        projectId={projectId}
+        organizationId={organizationId}
+        reportId={reportId}
+        lineId={line.id}
+        disabled={!editable}
+        linkedIssueId={line.linked_issue_id}
+        linking={linking}
+        location={draft.location}
+        trade={draft.trade}
+        group_key={line.group_key}
+        issue_id={line.issue_id}
+        onLinkIssue={
+          onLinkRow
+            ? (issueId) => onLinkRow(line.id, issueId)
+            : undefined
+        }
+        onMarkNewIssue={
+          onLinkRow ? () => onLinkRow(line.id, null) : undefined
+        }
+        onUnlinkIssue={
+          onLinkRow ? () => onLinkRow(line.id, null) : undefined
+        }
+      />
       {line.has_catalog_issue ? (
         <Button
           variant="secondary"
@@ -369,7 +406,7 @@ export default function ReportLineEditor({
       {!expanded ? (
         <>
           <p className="mt-2 whitespace-pre-wrap">
-            {line.description || "—"}
+            {line.description || "-"}
           </p>
           {line.notes ? (
             <p className="mt-1 text-zinc-600">הערות: {line.notes}</p>

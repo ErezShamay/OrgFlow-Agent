@@ -32,7 +32,7 @@ export type CatalogPayload = {
 };
 
 export const OFFLINE_CATALOG_UNAVAILABLE_MESSAGE =
-  "אין מפרט מקומי — בצע «הכנה לא מקוון» כשיש רשת.";
+  "אין מפרט מקומי - בצע «הכנה לא מקוון» כשיש רשת.";
 
 export async function loadOfflineCatalogForVisitType(
   organizationId: string,
@@ -42,7 +42,7 @@ export async function loadOfflineCatalogForVisitType(
 }
 
 /**
- * טוען קטלוג מ-IndexedDB (עם hydrate) ל-picker — בלי קריאת API (FR-014).
+ * טוען קטלוג מ-IndexedDB (עם hydrate) ל-picker - בלי קריאת API (FR-014).
  */
 export async function loadOfflineCatalogForPicker(
   organizationId: string,
@@ -79,7 +79,7 @@ export function catalogPayloadHasIssues(
   return Boolean(payload?.issues?.length);
 }
 
-/** גרסה סינכרונית — רק אם המטמון כבר הותהלם (`hydrateOfflinePrepBundle`). */
+/** גרסה סינכרונית - רק אם המטמון כבר הותהלם (`hydrateOfflinePrepBundle`). */
 export function loadOfflineCatalogForVisitTypeFromCache(
   organizationId: string,
   visitType: string
@@ -92,7 +92,7 @@ export function loadOfflineCatalogForVisitTypeFromCache(
   return filterCatalogForVisitType(bundle, visitType);
 }
 
-/** מסנן קטלוג לפי משפחות מותרות לסוג ביקור — משותף ל-localStorage ול-IndexedDB. */
+/** מסנן קטלוג לפי משפחות מותרות לסוג ביקור - משותף ל-localStorage ול-IndexedDB. */
 export function filterCatalogForVisitType(
   bundle: OfflinePrepBundle,
   visitType: string

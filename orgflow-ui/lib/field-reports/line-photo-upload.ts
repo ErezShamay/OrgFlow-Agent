@@ -146,7 +146,7 @@ async function uploadLinePhotoToServerReport(
 }
 
 /**
- * מעלה תמונת שורה לשרת — מזהה דוח מקומי (UUID) משתמש ב-sync API.
+ * מעלה תמונת שורה לשרת - מזהה דוח מקומי (UUID) משתמש ב-sync API.
  */
 export async function uploadLinePhotoForReport(
   reportId: string,
@@ -154,7 +154,7 @@ export async function uploadLinePhotoForReport(
   file: Blob,
   options: {
     photoId?: string;
-    /** תמונה ראשונה לשורה בדוח שרת בלבד — endpoint יחיד `/photo`. */
+    /** תמונה ראשונה לשורה בדוח שרת בלבד - endpoint יחיד `/photo`. */
     useLegacySinglePhotoEndpoint?: boolean;
   } = {}
 ): Promise<LinePhotoUploadLine> {

@@ -42,7 +42,7 @@ class TableSchema:
     audited: bool = True
 
 
-SCHEMA_VERSION = "2026060702"
+SCHEMA_VERSION = "2026060915"
 
 # Matches deploy/sql/20260604_enable_rls_best_practice.sql (authenticated SELECT + service_role bypass).
 ORGFLOW_TENANT_ISOLATION = (
@@ -57,6 +57,11 @@ ORGFLOW_PROJECT_SCOPE = (
     "SELECT p.id FROM public.projects AS p "
     "WHERE p.organization_id = public.orgflow_jwt_organization_id()"
     ")"
+)
+ORGFLOW_QUALITY_ISSUE_EVENT_SCOPE = (
+    "EXISTS (SELECT 1 FROM public.quality_issues AS qi "
+    "WHERE qi.id = quality_issue_events.issue_id "
+    "AND qi.organization_id = public.orgflow_jwt_organization_id())"
 )
 
 TABLES: dict[str, TableSchema] = {
@@ -334,6 +339,142 @@ TABLES: dict[str, TableSchema] = {
             ),
         ),
     ),
+    "quality_issues": TableSchema(
+        name="quality_issues",
+        tenant_column="organization_id",
+        soft_delete_column=None,
+        foreign_keys=(
+            ForeignKeyDef("organization_id", "organizations", on_delete="CASCADE"),
+            ForeignKeyDef("project_id", "projects", on_delete="CASCADE"),
+            ForeignKeyDef(
+                "first_seen_report_id",
+                "field_visit_reports",
+                on_delete="RESTRICT",
+            ),
+            ForeignKeyDef(
+                "last_seen_report_id",
+                "field_visit_reports",
+                on_delete="RESTRICT",
+            ),
+            ForeignKeyDef(
+                "first_seen_line_id",
+                "field_visit_report_lines",
+                on_delete="SET NULL",
+            ),
+            ForeignKeyDef(
+                "last_seen_line_id",
+                "field_visit_report_lines",
+                on_delete="SET NULL",
+            ),
+            ForeignKeyDef("closed_by", "profiles", on_delete="SET NULL"),
+        ),
+        indexes=(
+            IndexDef("quality_issues_pkey", ("id",), unique=True),
+            IndexDef("quality_issues_org_id_idx", ("organization_id",)),
+            IndexDef("quality_issues_project_id_idx", ("project_id",)),
+            IndexDef(
+                "quality_issues_org_project_status_idx",
+                ("organization_id", "project_id", "status"),
+            ),
+            IndexDef(
+                "quality_issues_org_project_open_severity_idx",
+                ("organization_id", "project_id", "severity"),
+            ),
+            IndexDef(
+                "quality_issues_org_materialization_key_uniq",
+                ("organization_id", "materialization_key"),
+                unique=True,
+            ),
+            IndexDef(
+                "quality_issues_project_matching_idx",
+                ("project_id", "group_key", "trade", "location"),
+            ),
+        ),
+        rls_policies=(
+            RlsPolicyDef(
+                name="quality_issues_tenant_isolation",
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
+            ),
+        ),
+    ),
+    "quality_issue_photos": TableSchema(
+        name="quality_issue_photos",
+        tenant_column="organization_id",
+        soft_delete_column=None,
+        foreign_keys=(
+            ForeignKeyDef("organization_id", "organizations", on_delete="CASCADE"),
+            ForeignKeyDef("project_id", "projects", on_delete="CASCADE"),
+            ForeignKeyDef(
+                "issue_id",
+                "quality_issues",
+                on_delete="CASCADE",
+            ),
+        ),
+        indexes=(
+            IndexDef("quality_issue_photos_pkey", ("id",), unique=True),
+            IndexDef(
+                "quality_issue_photos_issue_sort_idx",
+                ("issue_id", "sort_order"),
+            ),
+            IndexDef(
+                "quality_issue_photos_org_idx",
+                ("organization_id",),
+            ),
+        ),
+        rls_policies=(
+            RlsPolicyDef(
+                name="quality_issue_photos_tenant_isolation",
+                command="SELECT",
+                using_expression=ORGFLOW_TENANT_ISOLATION,
+            ),
+        ),
+    ),
+    "quality_issue_events": TableSchema(
+        name="quality_issue_events",
+        tenant_column=None,
+        soft_delete_column=None,
+        foreign_keys=(
+            ForeignKeyDef(
+                "issue_id",
+                "quality_issues",
+                on_delete="CASCADE",
+            ),
+            ForeignKeyDef(
+                "report_id",
+                "field_visit_reports",
+                on_delete="SET NULL",
+            ),
+            ForeignKeyDef(
+                "line_id",
+                "field_visit_report_lines",
+                on_delete="SET NULL",
+            ),
+            ForeignKeyDef("actor_id", "profiles", on_delete="SET NULL"),
+        ),
+        indexes=(
+            IndexDef("quality_issue_events_pkey", ("id",), unique=True),
+            IndexDef(
+                "quality_issue_events_issue_created_at_idx",
+                ("issue_id", "created_at"),
+            ),
+            IndexDef(
+                "quality_issue_events_report_id_idx",
+                ("report_id",),
+            ),
+            IndexDef(
+                "quality_issue_events_event_type_created_at_idx",
+                ("event_type", "created_at"),
+            ),
+        ),
+        rls_policies=(
+            RlsPolicyDef(
+                name="quality_issue_events_tenant_isolation",
+                command="SELECT",
+                using_expression=ORGFLOW_QUALITY_ISSUE_EVENT_SCOPE,
+            ),
+        ),
+    ),
     "notifications": TableSchema(
         name="notifications",
         tenant_column=None,
@@ -572,6 +713,24 @@ MIGRATION_SCRIPTS: list[dict] = [
             "Permanent PDF archive pointers on field visit reports"
         ),
         "tables": ["field_visit_reports"],
+    },
+    {
+        "version": "2026060912",
+        "name": "quality_issues",
+        "description": "QC issue registry - lives across field visits",
+        "tables": ["quality_issues"],
+    },
+    {
+        "version": "2026060913",
+        "name": "quality_issue_events",
+        "description": "Append-only audit trail for quality issues",
+        "tables": ["quality_issue_events"],
+    },
+    {
+        "version": "2026060915",
+        "name": "quality_issue_photos",
+        "description": "Remediation photos uploaded by contractors",
+        "tables": ["quality_issue_photos"],
     },
 ]
 

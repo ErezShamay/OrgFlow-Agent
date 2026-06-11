@@ -4,7 +4,7 @@ import { PDF_HEBREW_FONT, pdfText } from "./pdf-styles";
 import { PDF_SUPERVISION_BANNER_HE } from "./render-header";
 import type { OrganizationProfileSnapshot } from "./types";
 
-/** שוליים עליונים — משאירים מקום לכותרת חוזרת כמו בדוחות הלקוח. */
+/** שוליים עליונים - משאירים מקום לכותרת חוזרת כמו בדוחות הלקוח. */
 export const PDF_PAGE_MARGINS: [number, number, number, number] = [
   40,
   92,
@@ -47,11 +47,11 @@ export function organizationBannerLabel(
     profile?.organization_name,
     profile?.report_tagline,
   ].filter(Boolean);
-  return parts.join(" — ") || "פיקוח הנדסי";
+  return parts.join(" - ") || "פיקוח הנדסי";
 }
 
 /**
- * כותרת עליונה בכל עמוד — באנר, תאריך, שם המפקח/ארגון, מספר עמוד (כמו 7/7 דוחות דוגמה).
+ * כותרת עליונה בכל עמוד - באנר, תאריך, שם המפקח/ארגון, מספר עמוד (כמו 7/7 דוחות דוגמה).
  */
 export function renderRepeatingPageHeader(input: {
   visitDate: string;

@@ -41,7 +41,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# capacitor (FR-029) — native build artifacts; keep android/ ios/ projects in git
+# capacitor (FR-029) - native build artifacts; keep android/ ios/ projects in git
 android/.gradle/
 android/app/build/
 android/build/

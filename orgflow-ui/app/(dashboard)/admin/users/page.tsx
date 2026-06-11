@@ -172,8 +172,8 @@ function AdminUsersContent() {
   const updateRoleOptions = useMemo(
     () =>
       isPlatformAdmin(effectiveRole)
-        ? (["ADMIN", "SUPERVISOR", "VIEWER"] as const)
-        : (["SUPERVISOR", "VIEWER"] as const),
+        ? (["ADMIN", "SUPERVISOR", "DEVELOPER", "CONTRACTOR", "VIEWER"] as const)
+        : (["SUPERVISOR", "DEVELOPER", "CONTRACTOR", "VIEWER"] as const),
     [effectiveRole]
   );
   const roleOptions = useMemo(
@@ -181,7 +181,9 @@ function AdminUsersContent() {
       ...inviteableRoles(effectiveRole, {
         hasClientAdmin,
       }),
-    ] as Array<"ADMIN" | "SUPERVISOR" | "VIEWER">,
+    ] as Array<
+      "ADMIN" | "SUPERVISOR" | "DEVELOPER" | "CONTRACTOR" | "VIEWER"
+    >,
     [effectiveRole, hasClientAdmin],
   );
   const selectedRole = roleOptions.includes(
@@ -617,7 +619,7 @@ function AdminUsersContent() {
         setInviteOrganizationId(createdOrgId);
         await switchOrganization(createdOrgId);
         toast.info(
-          "עברת ללקוח החדש — ההזמנות הבאות ישויכו אליו"
+          "עברת ללקוח החדש - ההזמנות הבאות ישויכו אליו"
         );
       }
     } catch (err: unknown) {
@@ -996,8 +998,8 @@ function AdminUsersContent() {
         </h1>
         <p className="of-page-desc max-w-2xl text-sm">
           {canManageOrganizations
-            ? "אתה מנהל גלובלי — גישה לכל הלקוחות, יצירת לקוחות חדשים, וניהול משתמשים בכל חברה."
-            : "אתה מנהל לקוח — ניהול משתמשים ופעולות רק עבור הלקוח הפעיל."}
+            ? "אתה מנהל גלובלי - גישה לכל הלקוחות, יצירת לקוחות חדשים, וניהול משתמשים בכל חברה."
+            : "אתה מנהל לקוח - ניהול משתמשים ופעולות רק עבור הלקוח הפעיל."}
         </p>
       </header>
 
@@ -1101,7 +1103,7 @@ function AdminUsersContent() {
 
           {!fieldReportStorageAvailable ? (
             <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
-              טבלאות המודול אינן קיימות במסד — יש להריץ את המיגרציות
+              טבלאות המודול אינן קיימות במסד - יש להריץ את המיגרציות
               2026060101_organization_field_report_module.sql ו-
               2026060102_field_visit_reports.sql
             </p>
@@ -1327,12 +1329,12 @@ function AdminUsersContent() {
         </h2>
         <p className="mb-4 text-sm text-zinc-500">
           {canManageOrganizations
-            ? "בחרו במפורש לאיזה לקוח משויך המשתמש — לא מספיק ליצור לקוח חדש בלי לבחור אותו."
+            ? "בחרו במפורש לאיזה לקוח משויך המשתמש - לא מספיק ליצור לקוח חדש בלי לבחור אותו."
             : "משתמשים חדשים ישויכו לחברה שלך בלבד. מנהל לקוח יכול לנהל רק את הארגון שלו."}
           {" "}
           לכל לקוח מותר מנהל לקוח אחד בלבד.
           {hasClientAdmin && canManageOrganizations
-            ? " ללקוח הפעיל כבר יש מנהל לקוח — ניתן להזמין מפקח או משתמש כללי."
+            ? " ללקוח הפעיל כבר יש מנהל לקוח - ניתן להזמין מפקח או משתמש כללי."
             : ""}
         </p>
 
@@ -1501,7 +1503,7 @@ function AdminUsersContent() {
                     className="border-b border-zinc-100 dark:border-zinc-800"
                   >
                     <td className="px-3 py-3">
-                      {user.full_name || "—"}
+                      {user.full_name || "-"}
                     </td>
                     <td className="px-3 py-3">{user.email}</td>
                     {canManageOrganizations
@@ -1509,7 +1511,7 @@ function AdminUsersContent() {
                       <td className="px-3 py-3 text-zinc-600 dark:text-zinc-400">
                         {user.organization_name
                           || user.organization_id
-                          || "—"}
+                          || "-"}
                       </td>
                     ) : null}
                     <td className="px-3 py-3">

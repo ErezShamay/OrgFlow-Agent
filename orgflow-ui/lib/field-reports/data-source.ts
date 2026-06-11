@@ -23,7 +23,7 @@ export type FieldReportDataSourceMode =
 export type FieldReportDataSourceContext = {
   /** דוח קיים ב-`reports` store (לפי `client_report_uuid`). */
   hasLocalReport?: boolean;
-  /** מזהה שרת — מאפשר קריאות API במצב hybrid. */
+  /** מזהה שרת - מאפשר קריאות API במצב hybrid. */
   serverReportId?: string | null;
 };
 
@@ -40,9 +40,9 @@ export type FieldReportDataSource = {
 
 /**
  * קובע מצב מקור נתונים:
- * - `local-only` — אין רשת או ה-API לא נגיש
- * - `hybrid` — רשת + API, ויש עותק מקומי (מקור אמת בשטח)
- * - `remote` — רשת + API, אין עותק מקומי (זרימת משרד / טעינה ראשונה)
+ * - `local-only` - אין רשת או ה-API לא נגיש
+ * - `hybrid` - רשת + API, ויש עותק מקומי (מקור אמת בשטח)
+ * - `remote` - רשת + API, אין עותק מקומי (זרימת משרד / טעינה ראשונה)
  */
 export function resolveFieldReportDataSource(
   network: FieldReportNetworkSnapshot,
@@ -83,10 +83,10 @@ export function fieldReportDataSourceModeLabelHe(
 ): string {
   switch (mode) {
     case "local-only":
-      return "אופליין — נתונים מקומיים";
+      return "אופליין - נתונים מקומיים";
     case "hybrid":
       return "מקומי + סנכרון לשרת";
     case "remote":
-      return "מקוון — שרת";
+      return "מקוון - שרת";
   }
 }

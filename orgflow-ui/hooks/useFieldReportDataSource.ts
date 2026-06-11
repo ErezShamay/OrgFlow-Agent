@@ -17,7 +17,7 @@ export type UseFieldReportDataSourceResult = FieldReportDataSource & {
 };
 
 /**
- * מצב מקור נתונים לדוחות — `navigator.onLine` + ping ל-module-status.
+ * מצב מקור נתונים לדוחות - `navigator.onLine` + ping ל-module-status.
  * העבר `hasLocalReport` / `serverReportId` כשטוענים דוח (FR-012+).
  */
 export function useFieldReportDataSource(

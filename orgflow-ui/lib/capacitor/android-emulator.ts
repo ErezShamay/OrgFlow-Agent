@@ -1,4 +1,4 @@
-/** זיהוי אמולטור Android — במצלמה וירטואלית עדיף גלריה/קובץ בלי `capture`. */
+/** זיהוי אמולטור Android - במצלמה וירטואלית עדיף גלריה/קובץ בלי `capture`. */
 export function isLikelyAndroidEmulator(): boolean {
   if (typeof navigator === "undefined") {
     return false;
