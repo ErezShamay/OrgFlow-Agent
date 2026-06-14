@@ -123,6 +123,27 @@ describe("blocks CRUD helpers", () => {
 });
 
 describe("dual-write construction_progress", () => {
+  it("does not inject progress_table for supervision_checklist reports", () => {
+    const supervisionBlock = {
+      id: "checklist-main",
+      kind: "supervision_checklist" as const,
+      title_he: "ביקור",
+      construction_stage: "FINISHING" as const,
+      visit_scope: "APARTMENT" as const,
+      items: [],
+      sort_order: 0,
+    };
+
+    const { blocks } = dualWriteHeaderBlocksAndProgress(
+      [supervisionBlock],
+      [],
+      "FINISHING_APARTMENTS"
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]?.kind).toBe("supervision_checklist");
+  });
+
   it("syncs progress block rows with construction_progress", () => {
     const rows = constructionProgressToProgressRows([
       { description: "ביסוס", status: "בתהליך", completion_date: "" },

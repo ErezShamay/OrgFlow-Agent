@@ -295,12 +295,6 @@ export default function FieldReportsPage() {
               ? "מכין..."
               : "הכנה לא מקוון"}
           </button>
-          <Link
-            href="/field-reports/new"
-            className={FR_PRIMARY_ACTION_BUTTON}
-          >
-            דוח ביקור חדש
-          </Link>
         </div>
       </header>
 
@@ -400,12 +394,9 @@ export default function FieldReportsPage() {
       ) : reports.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
           <p className="text-sm text-zinc-600">אין דוחות עדיין.</p>
-          <Link
-            href="/field-reports/new"
-            className={`${FR_PRIMARY_ACTION_BUTTON} mt-4`}
-          >
-            צור דוח ביקור ראשון
-          </Link>
+          <p className="mt-2 text-sm text-zinc-500">
+            יצירת דוח חדש מתבצעת מדף הפרויקט — «הפקת דוח».
+          </p>
         </div>
       ) : (
         <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">

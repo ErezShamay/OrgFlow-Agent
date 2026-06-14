@@ -11,6 +11,7 @@ const QC_SPEC_DOCUMENTS = [
   "qc-personas-permissions.md",
   "qc-navigation.md",
   "qc-freeze-list.md",
+  "field-supervision-checklist-spec.md",
 ];
 
 describe("qc spec gate (0.6)", () => {

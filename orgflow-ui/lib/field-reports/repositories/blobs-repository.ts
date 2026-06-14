@@ -1,12 +1,15 @@
+import { MAX_CHECKLIST_ITEM_PHOTOS } from "@/lib/field-reports/checklist-photo-constants";
 import { MAX_LINE_PHOTOS } from "@/lib/field-reports/line-photo-constants";
 import {
   blobStorageKey,
   FIELD_REPORT_STORES,
+  reportChecklistItemIndexKey,
   reportLineIndexKey,
   type BlobRecord,
 } from "@/lib/field-reports/db/schema";
 import { getFieldReportDatabase } from "@/lib/field-reports/db/field-report-db";
 import { PRIMARY_LINE_PHOTO_ID } from "@/lib/field-reports/line-photo-keys";
+import { PRIMARY_CHECKLIST_PHOTO_ID } from "@/lib/field-reports/checklist-photo-keys";
 
 export { PRIMARY_LINE_PHOTO_ID };
 
@@ -61,6 +64,10 @@ async function listBlobsForReport(reportId: string): Promise<BlobRecord[]> {
 
 function isLinePhoto(record: BlobRecord): boolean {
   return record.kind === "line_photo";
+}
+
+function isChecklistPhoto(record: BlobRecord): boolean {
+  return record.kind === "checklist_photo";
 }
 
 /**
@@ -160,6 +167,112 @@ export async function countLinePhotoBlobs(
 
 export function canAddLinePhoto(count: number): boolean {
   return count < MAX_LINE_PHOTOS;
+}
+
+export async function saveChecklistPhotoBlob(
+  reportId: string,
+  checklistItemId: string,
+  file: Blob,
+  options: SaveLinePhotoOptions
+): Promise<string> {
+  const photoId = options.photoId ?? newPhotoId();
+  const record: BlobRecord = {
+    id: blobStorageKey(reportId, "checklist_photo", {
+      checklistItemId,
+      photoId,
+    }),
+    kind: "checklist_photo",
+    report_id: reportId,
+    report_line_key: reportChecklistItemIndexKey(reportId, checklistItemId),
+    line_id: checklistItemId,
+    photo_id: photoId,
+    blob: file,
+    mime_type: file.type || "image/jpeg",
+    updated_at: nowIso(),
+    pending_upload: options.pendingUpload,
+  };
+
+  await putBlobRecord(record);
+  return photoId;
+}
+
+export async function getChecklistPhotoBlob(
+  reportId: string,
+  checklistItemId: string,
+  photoId: string = PRIMARY_CHECKLIST_PHOTO_ID
+): Promise<BlobRecord | null> {
+  return getBlobRecord(
+    blobStorageKey(reportId, "checklist_photo", {
+      checklistItemId,
+      photoId,
+    })
+  );
+}
+
+export async function listChecklistPhotoBlobsForItem(
+  reportId: string,
+  checklistItemId: string
+): Promise<BlobRecord[]> {
+  const database = await getFieldReportDatabase();
+  const records = await database.getAllFromIndex(
+    FIELD_REPORT_STORES.blobs,
+    "by-report-line",
+    reportChecklistItemIndexKey(reportId, checklistItemId)
+  );
+
+  return records
+    .filter(isChecklistPhoto)
+    .sort((left, right) => left.updated_at.localeCompare(right.updated_at));
+}
+
+export async function listChecklistPhotoBlobsForReport(
+  reportId: string
+): Promise<BlobRecord[]> {
+  const records = await listBlobsForReport(reportId);
+  return records
+    .filter(isChecklistPhoto)
+    .sort((left, right) => left.updated_at.localeCompare(right.updated_at));
+}
+
+export async function listPendingChecklistPhotoBlobs(
+  reportId?: string
+): Promise<BlobRecord[]> {
+  const database = await getFieldReportDatabase();
+  const records = reportId
+    ? await listBlobsForReport(reportId)
+    : await database.getAll(FIELD_REPORT_STORES.blobs);
+
+  return records.filter(
+    (record) =>
+      isChecklistPhoto(record) && record.pending_upload === true
+  );
+}
+
+export async function deleteChecklistPhotoBlob(
+  reportId: string,
+  checklistItemId: string,
+  photoId: string = PRIMARY_CHECKLIST_PHOTO_ID
+): Promise<void> {
+  const database = await getFieldReportDatabase();
+  await database.delete(
+    FIELD_REPORT_STORES.blobs,
+    blobStorageKey(reportId, "checklist_photo", {
+      checklistItemId,
+      photoId,
+    })
+  );
+}
+
+export async function countChecklistPhotoBlobs(
+  reportId: string,
+  checklistItemId: string
+): Promise<number> {
+  const photos = await listChecklistPhotoBlobsForItem(reportId, checklistItemId);
+  return photos.length;
+}
+
+export function canAddChecklistPhoto(count: number): boolean {
+  return count < MAX_CHECKLIST_ITEM_PHOTOS;
 }
 
 export async function saveReportPdfBlob(

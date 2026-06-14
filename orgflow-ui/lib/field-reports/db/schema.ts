@@ -33,8 +33,8 @@ export type LocalReportStatus =
 /** סטטוס רשומה בתור סנכרון. */
 export type LocalSyncStatus = "pending" | "syncing" | "failed" | "done";
 
-/** סוג blob ב-store המאוחד (תמונות שורה / PDF). */
-export type FieldReportBlobKind = "line_photo" | "pdf";
+/** סוג blob ב-store המאוחד (תמונות שורה / צ'קליסט / PDF). */
+export type FieldReportBlobKind = "line_photo" | "checklist_photo" | "pdf";
 
 /**
  * חבילת הכנה לא מקוון - מחליף `offline-store` (FR-006).
@@ -123,15 +123,32 @@ export type SyncQueueRecord = {
 export function blobStorageKey(
   reportId: string,
   kind: FieldReportBlobKind,
-  options?: { lineId?: string; photoId?: string }
+  options?: {
+    lineId?: string;
+    photoId?: string;
+    checklistItemId?: string;
+  }
 ): string {
   if (kind === "pdf") {
     return `${reportId}:pdf`;
   }
 
+  if (kind === "checklist_photo") {
+    const checklistItemId = options?.checklistItemId ?? "";
+    const photoId = options?.photoId ?? "primary";
+    return `${reportId}:checklist-item:${checklistItemId}:${photoId}`;
+  }
+
   const lineId = options?.lineId ?? "";
   const photoId = options?.photoId ?? "primary";
   return `${reportId}:line:${lineId}:${photoId}`;
+}
+
+export function reportChecklistItemIndexKey(
+  reportId: string,
+  checklistItemId: string
+): string {
+  return `${reportId}:checklist:${checklistItemId}`;
 }
 
 export function reportLineIndexKey(reportId: string, lineId: string): string {

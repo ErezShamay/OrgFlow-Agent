@@ -12,7 +12,9 @@ import {
 import type {
   ChecklistBlock,
   ChecklistItem,
+  ChecklistItemStatus,
   ColumnPresetKey,
+  ConstructionStage,
   FindingRow,
   FindingsTableBlock,
   FixedTextBlock,
@@ -22,17 +24,25 @@ import type {
   ProgressRow,
   ProgressTableBlock,
   ProjectMetadata,
+  PublicAreaId,
   ReportBlock,
   Stakeholder,
   StakeholderRole,
+  SupervisionChecklistBlock,
+  SupervisionChecklistItem,
+  SupervisionReportMeta,
   SupplierRow,
   VisitReportDocument,
+  VisitScope,
 } from "./types";
 import {
+  CHECKLIST_ITEM_STATUSES,
   COLUMN_PRESET_KEYS,
+  CONSTRUCTION_STAGES,
   FIXED_TEXT_BLOCK_KINDS,
   PROJECT_SCHEMES,
   STAKEHOLDER_ROLES,
+  VISIT_SCOPES,
 } from "./types";
 
 /** קלט גולמי לדוח ביקור - תואם תגובת API קיימת. */
@@ -440,6 +450,8 @@ function normalizeReportBlock(
       return normalizeFindingsTableBlock(raw, base, visitType);
     case "checklist":
       return normalizeChecklistBlock(raw, base);
+    case "supervision_checklist":
+      return normalizeSupervisionChecklistBlock(raw, base);
     case "free_text":
       return normalizeFreeTextBlock(raw, base);
     case "image":
@@ -485,6 +497,69 @@ function normalizeChecklistBlock(
     ...base,
     kind: "checklist",
     items: normalizeChecklistItems(raw.items),
+  };
+}
+
+function normalizeSupervisionChecklistBlock(
+  raw: Record<string, unknown>,
+  base: { id: string; title_he: string; sort_order: number }
+): SupervisionChecklistBlock | null {
+  const constructionStage = raw.construction_stage;
+  const visitScope = raw.visit_scope;
+
+  if (
+    typeof constructionStage !== "string" ||
+    !isConstructionStage(constructionStage) ||
+    typeof visitScope !== "string" ||
+    !isVisitScope(visitScope)
+  ) {
+    return null;
+  }
+
+  return {
+    ...base,
+    kind: "supervision_checklist",
+    construction_stage: constructionStage,
+    visit_scope: visitScope,
+    apartment_id: nullableString(raw.apartment_id),
+    apartment_number: nullableString(raw.apartment_number),
+    ad_hoc_apartment: raw.ad_hoc_apartment === true,
+    public_area_id: normalizePublicAreaId(raw.public_area_id),
+    items: normalizeSupervisionChecklistItems(raw.items),
+  };
+}
+
+/** מנרמל supervision_meta מ-header_fields (§10.1). */
+export function normalizeSupervisionMeta(
+  raw: Record<string, unknown>
+): SupervisionReportMeta | null {
+  const nested = raw.supervision_meta;
+  const source =
+    nested && typeof nested === "object"
+      ? (nested as Record<string, unknown>)
+      : raw;
+
+  const constructionStage = source.construction_stage;
+  const visitScope = source.visit_scope;
+
+  if (
+    typeof constructionStage !== "string" ||
+    !isConstructionStage(constructionStage) ||
+    typeof visitScope !== "string" ||
+    !isVisitScope(visitScope)
+  ) {
+    return null;
+  }
+
+  return {
+    construction_stage: constructionStage,
+    visit_scope: visitScope,
+    apartment_id: nullableString(source.apartment_id),
+    apartment_number: nullableString(source.apartment_number),
+    owner_name: nullableString(source.owner_name),
+    ad_hoc_apartment: source.ad_hoc_apartment === true,
+    public_area_id: normalizePublicAreaId(source.public_area_id),
+    public_area_label_he: nullableString(source.public_area_label_he),
   };
 }
 
@@ -621,6 +696,99 @@ function normalizeChecklistItems(value: unknown): ChecklistItem[] {
   }
 
   return items;
+}
+
+function normalizeSupervisionChecklistItems(
+  value: unknown
+): SupervisionChecklistItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const items: SupervisionChecklistItem[] = [];
+
+  for (const [index, item] of value.entries()) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const raw = item as Record<string, unknown>;
+    const issueNameHe = stringField(raw.issue_name_he);
+    const catalogIssueId = stringField(raw.catalog_issue_id);
+    const standardRef = stringField(raw.standard_ref);
+
+    if (!issueNameHe || !catalogIssueId || !standardRef) {
+      continue;
+    }
+
+    const status = raw.status;
+    const normalizedStatus: ChecklistItemStatus =
+      typeof status === "string" && isChecklistItemStatus(status)
+        ? status
+        : "UNCHECKED";
+
+    items.push({
+      id: stringField(raw.id, `checklist-item-${index}`),
+      catalog_issue_id: catalogIssueId,
+      issue_name_he: issueNameHe,
+      category_id: stringField(raw.category_id),
+      category_name_he: stringField(raw.category_name_he),
+      top_family: stringField(raw.top_family),
+      standard_ref: standardRef,
+      severity: nullableString(raw.severity),
+      status: normalizedStatus,
+      notes: nullableString(raw.notes),
+      photo_ids: normalizeChecklistPhotoIds(raw.photo_ids),
+      linked_line_id: nullableString(raw.linked_line_id),
+      sort_order:
+        typeof raw.sort_order === "number" ? raw.sort_order : index,
+    });
+  }
+
+  return items;
+}
+
+function normalizeChecklistPhotoIds(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+function normalizePublicAreaId(value: unknown): PublicAreaId | null {
+  const text = stringField(value);
+  if (!text) {
+    return null;
+  }
+
+  const match = (
+    [
+      "LOBBY",
+      "WET_ROOMS",
+      "BALCONY_ROOF",
+      "PARKING",
+      "ELEVATOR_STAIRS",
+      "OUTDOOR",
+    ] as const
+  ).find((id) => id === text);
+
+  return match ?? null;
+}
+
+function isConstructionStage(value: string): value is ConstructionStage {
+  return (CONSTRUCTION_STAGES as readonly string[]).includes(value);
+}
+
+function isVisitScope(value: string): value is VisitScope {
+  return (VISIT_SCOPES as readonly string[]).includes(value);
+}
+
+function isChecklistItemStatus(value: string): value is ChecklistItemStatus {
+  return (CHECKLIST_ITEM_STATUSES as readonly string[]).includes(value);
 }
 
 function normalizePhotoIds(value: unknown): string[] | undefined {

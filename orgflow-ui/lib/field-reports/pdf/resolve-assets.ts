@@ -1,7 +1,9 @@
 import { apiFetch } from "@/lib/api/client";
+import { listChecklistPhotosForItem } from "@/lib/field-reports/checklist-photo-store";
 import { listLinePhotosForLine } from "@/lib/field-reports/line-photo-store";
+import type { SupervisionChecklistItem } from "@/lib/field-reports/schema/types";
 
-import type { LinePhotoData, PdfReportLine } from "./types";
+import type { ChecklistPhotoData, LinePhotoData, PdfReportLine } from "./types";
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -68,6 +70,27 @@ export async function resolveLinePhotos(
           dataUrl,
         });
       }
+    }
+  }
+
+  return photos;
+}
+
+export async function resolveChecklistPhotos(
+  reportId: string,
+  items: SupervisionChecklistItem[]
+): Promise<ChecklistPhotoData[]> {
+  const photos: ChecklistPhotoData[] = [];
+
+  for (const item of items) {
+    const localPhotos = await listChecklistPhotosForItem(reportId, item.id);
+
+    for (const local of localPhotos) {
+      photos.push({
+        checklistItemId: item.id,
+        photoId: local.photoId,
+        dataUrl: await blobToDataUrl(local.blob),
+      });
     }
   }
 

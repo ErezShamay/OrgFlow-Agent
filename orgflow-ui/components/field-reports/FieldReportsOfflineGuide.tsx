@@ -40,7 +40,7 @@ export default function FieldReportsOfflineGuide({
           <strong>לפני יציאה מהמשרד:</strong> לחץ «הכנה לא מקוון» (דורש רשת).
         </li>
         <li>
-          <strong>דוח חדש:</strong> «דוח ביקור חדש» - נשמר במכשיר גם בלי רשת.
+          <strong>דוח חדש:</strong> מדף פרויקט — «הפקת דוח» (נשמר במכשיר גם בלי רשת).
         </li>
         <li>
           <strong>דוח מהמשרד:</strong> פתח דוח «בעבודה» מהרשימה - ימשיך
@@ -65,13 +65,6 @@ export default function FieldReportsOfflineGuide({
       <p className="text-xs text-sky-800 dark:text-sky-300">
         <Link href="/field-reports" className="font-medium text-brand hover:underline">
           רשימת הדוחות
-        </Link>
-        {" · "}
-        <Link
-          href="/field-reports/new"
-          className="font-medium text-brand hover:underline"
-        >
-          דוח חדש
         </Link>
       </p>
       {dismissible && onDismiss ? (

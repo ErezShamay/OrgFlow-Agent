@@ -164,6 +164,24 @@ def test_create_request_warns_on_unknown_header_keys() -> None:
     assert any("totally_unknown_key" in str(item.message) for item in caught)
 
 
+def test_known_header_keys_include_supervision_meta() -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        unknown = warn_unknown_header_field_keys(
+            {
+                "supervision_meta": {
+                    "construction_stage": "FINISHING",
+                    "visit_scope": "APARTMENT",
+                    "apartment_number": "12",
+                },
+                "blocks": [],
+            },
+        )
+
+    assert unknown == []
+    assert len(caught) == 0
+
+
 def test_known_header_keys_include_fixed_text_and_inspector_notes() -> None:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")

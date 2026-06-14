@@ -21,7 +21,7 @@ import type {
   ProgressTableBlock,
   ReportBlock,
 } from "../schema/types";
-import type { LinePhotoData } from "./types";
+import type { LinePhotoData, ChecklistPhotoData } from "./types";
 import {
   hasPdfIssueMarkers,
   PDF_ISSUE_MARKER_COLUMN_HEADER_HE,
@@ -29,6 +29,8 @@ import {
   type PdfLineIssueMarkerMap,
 } from "./pdf-issue-markers";
 import { formatCatalogStandardCell } from "./format-catalog-standard-cell";
+import { renderSupervisionChecklist } from "./supervision-checklist-pdf-section";
+import type { SupervisionReportMeta } from "../schema/types";
 
 const LINE_STATUS_LABELS: Record<string, string> = {
   IN_PROGRESS: "בתהליך",
@@ -48,7 +50,12 @@ export type RenderBlocksOptions = {
   /** שורות דוח - fallback derive ל-findings כשאין blocks מפורשים (לא בשימוש כאן). */
   reportLines?: unknown[] | null;
   linePhotos?: LinePhotoData[];
+  checklistPhotos?: ChecklistPhotoData[];
   lineIssueMarkers?: PdfLineIssueMarkerMap;
+  projectName?: string | null;
+  visitDate?: string | null;
+  supervisionMeta?: SupervisionReportMeta | null;
+  headerFields?: Record<string, unknown>;
 };
 
 /** האם נשמר מערך blocks מפורש ב-header_fields (לא מיגרציה אוטומטית בלבד). */
@@ -87,6 +94,9 @@ export function renderBlocks(
         break;
       case "checklist":
         content.push(...renderChecklist(block));
+        break;
+      case "supervision_checklist":
+        content.push(...renderSupervisionChecklist(block, options));
         break;
       case "free_text":
         content.push(...renderFreeText(block));

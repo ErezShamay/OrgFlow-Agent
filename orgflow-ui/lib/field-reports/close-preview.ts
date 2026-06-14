@@ -10,6 +10,8 @@ export type ClosePreview = {
   empty_line_ids: string[];
   catalog_warning_count: number;
   warnings: string[];
+  /** שגיאות חוסמות לפני סגירה (§8.1 — supervision checklist). */
+  blocking_errors?: string[];
 };
 
 export function buildClosePreview(

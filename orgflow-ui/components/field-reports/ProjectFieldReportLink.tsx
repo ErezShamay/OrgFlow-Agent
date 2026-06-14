@@ -3,6 +3,8 @@
 import Link from "next/link";
 
 import { useFieldReportModule } from "@/hooks/useFieldReportModule";
+import { projectFieldReportNewPath } from "@/lib/field-reports/routes";
+import { FR_PRIMARY_ACTION_BUTTON } from "@/lib/field-reports/touch-input-class";
 
 export default function ProjectFieldReportLink({
   projectId,
@@ -17,10 +19,10 @@ export default function ProjectFieldReportLink({
 
   return (
     <Link
-      href={`/field-reports/new?project=${projectId}`}
-      className="text-sm font-medium text-brand hover:underline"
+      href={projectFieldReportNewPath(projectId)}
+      className={FR_PRIMARY_ACTION_BUTTON}
     >
-      הפקת דוח לפרויקט
+      הפקת דוח
     </Link>
   );
 }

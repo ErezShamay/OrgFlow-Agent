@@ -17,6 +17,7 @@ QC_SPEC_DOCUMENTS: tuple[str, ...] = (
     "qc-personas-permissions.md",
     "qc-navigation.md",
     "qc-freeze-list.md",
+    "field-supervision-checklist-spec.md",
 )
 
 QC_SPEC_GATE_CRITERIA: tuple[tuple[str, str], ...] = (

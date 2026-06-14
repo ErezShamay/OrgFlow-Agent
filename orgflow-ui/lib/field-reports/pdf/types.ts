@@ -57,10 +57,17 @@ export type LinePhotoData = {
   dataUrl: string;
 };
 
+export type ChecklistPhotoData = {
+  checklistItemId: string;
+  photoId?: string;
+  dataUrl: string;
+};
+
 export type VisitReportPdfInput = {
   report: PdfVisitReport;
   inspector?: PdfInspectorProfile | null;
   linePhotos?: LinePhotoData[];
+  checklistPhotos?: ChecklistPhotoData[];
   logoDataUrl?: string | null;
   illustrationDataUrl?: string | null;
   generatedAt?: Date;

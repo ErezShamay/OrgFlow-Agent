@@ -164,10 +164,24 @@ export default function NewFieldVisitReportPage() {
       return;
     }
 
+    if (preselectedProjectId) {
+      router.replace(
+        `/projects/${encodeURIComponent(preselectedProjectId)}/field-reports/new`
+      );
+      return;
+    }
+
     startTransition(() => {
       void loadFormData();
     });
-  }, [moduleLoading, isEnabled, organizationId, loadFormData]);
+  }, [
+    moduleLoading,
+    isEnabled,
+    organizationId,
+    loadFormData,
+    preselectedProjectId,
+    router,
+  ]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();

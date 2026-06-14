@@ -95,6 +95,8 @@ KNOWN_HEADER_FIELD_KEYS: frozenset[str] = frozenset(
         "include_fixed_text_blocks",
         "inspector_notes",
         "blocks",
+        # Supervision checklist (field-supervision-checklist-spec §10.1)
+        "supervision_meta",
     }
 )
 

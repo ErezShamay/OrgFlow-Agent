@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import ReportChecklistBlockEditor from "@/components/field-reports/ReportChecklistBlockEditor";
 import ReportFindingsBlockEditor from "@/components/field-reports/ReportFindingsBlockEditor";
 import ReportProgressBlockEditor from "@/components/field-reports/ReportProgressBlockEditor";
+import SupervisionChecklistEditor from "@/components/field-reports/SupervisionChecklistEditor";
 import Button from "@/components/ui/Button";
 import {
   ADDABLE_BLOCK_KINDS,
@@ -26,6 +27,7 @@ import type {
   ProgressTableBlock,
   ReportBlock,
   ReportBlockKind,
+  SupervisionChecklistBlock,
 } from "@/lib/field-reports/schema/types";
 import {
   FR_TOUCH_BUTTON,
@@ -248,6 +250,15 @@ export default function ReportBlocksManager({
               {block.kind === "checklist" ? (
                 <ReportChecklistBlockEditor
                   block={block}
+                  disabled={disabled}
+                  onChange={(next) => patchBlock(block.id, () => next)}
+                />
+              ) : null}
+
+              {block.kind === "supervision_checklist" && reportId ? (
+                <SupervisionChecklistEditor
+                  block={block as SupervisionChecklistBlock}
+                  reportId={reportId}
                   disabled={disabled}
                   onChange={(next) => patchBlock(block.id, () => next)}
                 />

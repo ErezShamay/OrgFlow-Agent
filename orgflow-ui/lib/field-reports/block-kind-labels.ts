@@ -6,6 +6,7 @@ export const REPORT_BLOCK_KIND_LABELS: Record<ReportBlockKind, string> = {
   progress_table: "טבלת התקדמות",
   findings_table: "טבלת ממצאים",
   checklist: "צ'קליסט",
+  supervision_checklist: "צ'קליסט מפקח",
   free_text: "טקסט חופשי",
   image: "תמונה / הדמיה",
 };

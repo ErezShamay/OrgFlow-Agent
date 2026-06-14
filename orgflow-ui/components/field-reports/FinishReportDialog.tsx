@@ -1,14 +1,9 @@
 "use client";
 
 import Button from "@/components/ui/Button";
+import type { ClosePreview } from "@/lib/field-reports/close-preview";
 
-export type ClosePreview = {
-  line_count: number;
-  empty_line_count: number;
-  empty_line_ids: string[];
-  catalog_warning_count: number;
-  warnings: string[];
-};
+export type { ClosePreview };
 
 type FinishReportDialogProps = {
   open: boolean;
@@ -74,6 +69,14 @@ export default function FinishReportDialog({
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
+        {!loading && preview?.blocking_errors?.length ? (
+          <ul className="space-y-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-100">
+            {preview.blocking_errors.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        ) : null}
+
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             variant="secondary"
@@ -85,7 +88,7 @@ export default function FinishReportDialog({
           </Button>
           <Button
             type="button"
-            disabled={loading}
+            disabled={loading || Boolean(preview?.blocking_errors?.length)}
             onClick={onConfirm}
           >
             {loading ? "סוגר..." : "אשר וסגור דוח"}

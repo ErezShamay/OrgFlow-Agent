@@ -31,8 +31,15 @@ import {
 } from "@/lib/field-reports/data-source";
 import { finishLocalVisitReportWithPdf } from "@/lib/field-reports/close-local-visit-report";
 import {
+  buildSupervisionClosePreview,
+  isSupervisionVisitReport,
+  prepareSupervisionReportForClose,
+  SupervisionCloseValidationError,
+} from "@/lib/field-reports/supervision-close";
+import {
   clientVisitReportUuid,
   loadVisitReportForPage,
+  localVisitReportToView,
   serverVisitReportId,
   type VisitReportView,
 } from "@/lib/field-reports/visit-report-view";
@@ -246,10 +253,21 @@ export default function FieldVisitReportPage() {
     setFinishError("");
     setFinishLoading(true);
 
-    const localPreview = buildClosePreview(report.lines);
+    const supervisionReport = isSupervisionVisitReport(
+      report.header_fields,
+      report.visit_type
+    );
+
+    const localPreview = supervisionReport
+      ? buildSupervisionClosePreview({
+          header_fields: report.header_fields,
+          visit_type: report.visit_type,
+          lines: report.lines,
+        })
+      : buildClosePreview(report.lines);
     setClosePreview(localPreview);
 
-    if (!isOnline) {
+    if (!isOnline || supervisionReport) {
       setFinishLoading(false);
       return;
     }
@@ -283,14 +301,28 @@ export default function FieldVisitReportPage() {
     const serverId = serverVisitReportId(report);
     const closeLocally =
       useLocalReports || dataSourceContext.hasLocalReport;
+    const supervisionReport = isSupervisionVisitReport(
+      report.header_fields,
+      report.visit_type
+    );
 
     try {
       setFinishLoading(true);
       setFinishError("");
 
       if (closeLocally) {
+        let reportForClose = report;
+
+        if (supervisionReport) {
+          const prepared = await prepareSupervisionReportForClose(
+            clientVisitReportUuid(report)
+          );
+          reportForClose = localVisitReportToView(prepared) as VisitReport;
+          setReport(reportForClose);
+        }
+
         const { view, pdfSource } = await finishLocalVisitReportWithPdf({
-          report,
+          report: reportForClose,
           inspector: { full_name: profile?.full_name },
         });
 
@@ -378,6 +410,17 @@ export default function FieldVisitReportPage() {
         );
       }
     } catch (err: unknown) {
+      if (err instanceof SupervisionCloseValidationError) {
+        setClosePreview((current) => ({
+          line_count: current?.line_count ?? report?.lines.length ?? 0,
+          empty_line_count: current?.empty_line_count ?? 0,
+          empty_line_ids: current?.empty_line_ids ?? [],
+          catalog_warning_count: current?.catalog_warning_count ?? 0,
+          warnings: current?.warnings ?? [],
+          blocking_errors: err.errors.map((entry) => entry.message),
+        }));
+      }
+
       setFinishError(
         err instanceof Error ? err.message : "סגירת הדוח נכשלה"
       );

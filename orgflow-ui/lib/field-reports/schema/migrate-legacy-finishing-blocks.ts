@@ -37,7 +37,10 @@ const PROGRESS_TO_CHECKLIST_ITEM_ID: readonly {
 export function hasModernFinishingBlockLayout(
   blocks: readonly ReportBlock[]
 ): boolean {
-  return blocks.some((block) => block.kind === "checklist");
+  return blocks.some(
+    (block) =>
+      block.kind === "checklist" || block.kind === "supervision_checklist"
+  );
 }
 
 export function shouldMigrateLegacyFinishingBlocks(

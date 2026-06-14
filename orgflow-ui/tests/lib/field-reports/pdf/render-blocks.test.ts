@@ -506,6 +506,73 @@ describe("buildVisitReportDocDefinition with explicit blocks", () => {
   });
 });
 
+describe("renderSupervisionChecklist via renderBlocks", () => {
+  it("renders grouped supervision checklist with summary", () => {
+    const content = renderBlocks(
+      [
+        {
+          id: "sc1",
+          kind: "supervision_checklist",
+          title_he: "ביקור לובי",
+          construction_stage: "MIXED",
+          visit_scope: "PUBLIC_AREA",
+          public_area_id: "LOBBY",
+          items: [
+            {
+              id: "i1",
+              catalog_issue_id: "PUB-01",
+              issue_name_he: "ריצוף כניסה",
+              category_id: "flooring",
+              category_name_he: "ריצוף",
+              top_family: "FINISHING_WORKS",
+              standard_ref: 'ת"י 4438',
+              status: "DEFECT",
+              notes: "שבר",
+              photo_ids: ["primary"],
+              sort_order: 0,
+            },
+          ],
+        },
+      ],
+      {
+        visitType: "FINISHING_APARTMENTS",
+        projectName: "מגדלי הים",
+        visitDate: "2026-06-01",
+        headerFields: {
+          supervision_meta: {
+            construction_stage: "MIXED",
+            visit_scope: "PUBLIC_AREA",
+            public_area_id: "LOBBY",
+            public_area_label_he: "לובי / כניסה",
+          },
+        },
+        checklistPhotos: [
+          {
+            checklistItemId: "i1",
+            dataUrl: "data:image/png;base64,thumb",
+          },
+        ],
+      }
+    );
+
+    const texts = collectTexts(content);
+    expect(texts).toContain("ביקור לובי");
+    expect(texts.some((text) => text.includes("לובי / כניסה"))).toBe(true);
+    expect(texts).toContain("ליקוי");
+    expect(texts.some((text) => text.includes('ת"י 4438'))).toBe(true);
+    expect(texts.some((text) => text.includes("ליקויים: 1"))).toBe(true);
+
+    const images = collectImages(content);
+    expect(images.some((image) => image.width === 40)).toBe(true);
+  });
+
+  it("does not affect legacy checklist block rendering", () => {
+    const legacy = renderChecklist(defaultFinishingChecklistBlock());
+    const texts = collectTexts(legacy);
+    expect(texts.length).toBeGreaterThan(0);
+  });
+});
+
 function collectImages(content: unknown): { width?: number; height?: number }[] {
   if (!content) {
     return [];

@@ -5,6 +5,11 @@ import { isCapacitorNativePlatform } from "@/lib/capacitor/platform";
 
 const REPORT_ID_QUERY_KEY = "report";
 
+/** נתיב יצירת דוח supervision מפרויקט (§4, §16.C). */
+export function projectFieldReportNewPath(projectId: string): string {
+  return `/projects/${encodeURIComponent(projectId)}/field-reports/new`;
+}
+
 /** נתיב לעורך דוח - ב-APK (static export) רק `/_/index.html` קיים; UUID ב-query. */
 export function fieldReportDetailPath(reportId: string): string {
   if (!reportId) {

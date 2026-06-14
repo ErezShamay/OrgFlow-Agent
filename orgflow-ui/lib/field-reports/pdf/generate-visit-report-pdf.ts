@@ -1,11 +1,13 @@
 import { openVisitReportPdfOnNative } from "@/lib/capacitor/visit-report-pdf-filesystem";
 
+import { findSupervisionChecklistBlock } from "../supervision-close";
 import {
   buildPdfFilename,
   buildVisitReportDocDefinition,
 } from "./build-doc-definition";
 import { createPdfPrinter } from "./font-loader";
 import {
+  resolveChecklistPhotos,
   resolveIllustrationDataUrl,
   resolveLinePhotos,
   resolveLogoDataUrl,
@@ -35,6 +37,15 @@ export async function generateVisitReportPdf(
   const linePhotos =
     input.linePhotos
     ?? (await resolveLinePhotos(storageKey, input.report.lines));
+  const supervisionBlock = findSupervisionChecklistBlock(
+    input.report.header_fields || {},
+    input.report.visit_type
+  );
+  const checklistPhotos =
+    input.checklistPhotos
+    ?? (supervisionBlock
+      ? await resolveChecklistPhotos(storageKey, supervisionBlock.items)
+      : []);
   const lineIssueMarkers =
     input.lineIssueMarkers
     ?? (await resolveVisitPdfIssueMarkers(input.report));
@@ -44,6 +55,7 @@ export async function generateVisitReportPdf(
     logoDataUrl,
     illustrationDataUrl,
     linePhotos,
+    checklistPhotos,
     lineIssueMarkers,
   });
 

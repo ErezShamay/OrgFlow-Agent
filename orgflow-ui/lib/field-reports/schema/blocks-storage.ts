@@ -128,7 +128,10 @@ export function dualWriteHeaderBlocksAndProgress(
 ): { blocks: ReportBlock[]; construction_progress: ConstructionProgressRow[] } {
   const usesFinishingChecklist =
     visitType === "FINISHING_APARTMENTS"
-    && blocks.some((block) => block.kind === "checklist");
+    && blocks.some(
+      (block) =>
+        block.kind === "checklist" || block.kind === "supervision_checklist"
+    );
 
   if (usesFinishingChecklist) {
     return { blocks, construction_progress };
@@ -244,6 +247,14 @@ export function createEmptyBlockForKind(
         kind: "checklist",
         items: defaultFinishingChecklistItems(),
       };
+    case "supervision_checklist":
+      return {
+        ...base,
+        kind: "supervision_checklist",
+        construction_stage: "FINISHING",
+        visit_scope: "APARTMENT",
+        items: [],
+      };
     case "free_text":
       return { ...base, kind: "free_text", body_he: "" };
     case "image":
@@ -266,6 +277,8 @@ function defaultTitleForBlockKind(
       return "ממצאים / עבודות";
     case "checklist":
       return "צ'קליסט גמר";
+    case "supervision_checklist":
+      return "צ'קליסט מפקח";
     case "free_text":
       return "טקסט חופשי";
     case "image":
@@ -314,6 +327,31 @@ function serializeReportBlockForApi(block: ReportBlock): Record<string, unknown>
           checked: item.checked,
           notes: item.notes ?? null,
           sort_order: item.sort_order ?? 0,
+        })),
+      };
+    case "supervision_checklist":
+      return {
+        ...base,
+        construction_stage: block.construction_stage,
+        visit_scope: block.visit_scope,
+        apartment_id: block.apartment_id ?? null,
+        apartment_number: block.apartment_number ?? null,
+        ad_hoc_apartment: block.ad_hoc_apartment ?? false,
+        public_area_id: block.public_area_id ?? null,
+        items: block.items.map((item) => ({
+          id: item.id,
+          catalog_issue_id: item.catalog_issue_id,
+          issue_name_he: item.issue_name_he,
+          category_id: item.category_id,
+          category_name_he: item.category_name_he,
+          top_family: item.top_family,
+          standard_ref: item.standard_ref,
+          severity: item.severity ?? null,
+          status: item.status,
+          notes: item.notes ?? null,
+          photo_ids: item.photo_ids,
+          linked_line_id: item.linked_line_id ?? null,
+          sort_order: item.sort_order,
         })),
       };
     case "free_text":

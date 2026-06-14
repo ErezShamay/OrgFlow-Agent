@@ -1,5 +1,6 @@
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 
+import { normalizeSupervisionMeta } from "../schema/normalize";
 import {
   constructionProgressTitleHe,
   type ConstructionProgressRow,
@@ -159,6 +160,7 @@ export function buildVisitReportDocDefinition(
     report,
     inspector,
     linePhotos = [],
+    checklistPhotos = [],
     logoDataUrl,
     illustrationDataUrl,
     generatedAt = new Date(),
@@ -219,7 +221,12 @@ export function buildVisitReportDocDefinition(
         visitType: report.visit_type,
         reportLines: report.lines,
         linePhotos,
+        checklistPhotos,
         lineIssueMarkers,
+        projectName: report.project_name,
+        visitDate: report.visit_date,
+        supervisionMeta: normalizeSupervisionMeta(headerFields),
+        headerFields,
       })
     );
   } else {

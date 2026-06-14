@@ -26,6 +26,9 @@ from app.repositories.field_visit_report_line_repository import (
 from app.repositories.field_visit_report_repository import (
     FieldVisitReportRepository,
 )
+from app.repositories.project_apartment_repository import (
+    ProjectApartmentRepository,
+)
 from app.repositories.project_repository import (
     ProjectRepository,
 )
@@ -35,6 +38,11 @@ from app.services.field_report_catalog_service import (
 )
 from app.services.field_report_organization_profile_service import (
     FieldReportOrganizationProfileService,
+)
+from app.services.field_supervision_offline_bundle import (
+    build_apartments_by_project,
+    build_supervision_catalog,
+    public_areas_for_offline_bundle,
 )
 from app.services.field_visit_report_archive_service import (
     build_project_field_report_archive,
@@ -97,6 +105,8 @@ class FieldVisitReportService:
             FieldVisitReportLinePhotoRepository | None = None,
         project_repository:
             ProjectRepository | None = None,
+        apartment_repository:
+            ProjectApartmentRepository | None = None,
         organization_profile_service:
             FieldReportOrganizationProfileService | None = None,
         catalog_service:
@@ -123,6 +133,9 @@ class FieldVisitReportService:
         )
         self.project_repository = (
             project_repository or ProjectRepository()
+        )
+        self.apartment_repository = (
+            apartment_repository or ProjectApartmentRepository()
         )
         self.organization_profile_service = (
             organization_profile_service
@@ -204,50 +217,63 @@ class FieldVisitReportService:
             )
         )
         catalog = self.catalog_service.get_full_catalog()
+        project_payload = [
+            {
+                "id": str(project["id"]),
+                "project_name": project.get("project_name"),
+                "city": project.get("city"),
+                "scheme": project.get("scheme"),
+                "developer_name": project.get("developer_name"),
+                "developer_pm_name": project.get("developer_pm_name"),
+                "contractor_name": project.get("contractor_name"),
+                "lawyer_name": project.get("lawyer_name"),
+                "accompanying_lawyer": project.get(
+                    "accompanying_lawyer"
+                ),
+                "architect_name": project.get("architect_name"),
+                "site_manager_name": project.get("site_manager_name"),
+                "housing_units_count": project.get(
+                    "housing_units_count"
+                ),
+                "project_start_date": project.get(
+                    "project_start_date"
+                ),
+                "project_end_date": project.get("project_end_date"),
+                "project_grace_end_date": project.get(
+                    "project_grace_end_date"
+                ),
+                "structure_documentation_date": project.get(
+                    "structure_documentation_date"
+                ),
+                "illustration_url": project.get("illustration_url"),
+                "illustration_source_he": project.get(
+                    "illustration_source_he"
+                ),
+                "project_type": project.get("project_type"),
+            }
+            for project in projects
+        ]
+        project_ids = [
+            str(project["id"])
+            for project in projects
+            if project.get("id")
+        ]
 
         return {
             "organization_id": organization_id,
             "offline_max_days": OFFLINE_MAX_DAYS,
             "catalog_version": catalog.get("catalog_version"),
             "catalog": catalog,
+            "supervision_catalog": build_supervision_catalog(catalog),
+            "public_areas": public_areas_for_offline_bundle(),
+            "apartments_by_project": build_apartments_by_project(
+                organization_id=organization_id,
+                project_ids=project_ids,
+                apartment_repository=self.apartment_repository,
+            ),
             "visit_types": list_visit_types(),
             "organization_profile": organization_profile,
-            "projects": [
-                {
-                    "id": str(project["id"]),
-                    "project_name": project.get("project_name"),
-                    "city": project.get("city"),
-                    "scheme": project.get("scheme"),
-                    "developer_name": project.get("developer_name"),
-                    "developer_pm_name": project.get("developer_pm_name"),
-                    "contractor_name": project.get("contractor_name"),
-                    "lawyer_name": project.get("lawyer_name"),
-                    "accompanying_lawyer": project.get(
-                        "accompanying_lawyer"
-                    ),
-                    "architect_name": project.get("architect_name"),
-                    "site_manager_name": project.get("site_manager_name"),
-                    "housing_units_count": project.get(
-                        "housing_units_count"
-                    ),
-                    "project_start_date": project.get(
-                        "project_start_date"
-                    ),
-                    "project_end_date": project.get("project_end_date"),
-                    "project_grace_end_date": project.get(
-                        "project_grace_end_date"
-                    ),
-                    "structure_documentation_date": project.get(
-                        "structure_documentation_date"
-                    ),
-                    "illustration_url": project.get("illustration_url"),
-                    "illustration_source_he": project.get(
-                        "illustration_source_he"
-                    ),
-                    "project_type": project.get("project_type"),
-                }
-                for project in projects
-            ],
+            "projects": project_payload,
             "reports": self.list_reports(
                 organization_id,
                 status="IN_PROGRESS",

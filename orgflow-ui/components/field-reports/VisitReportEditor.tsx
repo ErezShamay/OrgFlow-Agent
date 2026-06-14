@@ -9,6 +9,7 @@ import CatalogIssuePicker, {
 } from "@/components/field-reports/CatalogIssuePicker";
 import ReportBlocksManager from "@/components/field-reports/ReportBlocksManager";
 import ReportFixedBlocksSection from "@/components/field-reports/ReportFixedBlocksSection";
+import SupervisionChecklistEditor from "@/components/field-reports/SupervisionChecklistEditor";
 import ReportProjectMetadataSection from "@/components/field-reports/ReportProjectMetadataSection";
 import ReportStakeholdersSection from "@/components/field-reports/ReportStakeholdersSection";
 import ReportLineEditor, {
@@ -68,6 +69,8 @@ import {
   localVisitReportToView,
   type VisitReportView,
 } from "@/lib/field-reports/visit-report-view";
+import { isSupervisionChecklistReport } from "@/lib/field-reports/supervision-checklist-builder";
+import type { SupervisionChecklistBlock } from "@/lib/field-reports/schema/types";
 import {
   deleteLine as deleteLocalLine,
   getLocalReport,
@@ -497,6 +500,31 @@ export default function VisitReportEditor({
     const raw = report.header_fields?.blocks;
     return Array.isArray(raw) && raw.length > 0;
   }, [report.header_fields]);
+
+  const isSupervisionReport = useMemo(
+    () => isSupervisionChecklistReport(headerFields.blocks),
+    [headerFields.blocks]
+  );
+
+  const supervisionChecklistBlock = useMemo(() => {
+    const match = headerFields.blocks.find(
+      (block): block is SupervisionChecklistBlock =>
+        block.kind === "supervision_checklist"
+    );
+    return match ?? null;
+  }, [headerFields.blocks]);
+
+  function updateSupervisionChecklistBlock(nextBlock: SupervisionChecklistBlock) {
+    setHeaderFields((current) =>
+      patchHeaderFieldsBlocks(
+        current,
+        current.blocks.map((block) =>
+          block.id === nextBlock.id ? nextBlock : block
+        ),
+        report.visit_type
+      )
+    );
+  }
 
   async function shouldSaveLinesLocally(): Promise<boolean> {
     if (useLocalReports) {
@@ -1019,12 +1047,23 @@ export default function VisitReportEditor({
         </p>
       ) : null}
 
-      {catalogLineWarnings > 0 ? (
+      {catalogLineWarnings > 0 && !isSupervisionReport ? (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
           {catalogLineWarnings} שורות עם אזהרת מפרט - בדוק לפני סגירת הדוח.
         </p>
       ) : null}
 
+      {isSupervisionReport && supervisionChecklistBlock ? (
+        <SupervisionChecklistEditor
+          block={supervisionChecklistBlock}
+          reportId={report.server_report_id ?? clientReportUuid}
+          disabled={!report.is_editable}
+          onChange={updateSupervisionChecklistBlock}
+        />
+      ) : null}
+
+      {!isSupervisionReport ? (
+        <>
       <ReportProjectMetadataSection
         metadata={headerFields.project_metadata}
         disabled={!report.is_editable}
@@ -1297,6 +1336,8 @@ export default function VisitReportEditor({
         disabled={!report.is_editable}
         onChange={setHeaderFields}
       />
+        </>
+      ) : null}
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>

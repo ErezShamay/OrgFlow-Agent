@@ -175,6 +175,113 @@ export type ChecklistItem = {
   sort_order?: number;
 };
 
+/** שלבי בנייה לדוח מפקח בשטח. */
+export const CONSTRUCTION_STAGES = [
+  "STRUCTURE",
+  "FINISHING",
+  "MIXED",
+] as const;
+
+export type ConstructionStage = (typeof CONSTRUCTION_STAGES)[number];
+
+/** היקף ביקור — דירה או שטחים ציבוריים. */
+export const VISIT_SCOPES = ["APARTMENT", "PUBLIC_AREA"] as const;
+
+export type VisitScope = (typeof VISIT_SCOPES)[number];
+
+/** סטטוס פריט בצ'קליסט מפקח. */
+export const CHECKLIST_ITEM_STATUSES = [
+  "UNCHECKED",
+  "OK",
+  "DEFECT",
+  "NOT_APPLICABLE",
+] as const;
+
+export type ChecklistItemStatus = (typeof CHECKLIST_ITEM_STATUSES)[number];
+
+/** היקף פריט בקטלוג supervision. */
+export const CATALOG_ISSUE_SCOPES = [
+  "APARTMENT",
+  "PUBLIC_AREA",
+  "BOTH",
+] as const;
+
+export type CatalogIssueScope = (typeof CATALOG_ISSUE_SCOPES)[number];
+
+/** אזורים ציבוריים — נספח א' במפרט field-supervision-checklist. */
+export const PUBLIC_AREA_DEFINITIONS = [
+  { id: "LOBBY", label_he: "לובי / כניסה" },
+  { id: "WET_ROOMS", label_he: "חדרים רטובים משותפים" },
+  { id: "BALCONY_ROOF", label_he: "מרפסות / גג משותף" },
+  { id: "PARKING", label_he: "חניון / מחסנים" },
+  { id: "ELEVATOR_STAIRS", label_he: "מעליות / חדרי מדרגות" },
+  { id: "OUTDOOR", label_he: "שטח חוץ / גינון" },
+] as const;
+
+export type PublicAreaDefinition = (typeof PUBLIC_AREA_DEFINITIONS)[number];
+
+export type PublicAreaId = PublicAreaDefinition["id"];
+
+/** מטא-דאטה לדוח מפקח בשטח (header_fields.supervision_meta). */
+export type SupervisionReportMeta = {
+  construction_stage: ConstructionStage;
+  visit_scope: VisitScope;
+  apartment_id?: string | null;
+  apartment_number?: string | null;
+  owner_name?: string | null;
+  ad_hoc_apartment?: boolean;
+  public_area_id?: PublicAreaId | null;
+  public_area_label_he?: string | null;
+};
+
+/** פריט קטלוג supervision (offline prep / seed). */
+export type SupervisionCatalogIssue = {
+  issue_id: string;
+  issue_name_he: string;
+  standard_ref: string;
+  catalog_reference_id?: string | null;
+  top_family: string;
+  category_id: string;
+  category_name_he: string;
+  severity?: string | null;
+  description?: string | null;
+  scope: CatalogIssueScope;
+  public_area_id?: PublicAreaId | null;
+  allowed_stages: readonly ConstructionStage[];
+};
+
+export type SupervisionCatalog = {
+  catalog_version?: string | null;
+  families?: Array<{
+    top_family: string;
+    label_he?: string;
+    issue_count?: number;
+  }>;
+  categories?: Array<{
+    top_family: string;
+    category_id: string;
+    category_name_he: string;
+  }>;
+  issues: SupervisionCatalogIssue[];
+};
+
+/** פריט בצ'קליסט מפקח — מעוגן לקטלוג supervision. */
+export type SupervisionChecklistItem = {
+  id: string;
+  catalog_issue_id: string;
+  issue_name_he: string;
+  category_id: string;
+  category_name_he: string;
+  top_family: string;
+  standard_ref: string;
+  severity?: string | null;
+  status: ChecklistItemStatus;
+  notes?: string | null;
+  photo_ids: string[];
+  linked_line_id?: string | null;
+  sort_order: number;
+};
+
 /** שדות משותפים לכל בלוק בגוף הדוח. */
 export type ReportBlockBase = {
   id: string;
@@ -202,6 +309,18 @@ export type ChecklistBlock = ReportBlockBase & {
   items: ChecklistItem[];
 };
 
+/** בלוק צ'קליסט מפקח — kind חדש (לא לשבור checklist גמר ישן). */
+export type SupervisionChecklistBlock = ReportBlockBase & {
+  kind: "supervision_checklist";
+  construction_stage: ConstructionStage;
+  visit_scope: VisitScope;
+  apartment_id?: string | null;
+  apartment_number?: string | null;
+  ad_hoc_apartment?: boolean;
+  public_area_id?: PublicAreaId | null;
+  items: SupervisionChecklistItem[];
+};
+
 /** בלוק טקסט חופשי - המלצות, הערות נוספות. */
 export type FreeTextBlock = ReportBlockBase & {
   kind: "free_text";
@@ -224,6 +343,7 @@ export type ReportBlock =
   | ProgressTableBlock
   | FindingsTableBlock
   | ChecklistBlock
+  | SupervisionChecklistBlock
   | FreeTextBlock
   | ImageBlock;
 

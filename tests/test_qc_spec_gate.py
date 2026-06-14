@@ -24,3 +24,4 @@ def test_qc_spec_documents_exist_on_disk() -> None:
     assert missing == [], f"Missing spec files: {missing}"
     assert is_qc_spec_gate_complete() is True
     assert "qc-platform-spec.md" in QC_SPEC_DOCUMENTS
+    assert "field-supervision-checklist-spec.md" in QC_SPEC_DOCUMENTS
