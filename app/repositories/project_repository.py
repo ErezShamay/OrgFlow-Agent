@@ -25,6 +25,7 @@ OPTIONAL_PROJECT_WRITE_COLUMNS = (
     "site_manager_name",
     "city",
     "housing_units_count",
+    "floors_count",
     "project_start_date",
     "project_end_date",
     "project_grace_end_date",
@@ -39,6 +40,7 @@ OPTIONAL_PROJECT_WRITE_COLUMNS = (
     "accompanying_lawyer_email",
     "architect_email",
     "stakeholder_emails",
+    "spatial_public_area_ids",
 )
 
 
@@ -98,6 +100,7 @@ class ProjectRepository:
         site_manager_name: str | None = None,
         city: str | None = None,
         housing_units_count: int | None = None,
+        floors_count: int | None = None,
         project_start_date: str | None = None,
         project_end_date: str | None = None,
         project_grace_end_date: str | None = None,
@@ -223,6 +226,13 @@ class ProjectRepository:
                     project.housing_units_count
                     if project and hasattr(project, "housing_units_count")
                     else housing_units_count
+                ),
+
+            "floors_count":
+                (
+                    project.floors_count
+                    if project and hasattr(project, "floors_count")
+                    else floors_count
                 ),
 
             "project_start_date":

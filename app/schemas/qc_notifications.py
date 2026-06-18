@@ -26,3 +26,16 @@ class QcReportNotificationResponse(BaseModel):
     alerts_evaluated: bool = True
     open_report_resolved: bool = False
     critical_new_issue_count: int = Field(default=0, ge=0)
+
+
+class DraftIssueNotificationResponse(BaseModel):
+    """Instant-loop L3 — internal activity + optional contractor heads-up on draft."""
+
+    organization_id: str
+    project_id: str
+    report_id: str
+    issue_id: str
+    line_id: str
+    workspace_activity_id: str | None = None
+    contractor_email: str | None = None
+    email_status: str = "SKIPPED"

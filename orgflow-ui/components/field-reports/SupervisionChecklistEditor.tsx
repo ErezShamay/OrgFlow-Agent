@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 
-import ChecklistItemPhotoCapture from "@/components/field-reports/ChecklistItemPhotoCapture";
+import SupervisionChecklistItemPhotoCapture from "@/components/field-reports/supervision/ChecklistItemPhotoCapture";
+import QuickInspectToggle from "@/components/field-reports/supervision/QuickInspectToggle";
 import { catalogFamilyLabelHe } from "@/lib/field-reports/catalog-labels";
 import type {
   ChecklistItemStatus,
+  InspectMode,
   SupervisionChecklistBlock,
   SupervisionChecklistItem,
 } from "@/lib/field-reports/schema/types";
@@ -21,6 +23,7 @@ import {
 type SupervisionChecklistEditorProps = {
   block: SupervisionChecklistBlock;
   reportId: string;
+  inspectMode?: InspectMode;
   disabled?: boolean;
   onChange: (block: SupervisionChecklistBlock) => void;
 };
@@ -28,9 +31,11 @@ type SupervisionChecklistEditorProps = {
 export default function SupervisionChecklistEditor({
   block,
   reportId,
+  inspectMode = "standard",
   disabled = false,
   onChange,
 }: SupervisionChecklistEditorProps) {
+  const isQuickInspect = inspectMode === "quick";
   const groups = useMemo(
     () =>
       groupSupervisionChecklistItems(block, (topFamily) =>
@@ -72,6 +77,7 @@ export default function SupervisionChecklistEditor({
         <h2 className="text-lg font-semibold">{block.title_he}</h2>
         <p className="text-sm text-zinc-500">
           {block.items.length} פריטי בדיקה · {groups.length} מלאכות
+          {isQuickInspect ? " · מצב סימון מהיר (V/X)" : null}
         </p>
       </header>
 
@@ -121,30 +127,40 @@ export default function SupervisionChecklistEditor({
                               </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-2">
-                              {CHECKLIST_ITEM_STATUS_OPTIONS.map((option) => {
-                                const selected = item.status === option.value;
+                            {isQuickInspect ? (
+                              <QuickInspectToggle
+                                status={item.status}
+                                disabled={disabled}
+                                onStatusChange={(status) =>
+                                  setItemStatus(item.id, status)
+                                }
+                              />
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {CHECKLIST_ITEM_STATUS_OPTIONS.map((option) => {
+                                  const selected = item.status === option.value;
 
-                                return (
-                                  <button
-                                    key={option.value}
-                                    type="button"
-                                    disabled={disabled}
-                                    aria-pressed={selected}
-                                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                                      selected
-                                        ? "bg-brand text-white dark:bg-brand-light dark:text-brand-dark"
-                                        : "border border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
-                                    }`}
-                                    onClick={() =>
-                                      setItemStatus(item.id, option.value)
-                                    }
-                                  >
-                                    {option.label_he}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                                  return (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      disabled={disabled}
+                                      aria-pressed={selected}
+                                      className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                                        selected
+                                          ? "bg-brand text-white dark:bg-brand-light dark:text-brand-dark"
+                                          : "border border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
+                                      }`}
+                                      onClick={() =>
+                                        setItemStatus(item.id, option.value)
+                                      }
+                                    >
+                                      {option.label_he}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
 
                             <label className="block space-y-1 text-sm">
                               <span className="text-zinc-600">הערות</span>
@@ -163,7 +179,8 @@ export default function SupervisionChecklistEditor({
                               />
                             </label>
 
-                            <ChecklistItemPhotoCapture
+                            <SupervisionChecklistItemPhotoCapture
+                              status={item.status}
                               reportId={reportId}
                               checklistItemId={item.id}
                               photoIds={item.photo_ids}

@@ -20,7 +20,10 @@ import { useFiltering } from "@/hooks/useFiltering";
 import { usePagination } from "@/hooks/usePagination";
 import { useSorting } from "@/hooks/useSorting";
 import { apiFetch } from "@/lib/api/client";
+import type { ProjectScheme } from "@/lib/field-reports/schema/types";
+import { ensureOfflinePrepForProject } from "@/lib/field-reports/offline-prep-runner";
 import { showToast } from "@/lib/ui/toast";
+import ProjectSchemeSelect from "@/components/projects/ProjectSchemeSelect";
 import { useI18n } from "@/providers/I18nProvider";
 import { useOffline } from "@/providers/OfflineProvider";
 
@@ -58,6 +61,9 @@ export default function ProjectsPage() {
     lawyer_name: "",
     supervisor_name: "",
     supervisor_email: "",
+    scheme: "" as ProjectScheme | "",
+    housing_units_count: "",
+    floors_count: "",
   });
 
   const loadProjects = useCallback(async () => {
@@ -123,13 +129,36 @@ export default function ProjectsPage() {
       !newProject.developer_name.trim() ||
       !newProject.contractor_name.trim() ||
       !newProject.lawyer_name.trim() ||
-      !newProject.supervisor_name.trim()
+      !newProject.supervisor_name.trim() ||
+      !newProject.scheme
     ) {
       showToast(
-        "יש למלא את כל שדות החובה: שם פרויקט, יזם, קבלן, עו״ד מלווה ומפקח מלווה",
+        "יש למלא את כל שדות החובה: שם פרויקט, סוג פרויקט, יזם, קבלן, עו״ד מלווה ומפקח מלווה",
         "error"
       );
       return;
+    }
+
+    const housingUnitsRaw = newProject.housing_units_count.trim();
+    let housing_units_count: number | undefined;
+    if (housingUnitsRaw) {
+      const parsed = Number(housingUnitsRaw);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        showToast("מספר יחידות דיור חייב להיות מספר שלם חיובי", "error");
+        return;
+      }
+      housing_units_count = parsed;
+    }
+
+    const floorsRaw = newProject.floors_count.trim();
+    let floors_count: number | undefined;
+    if (floorsRaw) {
+      const parsed = Number(floorsRaw);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        showToast("מספר קומות חייב להיות מספר שלם חיובי", "error");
+        return;
+      }
+      floors_count = parsed;
     }
 
     try {
@@ -145,6 +174,9 @@ export default function ProjectsPage() {
           supervisor_name: newProject.supervisor_name.trim(),
           supervisor_email:
             newProject.supervisor_email.trim() || null,
+          scheme: newProject.scheme,
+          housing_units_count: housing_units_count ?? null,
+          floors_count: floors_count ?? null,
           organization_id: currentOrgId || profile?.organization_id || null,
           owner_id: profile?.id || null,
         }),
@@ -154,6 +186,17 @@ export default function ProjectsPage() {
         throw new Error("Failed to create project");
       }
 
+      const created = (await response.json()) as { id?: string };
+      const organizationId = currentOrgId || profile?.organization_id || "";
+      if (created.id && organizationId) {
+        void ensureOfflinePrepForProject({
+          organizationId,
+          projectId: created.id,
+          userId: profile?.id ?? null,
+          force: true,
+        }).catch(() => undefined);
+      }
+
       setNewProject({
         project_name: "",
         developer_name: "",
@@ -161,6 +204,9 @@ export default function ProjectsPage() {
         lawyer_name: "",
         supervisor_name: "",
         supervisor_email: "",
+        scheme: "",
+        housing_units_count: "",
+        floors_count: "",
       });
 
       showToast("הפרויקט נוצר בהצלחה", "success");
@@ -227,6 +273,52 @@ export default function ProjectsPage() {
                 })
               }
               required
+            />
+            <div className="md:col-span-2">
+              <label
+                htmlFor="new-project-scheme"
+                className="mb-2 block text-sm font-medium text-zinc-600 dark:text-zinc-400"
+              >
+                סוג פרויקט *
+              </label>
+              <ProjectSchemeSelect
+                id="new-project-scheme"
+                value={newProject.scheme}
+                onChange={(scheme) =>
+                  setNewProject({
+                    ...newProject,
+                    scheme,
+                  })
+                }
+                required
+                className="w-full rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              />
+            </div>
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              placeholder="מספר קומות (אופציונלי)"
+              type="number"
+              min={1}
+              value={newProject.floors_count}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  floors_count: event.target.value,
+                })
+              }
+            />
+            <input
+              className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"
+              placeholder="יחידות דיור (אופציונלי)"
+              type="number"
+              min={1}
+              value={newProject.housing_units_count}
+              onChange={(event) =>
+                setNewProject({
+                  ...newProject,
+                  housing_units_count: event.target.value,
+                })
+              }
             />
             <input
               className="rounded-2xl border border-zinc-200 bg-transparent p-4 dark:border-zinc-700"

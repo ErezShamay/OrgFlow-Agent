@@ -321,7 +321,7 @@ export default function ResidentPortalView({
                     >
                       <p className="font-medium">{issue.title || issue.trade || "ליקוי"}</p>
                       <p className="text-zinc-500">
-                        {issue.status || "—"}
+                        {issue.tenant_view_status_he || issue.status || "—"}
                         {issue.location ? ` · ${issue.location}` : ""}
                       </p>
                     </li>

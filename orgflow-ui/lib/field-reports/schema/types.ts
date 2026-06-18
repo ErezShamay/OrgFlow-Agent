@@ -199,6 +199,11 @@ export const FIELD_REPORT_DOCUMENT_TYPES = [
 export type FieldReportDocumentType =
   (typeof FIELD_REPORT_DOCUMENT_TYPES)[number];
 
+/** מצב סימון צ'קליסט מפקח — מהיר (V/X) או סטנדרטי (4 סטטוסים). */
+export const INSPECT_MODES = ["standard", "quick"] as const;
+
+export type InspectMode = (typeof INSPECT_MODES)[number];
+
 /** סטטוס פריט בצ'קליסט מפקח. */
 export const CHECKLIST_ITEM_STATUSES = [
   "UNCHECKED",
@@ -235,6 +240,8 @@ export type PublicAreaId = PublicAreaDefinition["id"];
 /** מטא-דאטה לדוח מפקח בשטח (header_fields.supervision_meta). */
 export type SupervisionReportMeta = {
   document_type?: FieldReportDocumentType;
+  /** weekly_inspection → quick כברירת מחדל (V1). */
+  inspect_mode?: InspectMode;
   construction_stage: ConstructionStage;
   visit_scope: VisitScope;
   apartment_id?: string | null;

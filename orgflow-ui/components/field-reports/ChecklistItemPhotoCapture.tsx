@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import {
   pickLinePhotoFromNativeGallery,
-  useNativeLinePhotoGallery,
+  isNativeLinePhotoGallery,
 } from "@/lib/capacitor/line-photo-picker";
 import { isLikelyAndroidEmulator } from "@/lib/capacitor/android-emulator";
 import {
@@ -41,7 +41,7 @@ export default function ChecklistItemPhotoCapture({
   disabled = false,
   onPhotoIdsChange,
 }: ChecklistItemPhotoCaptureProps) {
-  const nativeGalleryPicker = useNativeLinePhotoGallery();
+  const nativeGalleryPicker = isNativeLinePhotoGallery();
   const androidEmulator = isLikelyAndroidEmulator();
   const useDeviceCameraCapture = !androidEmulator;
   const cameraInputRef = useRef<HTMLInputElement>(null);

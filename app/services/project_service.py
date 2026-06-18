@@ -6,9 +6,14 @@ from uuid import uuid4
 
 from app.config.field_report_project_scheme import (
     is_valid_project_scheme,
+    parse_project_scheme,
 )
+from app.exceptions.exceptions import ValidationError
 from app.services.project_illustration_service import (
     ProjectIllustrationService,
+)
+from app.services.project_spatial_bootstrap_service import (
+    ProjectSpatialBootstrapService,
 )
 
 
@@ -16,6 +21,13 @@ def _normalized_project_scheme(scheme: str | None) -> str | None:
     if scheme and is_valid_project_scheme(scheme):
         return scheme
     return None
+
+
+def _require_project_scheme(scheme: str | None) -> str:
+    try:
+        return parse_project_scheme(scheme)
+    except ValueError as error:
+        raise ValidationError(str(error)) from error
 
 
 class ProjectService:
@@ -28,6 +40,7 @@ class ProjectService:
         self.project_comments: dict[str, list[dict]] = {}
         self.project_attachments: dict[str, list[dict]] = {}
         self.illustration_service = ProjectIllustrationService()
+        self.spatial_bootstrap_service = ProjectSpatialBootstrapService()
 
     def create_project(
         self,
@@ -41,6 +54,7 @@ class ProjectService:
         owner_id: str | None = None,
         tags: list[str] | None = None,
         scheme: str | None = None,
+        floors_count: int | None = None,
         developer_pm_name: str | None = None,
         accompanying_lawyer: str | None = None,
         architect_name: str | None = None,
@@ -53,7 +67,11 @@ class ProjectService:
         structure_documentation_date: str | None = None,
     ):
         normalized_tags = self._normalize_tags(tags)
-        return (
+        normalized_scheme = _require_project_scheme(scheme)
+        if floors_count is not None and floors_count < 1:
+            raise ValidationError("floors_count must be a positive integer")
+
+        project = (
             self.project_repository
             .create_project(
                 project_name=
@@ -84,7 +102,10 @@ class ProjectService:
                     normalized_tags,
 
                 scheme=
-                    _normalized_project_scheme(scheme),
+                    normalized_scheme,
+
+                floors_count=
+                    floors_count,
 
                 developer_pm_name=
                     developer_pm_name,
@@ -121,6 +142,23 @@ class ProjectService:
             )
         )
 
+        if project and project.get("id"):
+            org_id = str(project.get("organization_id") or organization_id or "")
+            if org_id:
+                bootstrap = self.spatial_bootstrap_service.bootstrap(
+                    project_id=str(project["id"]),
+                    scheme=normalized_scheme,
+                    organization_id=org_id,
+                    floors=floors_count,
+                    housing_units_count=housing_units_count,
+                )
+                project = {
+                    **project,
+                    "spatial_bootstrap": bootstrap.model_dump(),
+                }
+
+        return project
+
     def edit_project(
         self,
         project_id: str,
@@ -132,6 +170,7 @@ class ProjectService:
         supervisor_name: str | None = None,
         supervisor_email: str | None = None,
         scheme: str | None = None,
+        floors_count: int | None = None,
         developer_pm_name: str | None = None,
         accompanying_lawyer: str | None = None,
         architect_name: str | None = None,
@@ -152,6 +191,14 @@ class ProjectService:
         accompanying_lawyer_email: str | None = None,
         architect_email: str | None = None,
     ):
+        normalized_scheme = (
+            _require_project_scheme(scheme)
+            if scheme is not None
+            else None
+        )
+        if floors_count is not None and floors_count < 1:
+            raise ValidationError("floors_count must be a positive integer")
+
         updates = {
             "project_name": project_name,
             "developer_name": developer_name,
@@ -159,7 +206,8 @@ class ProjectService:
             "lawyer_name": lawyer_name,
             "supervisor_name": supervisor_name,
             "supervisor_email": supervisor_email,
-            "scheme": _normalized_project_scheme(scheme),
+            "scheme": normalized_scheme,
+            "floors_count": floors_count,
             "developer_pm_name": developer_pm_name,
             "accompanying_lawyer": accompanying_lawyer,
             "architect_name": architect_name,

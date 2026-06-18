@@ -552,6 +552,14 @@ export function normalizeSupervisionMeta(
   }
 
   return {
+    ...(typeof source.document_type === "string" &&
+    (source.document_type === "weekly_inspection" ||
+      source.document_type === "handover_protocol")
+      ? { document_type: source.document_type }
+      : {}),
+    ...(source.inspect_mode === "standard" || source.inspect_mode === "quick"
+      ? { inspect_mode: source.inspect_mode }
+      : {}),
     construction_stage: constructionStage,
     visit_scope: visitScope,
     apartment_id: nullableString(source.apartment_id),

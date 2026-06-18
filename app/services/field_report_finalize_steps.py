@@ -20,6 +20,7 @@ from app.services.field_visit_report_service import FieldVisitReportService
 from app.services.notification_service import NotificationService
 from app.services.quality_issue_materialization_service import (
     MaterializationResult,
+    PromoteDraftsResult,
     QualityIssueMaterializationService,
     collect_materializable_finding_rows,
 )
@@ -214,13 +215,35 @@ class FieldReportFinalizeSteps:
         self,
         ctx: FinalizePipelineContext,
     ) -> dict[str, Any]:
-        result = self.materialization_service.materialize_issues_from_report(
+        promote_result = self.materialization_service.promote_drafts_for_report(
             organization_id=ctx.organization_id,
             report_id=ctx.report_id,
             actor_id=ctx.actor_id,
         )
+        result = self._materialize_issues_after_promote(
+            ctx=ctx,
+            promote_result=promote_result,
+        )
         ctx.materialization = result
         return result.model_dump(mode="json")
+
+    def _materialize_issues_after_promote(
+        self,
+        *,
+        ctx: FinalizePipelineContext,
+        promote_result: PromoteDraftsResult,
+    ) -> MaterializationResult:
+        materialized = self.materialization_service.materialize_issues_from_report(
+            organization_id=ctx.organization_id,
+            report_id=ctx.report_id,
+            actor_id=ctx.actor_id,
+        )
+        return materialized.model_copy(
+            update={
+                "promoted_count": promote_result.promoted_count,
+                "promoted_issue_ids": promote_result.promoted_issue_ids,
+            }
+        )
 
     def _step_c05_visit_diff(
         self,

@@ -1,5 +1,6 @@
 import {
   checklistCloseErrorsToMessages,
+  listDefectsMissingClosePhoto,
   validateChecklistForClose,
   type ChecklistCloseError,
 } from "@/lib/field-reports/checklist-close-validation";
@@ -61,6 +62,7 @@ export function buildSupervisionClosePreview(params: {
   const defectCount = block.items.filter(
     (item) => item.status === "DEFECT"
   ).length;
+  const defectsMissingPhoto = listDefectsMissingClosePhoto(block).length;
   const uncheckedCount = block.items.filter(
     (item) => item.status === "UNCHECKED"
   ).length;
@@ -68,6 +70,12 @@ export function buildSupervisionClosePreview(params: {
   const warnings: string[] = [
     `${block.items.length} פריטי צ'קליסט · ${defectCount} ליקויים · ${uncheckedCount} לא נבדקו`,
   ];
+
+  if (defectsMissingPhoto > 0) {
+    warnings.push(
+      `${defectsMissingPhoto} ליקויים ללא תמונה — נדרש לפני סגירה`
+    );
+  }
 
   const blocking_errors = validation.ok
     ? []

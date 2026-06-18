@@ -20,13 +20,13 @@ from fastapi import (
     File,
     Form,
 )
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from fastapi.middleware.cors import (
     CORSMiddleware
 )
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from postgrest.exceptions import APIError
 
 from app.auth.password_policy import get_password_policy
@@ -34,6 +34,7 @@ from app.auth.supabase_session_metadata import (
     sync_active_organization_metadata,
 )
 from app.config.settings import settings
+from app.config.field_report_project_scheme import is_valid_project_scheme
 from app.config import config_manager
 from app.auth import (
     APIAuthorizationMiddleware,
@@ -69,6 +70,12 @@ from app.services.project_insights_service import (
 
 from app.services.project_service import (
     ProjectService,
+)
+from app.services.project_spatial_bootstrap_service import (
+    ProjectSpatialBootstrapService,
+)
+from app.services.project_template_service import (
+    ProjectTemplateService,
 )
 
 from app.repositories.project_repository import (
@@ -144,6 +151,7 @@ from app.schemas.field_reports import (
     FieldVisitReportClosePreview,
     FieldVisitReportPublishPreview,
     FieldVisitReportCreateRequest,
+    FieldVisitReportDraftIssueRequest,
     FieldVisitReportLineCreateRequest,
     FieldVisitReportLineUpdateRequest,
     FieldVisitReportSyncRequest,
@@ -214,6 +222,7 @@ from app.schemas.quality_issue import (
     QualityIssueUpdateRequest,
     QualityIssueVisitDiffResponse,
     QualityCriticalStaleAlertResponse,
+    QualityPortfolioLiveSnapshot,
     QualityPortfolioSummaryResponse,
     QualityPeriodicReportResponse,
     QualityRecurringRankingsResponse,
@@ -269,6 +278,9 @@ from app.schemas.project_apartment import (
     ProjectApartmentListResponse,
     ResidentPortalPayload,
 )
+from app.schemas.project_spatial_bootstrap import (
+    ProjectSpatialBootstrapResponse,
+)
 
 from app.services.notification_service import (
     NotificationService
@@ -281,6 +293,7 @@ from app.services.portfolio_insights_service import (
 from app.services.portfolio_intelligence_dashboard_service import (
     PortfolioIntelligenceDashboardService,
 )
+from app.services.portfolio_live_service import PortfolioLiveService
 from app.services.database_hardening_dashboard_service import (
     DatabaseHardeningDashboardService,
 )
@@ -685,6 +698,14 @@ project_service = (
     ProjectService()
 )
 
+project_template_service = (
+    ProjectTemplateService()
+)
+
+project_spatial_bootstrap_service = (
+    ProjectSpatialBootstrapService()
+)
+
 project_repository = (
     ProjectRepository()
 )
@@ -788,11 +809,25 @@ field_visit_report_export_service = FieldVisitReportExportService()
 
 quality_issue_service = QualityIssueService()
 
+portfolio_live_service = PortfolioLiveService(
+    quality_issue_service=quality_issue_service,
+)
+
 deliverable_reports_service = DeliverableReportsService()
+
+notification_service = (
+    NotificationService()
+)
+workspace_activity_service = (
+    WorkspaceActivityService()
+)
 
 qc_notification_service = build_qc_notification_service(
     persistent_dedup=True,
+    workspace_activity_service=workspace_activity_service,
 )
+
+field_visit_report_service.qc_notification_service = qc_notification_service
 
 tenant_migration_service = TenantMigrationService()
 
@@ -807,13 +842,6 @@ resident_invite_service = ResidentInviteService()
 resident_portal_service = ResidentPortalService()
 
 resident_activation_service = ResidentActivationService()
-
-notification_service = (
-    NotificationService()
-)
-workspace_activity_service = (
-    WorkspaceActivityService()
-)
 
 field_report_finalize_service = FieldReportFinalizeService(
     visit_report_service=field_visit_report_service,
@@ -1003,13 +1031,14 @@ class CreateProjectRequest(
     organization_id: str | None = None
     owner_id: str | None = None
     tags: list[str] = Field(default_factory=list)
-    scheme: str | None = None
+    scheme: str
     developer_pm_name: str | None = None
     accompanying_lawyer: str | None = None
     architect_name: str | None = None
     site_manager_name: str | None = None
     city: str | None = None
     housing_units_count: int | None = None
+    floors_count: int | None = None
     project_start_date: str | None = None
     project_end_date: str | None = None
     project_grace_end_date: str | None = None
@@ -1023,6 +1052,20 @@ class CreateProjectRequest(
     lawyer_email: str | None = None
     accompanying_lawyer_email: str | None = None
     architect_email: str | None = None
+
+    @field_validator("scheme")
+    @classmethod
+    def validate_scheme(cls, value: str) -> str:
+        if not is_valid_project_scheme(value):
+            raise ValueError("invalid project scheme")
+        return value
+
+    @field_validator("floors_count", "housing_units_count")
+    @classmethod
+    def validate_positive_counts(cls, value: int | None) -> int | None:
+        if value is not None and value < 1:
+            raise ValueError("count must be a positive integer")
+        return value
 
 
 class EditProjectRequest(
@@ -1041,6 +1084,7 @@ class EditProjectRequest(
     site_manager_name: str | None = None
     city: str | None = None
     housing_units_count: int | None = None
+    floors_count: int | None = None
     project_start_date: str | None = None
     project_end_date: str | None = None
     project_grace_end_date: str | None = None
@@ -1054,6 +1098,20 @@ class EditProjectRequest(
     lawyer_email: str | None = None
     accompanying_lawyer_email: str | None = None
     architect_email: str | None = None
+
+    @field_validator("scheme")
+    @classmethod
+    def validate_scheme(cls, value: str | None) -> str | None:
+        if value is not None and not is_valid_project_scheme(value):
+            raise ValueError("invalid project scheme")
+        return value
+
+    @field_validator("floors_count", "housing_units_count")
+    @classmethod
+    def validate_positive_counts(cls, value: int | None) -> int | None:
+        if value is not None and value < 1:
+            raise ValueError("count must be a positive integer")
+        return value
 
 
 class ProjectTagsRequest(
@@ -2571,6 +2629,27 @@ def update_field_visit_report_line(
     )
 
 
+@app.post(
+    "/field-reports/visits/{report_id}/lines/{line_id}/draft-issue"
+)
+def materialize_field_visit_draft_issue(
+    report_id: str,
+    line_id: str,
+    request: FieldVisitReportDraftIssueRequest,
+    auth=Depends(
+        require_permission("field_reports:write")
+    ),
+    _module=Depends(require_field_report_module),
+):
+    return field_visit_report_service.materialize_draft_issue_from_line(
+        organization_id=auth.org_id,
+        report_id=report_id,
+        line_id=line_id,
+        actor_id=auth.user_id,
+        checklist_item_id=request.checklist_item_id,
+    )
+
+
 @app.delete(
     "/field-reports/visits/{report_id}/lines/{line_id}"
 )
@@ -3459,6 +3538,17 @@ def get_profile_notification_delivery_log(profile_id: str):
     return notification_service.get_delivery_log(profile_id)
 
 
+@app.get("/project-templates/resolve")
+def resolve_project_template(
+    scheme: str,
+    auth=Depends(require_permission("projects:read")),
+):
+    return project_template_service.resolve_for_scheme(
+        scheme,
+        organization_id=auth.org_id,
+    ).model_dump()
+
+
 @app.post("/projects")
 def create_project(
     request: CreateProjectRequest,
@@ -3481,10 +3571,64 @@ def create_project(
         site_manager_name=request.site_manager_name,
         city=request.city,
         housing_units_count=request.housing_units_count,
+        floors_count=request.floors_count,
         project_start_date=request.project_start_date,
         project_end_date=request.project_end_date,
         project_grace_end_date=request.project_grace_end_date,
         structure_documentation_date=request.structure_documentation_date,
+    )
+
+
+@app.post(
+    "/projects/{project_id}/bootstrap-spatial",
+    response_model=ProjectSpatialBootstrapResponse,
+)
+def bootstrap_project_spatial(
+    project_id: str,
+    auth=Depends(require_permission("projects:write")),
+):
+    project = tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+        role=auth.role,
+        actor_user_id=auth.actor_user_id,
+    )
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    scheme = project.get("scheme")
+    if not scheme:
+        raise HTTPException(
+            status_code=422,
+            detail="Project scheme is required for spatial bootstrap",
+        )
+
+    return project_spatial_bootstrap_service.bootstrap(
+        project_id=project_id,
+        scheme=str(scheme),
+        organization_id=auth.org_id,
+        floors=project.get("floors_count"),
+        housing_units_count=project.get("housing_units_count"),
+    )
+
+
+@app.get("/projects/{project_id}/offline-prep")
+def get_project_offline_prep(
+    project_id: str,
+    auth=Depends(require_permission("field_reports:read")),
+    _module=Depends(require_field_report_module),
+):
+    if not tenant_scope_service.get_organization_scoped_project(
+        project_id,
+        auth.org_id,
+        role=auth.role,
+        actor_user_id=auth.actor_user_id,
+    ):
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return field_visit_report_service.build_offline_prep_bundle_for_project(
+        auth.org_id,
+        project_id,
     )
 
 
@@ -3517,6 +3661,7 @@ def edit_project(
         site_manager_name=request.site_manager_name,
         city=request.city,
         housing_units_count=request.housing_units_count,
+        floors_count=request.floors_count,
         project_start_date=request.project_start_date,
         project_end_date=request.project_end_date,
         project_grace_end_date=request.project_grace_end_date,
@@ -5195,6 +5340,46 @@ def get_portfolio_quality_summary(
         organization_id=auth.org_id,
         actor_role=auth.role,
         actor_user_id=auth.actor_user_id,
+    )
+
+
+@app.get(
+    "/portfolio/live-snapshot",
+    response_model=QualityPortfolioLiveSnapshot,
+)
+def get_portfolio_live_snapshot(
+    auth=Depends(get_auth_context),
+):
+    """R1 — lightweight open-issue counters for 30s polling."""
+    return quality_issue_service.get_portfolio_live_snapshot(
+        organization_id=auth.org_id,
+        actor_role=auth.role,
+        actor_user_id=auth.actor_user_id,
+    )
+
+
+@app.get("/portfolio/events")
+async def stream_portfolio_events(
+    auth=Depends(get_auth_context),
+):
+    """R1 — SSE stream of portfolio open-issue counters (30s interval)."""
+
+    async def event_generator():
+        async for chunk in portfolio_live_service.stream_events(
+            organization_id=auth.org_id,
+            actor_role=auth.role,
+            actor_user_id=auth.actor_user_id,
+        ):
+            yield chunk
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

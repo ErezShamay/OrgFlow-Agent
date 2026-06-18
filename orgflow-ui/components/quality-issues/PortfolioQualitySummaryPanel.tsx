@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import LoadingState from "@/components/ui/LoadingState";
 import { useEffectiveRole } from "@/hooks/useEffectiveRole";
 import { useOrgQuery } from "@/hooks/useOrgQuery";
+import { usePortfolioLiveUpdates } from "@/hooks/usePortfolioLiveUpdates";
 import { getPortfolioQualitySummary } from "@/lib/quality-issues/api";
 import {
   formatLastReportAtCaption,
@@ -32,6 +33,30 @@ export default function PortfolioQualitySummaryPanel() {
       showErrorToast: false,
     }
   );
+
+  const { snapshot: liveSnapshot, isLive } = usePortfolioLiveUpdates(
+    canReadPortfolio
+  );
+
+  const displayOpenTotal = liveSnapshot?.total_open ?? summary?.total_open ?? 0;
+  const displayOpenCritical =
+    liveSnapshot?.total_open_critical ?? summary?.total_open_critical ?? 0;
+
+  const liveCaption = useMemo(() => {
+    if (!isLive || !liveSnapshot?.updated_at) {
+      return null;
+    }
+
+    const updatedAt = new Date(liveSnapshot.updated_at);
+    if (Number.isNaN(updatedAt.getTime())) {
+      return "עדכון חי";
+    }
+
+    return `עדכון חי — ${updatedAt.toLocaleTimeString("he-IL", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  }, [isLive, liveSnapshot?.updated_at]);
 
   if (!canReadPortfolio) {
     return null;
@@ -67,6 +92,11 @@ export default function PortfolioQualitySummaryPanel() {
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
           תיק פיקוח הנדסי — ליקויים שפורסמו
         </h2>
+        {liveCaption ? (
+          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            {liveCaption}
+          </p>
+        ) : null}
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {projectCaption}
         </p>
@@ -78,12 +108,14 @@ export default function PortfolioQualitySummaryPanel() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <SupervisionKpiCard
           title="ליקויים פתוחים"
-          value={summary.total_open}
+          value={displayOpenTotal}
+          live={isLive}
         />
         <SupervisionKpiCard
           title="קריטיים פתוחים"
-          value={summary.total_open_critical}
-          danger={summary.total_open_critical > 0}
+          value={displayOpenCritical}
+          danger={displayOpenCritical > 0}
+          live={isLive}
         />
         <SupervisionKpiCard
           title="דוח אחרון"
@@ -100,11 +132,13 @@ function SupervisionKpiCard({
   value,
   danger = false,
   text = false,
+  live = false,
 }: {
   title: string;
   value: number | string;
   danger?: boolean;
   text?: boolean;
+  live?: boolean;
 }) {
   const borderClass = danger ? "border-red-200 dark:border-red-900" : "";
   const titleClass = danger ? "text-red-500" : "text-zinc-500";
@@ -114,6 +148,9 @@ function SupervisionKpiCard({
     <div className={`of-kpi-card ${borderClass}`}>
       <p className={`mb-3 ${titleClass}`}>
         {title}
+        {live ? (
+          <span className="ms-2 inline-block h-2 w-2 rounded-full bg-emerald-500 align-middle" />
+        ) : null}
       </p>
       <p
         className={`font-black ${text ? "text-3xl" : "text-5xl"} ${valueClass}`}

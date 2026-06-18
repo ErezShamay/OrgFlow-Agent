@@ -222,10 +222,10 @@ async function createFullNativeOfflineFieldReport(fetchSpy: ReturnType<typeof vi
     lineUuids.push(updated!.lines[index].client_line_uuid);
   }
 
-  const { takeLinePhotoWithNativeCamera, useNativeLinePhotoPicker } =
+  const { takeLinePhotoWithNativeCamera, isNativeLinePhotoPicker } =
     await import("@/lib/capacitor/line-photo-picker");
 
-  expect(useNativeLinePhotoPicker()).toBe(true);
+  expect(isNativeLinePhotoPicker()).toBe(true);
 
   takePhoto.mockResolvedValue({
     webPath: "capacitor://localhost/cam.jpg",

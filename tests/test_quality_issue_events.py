@@ -18,6 +18,8 @@ from app.schemas.quality_issue import (
 def test_event_type_enum_values_and_labels() -> None:
     assert list(QualityIssueEventType) == [
         QualityIssueEventType.DETECTED,
+        QualityIssueEventType.CREATED_FROM_FIELD,
+        QualityIssueEventType.PUBLISHED_FROM_FINALIZE,
         QualityIssueEventType.LINKED,
         QualityIssueEventType.REMEDIATION_SUBMITTED,
         QualityIssueEventType.VERIFIED_CLOSED,
@@ -25,6 +27,11 @@ def test_event_type_enum_values_and_labels() -> None:
         QualityIssueEventType.STATUS_CHANGED,
     ]
     assert QualityIssueEventType.DETECTED.label_he == "התגלות"
+    assert QualityIssueEventType.CREATED_FROM_FIELD.label_he == "נוצר משטח"
+    assert (
+        QualityIssueEventType.PUBLISHED_FROM_FINALIZE.label_he
+        == "פורסם ב-Finalize"
+    )
     assert QualityIssueEventType.VERIFIED_CLOSED.label_he == "אושר ונסגר"
 
 

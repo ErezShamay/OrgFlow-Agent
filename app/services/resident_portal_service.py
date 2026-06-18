@@ -21,7 +21,7 @@ from app.schemas.project_apartment import (
     ResidentPortalReportLine,
     ResidentPortalReportSummary,
 )
-from app.schemas.quality_issue import IssueVisibility
+from app.schemas.quality_issue import IssueVisibility, resolve_tenant_view_status_he
 from app.services.resident_portal_status_cards import build_status_cards
 from app.services.resident_invite_service import RESIDENT_ROLE
 from app.services.resident_portal_gantt import build_gantt_rows
@@ -523,11 +523,16 @@ class ResidentPortalService:
                     continue
 
             records.append(issue)
+            issue_status = issue.get("status")
+            tenant_status_he = issue.get("tenant_view_status_he") or (
+                resolve_tenant_view_status_he(issue_status)
+            )
             filtered.append(
                 ResidentPortalIssueSummary(
                     id=str(issue.get("id") or ""),
                     title=issue.get("title"),
-                    status=issue.get("status"),
+                    status=issue_status,
+                    tenant_view_status_he=tenant_status_he,
                     trade=issue.get("trade"),
                     location=issue.get("location"),
                     severity=issue.get("severity"),

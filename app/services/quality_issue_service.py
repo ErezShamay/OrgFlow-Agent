@@ -23,6 +23,7 @@ from app.repositories.quality_issue_repository import (
     QualityIssueEventRepository,
     QualityIssueRepository,
 )
+from app.schemas.contractor_access import is_contractor_role
 from app.schemas.qc_permissions import (
     can_perform_issue_transition,
     has_qc_permission,
@@ -43,12 +44,14 @@ from app.schemas.quality_issue import (
     QualityIssueUpdateRequest,
     QualityIssueVisitDiffResponse,
     QualityPeriodicReportResponse,
+    QualityPortfolioLiveSnapshot,
     QualityPortfolioSummaryResponse,
     QualityRecurringRankingsResponse,
     QualityTradeHeatmapResponse,
     parse_quality_issue_event_row,
     parse_quality_issue_row,
     preferred_event_type_for_transition,
+    resolve_tenant_view_status_he,
     validate_event_fields,
     validate_status_update,
 )
@@ -72,6 +75,7 @@ from app.services.quality_issue_portfolio_kpi import (
     compute_closed_within_days_percent,
     count_critical_open_over_days,
     filter_published_portfolio_issues,
+    is_published_portfolio_issue,
     resolve_latest_published_report_at,
 )
 from app.services.quality_issue_recurring_rankings import (
@@ -243,11 +247,8 @@ class QualityIssueService:
             project_id=project_id,
             query=filters,
         )
-        total = self.issue_repository.count_by_project(
-            organization_id=organization_id,
-            project_id=project_id,
-            query=filters,
-        )
+        rows = self._filter_rows_for_actor_visibility(rows, actor_role)
+        total = len(rows)
 
         return QualityIssueListResponse(
             project_id=project_id,
@@ -281,6 +282,7 @@ class QualityIssueService:
             actor_role=actor_role,
             actor_user_id=actor_user_id,
         )
+        rows = self._filter_rows_for_actor_visibility(rows, actor_role)
         total = len(rows)
 
         return QualityIssueOrgListResponse(
@@ -311,6 +313,7 @@ class QualityIssueService:
             organization_id=organization_id,
             project_id=project_id,
         )
+        rows = self._filter_rows_for_actor_visibility(rows, actor_role)
         visible = visible_issue_statuses_for_role(actor_role)
         if visible is not None:
             allowed = {status.value for status in visible}
@@ -480,6 +483,26 @@ class QualityIssueService:
             closed_within_30_days_percent=closed_within_30_days_percent,
             last_report_at=last_report_at,
             projects=project_summaries,
+        )
+
+    def get_portfolio_live_snapshot(
+        self,
+        *,
+        organization_id: str,
+        actor_role: str | None,
+        actor_user_id: str | None = None,
+    ) -> QualityPortfolioLiveSnapshot:
+        """R1 — lightweight open-issue counters for live portfolio updates."""
+        summary = self.get_portfolio_quality_summary(
+            organization_id=organization_id,
+            actor_role=actor_role,
+            actor_user_id=actor_user_id,
+        )
+        return QualityPortfolioLiveSnapshot(
+            organization_id=summary.organization_id,
+            total_open=summary.total_open,
+            total_open_critical=summary.total_open_critical,
+            updated_at=_utc_now(),
         )
 
     def get_portfolio_trade_heatmap(
@@ -995,6 +1018,15 @@ class QualityIssueService:
             if str(row.get("project_id") or "") in allowed_project_ids
         ]
 
+    @staticmethod
+    def _filter_rows_for_actor_visibility(
+        rows: list[dict],
+        actor_role: str | None,
+    ) -> list[dict]:
+        if not is_contractor_role(actor_role):
+            return rows
+        return filter_published_portfolio_issues(rows)
+
     def _ensure_issue_project_access(
         self,
         record: dict,
@@ -1036,6 +1068,15 @@ class QualityIssueService:
         record: dict,
         actor_role: str | None,
     ) -> None:
+        if is_contractor_role(actor_role) and not is_published_portfolio_issue(
+            record
+        ):
+            raise NotFoundError(
+                message="Quality issue not found",
+                resource_type="quality_issue",
+                resource_id=str(record.get("id")),
+            )
+
         visible = visible_issue_statuses_for_role(actor_role)
         if visible is None:
             return
@@ -1209,6 +1250,10 @@ class QualityIssueService:
         to_status: QualityIssueStatus,
         actor_id: str | None,
     ) -> None:
+        updates["tenant_view_status_he"] = resolve_tenant_view_status_he(
+            to_status
+        )
+
         if to_status == QualityIssueStatus.CLOSED:
             updates.setdefault("closed_at", _utc_now_iso())
             if actor_id:

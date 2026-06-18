@@ -89,6 +89,60 @@ class ProjectApartmentRepository:
             return None
         return response.data[0]
 
+    def bulk_create_apartments(
+        self,
+        *,
+        organization_id: str,
+        project_id: str,
+        apartments: list[dict],
+    ) -> list[dict]:
+        if not self.is_storage_available():
+            raise RuntimeError(
+                f"Table {self.TABLE} is not available. "
+                "Apply db/migrations/2026061201_project_apartments.sql"
+            )
+
+        if not apartments:
+            return []
+
+        now = datetime.now(UTC).isoformat()
+        payload: list[dict] = []
+
+        for item in apartments:
+            normalized_number = str(item.get("apartment_number") or "").strip()
+            owner_name = str(
+                item.get("owner_name") or "דייר"
+            ).strip()
+            if not normalized_number or not owner_name:
+                continue
+
+            payload.append(
+                {
+                    "organization_id": organization_id,
+                    "project_id": project_id,
+                    "apartment_number": normalized_number,
+                    "group_key": build_apartment_group_key(normalized_number),
+                    "owner_name": owner_name,
+                    "phone": None,
+                    "email": None,
+                    "building": None,
+                    "entrance": None,
+                    "created_at": now,
+                    "updated_at": now,
+                }
+            )
+
+        if not payload:
+            return []
+
+        response = (
+            self.client
+            .table(self.TABLE)
+            .insert(payload)
+            .execute()
+        )
+        return response.data or []
+
     def upsert_apartment(
         self,
         *,

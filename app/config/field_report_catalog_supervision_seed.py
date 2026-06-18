@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from app.config.standards_seed import (
+    STANDARD_HLT_VENT_4M3_ID,
+    STANDARD_MAMAD_REGS_ID,
+    STANDARD_TI_1752_SILL_ID,
+)
 SUPERVISION_CATALOG_VERSION = "1.4.0-supervision-checklist"
 
 _CHECKLIST_SCOPE_APARTMENT = "APARTMENT"
@@ -238,6 +243,7 @@ SUPERVISION_CATALOG_ISSUES: tuple[dict, ...] = (
         "target_elements": "מרפסות, גגות",
         "issue_name_he": "חוסר רולקות בחיבור רצפה-קיר במרפסת",
         "standard_ref": 'ת"י 1752 ח"1',
+        "standard_id": STANDARD_TI_1752_SILL_ID,
         "severity": "Critical",
         "description": "זווית רצפה-קיר חדה ללא רולקה.",
         "engineering_impact": "קריעת יריעת איטום.",
@@ -292,6 +298,7 @@ SUPERVISION_CATALOG_ISSUES: tuple[dict, ...] = (
         "target_elements": "קירות מרתף",
         "issue_name_he": "חדירת מים פעילה במרתף",
         "standard_ref": 'ת"י 1752',
+        "standard_id": STANDARD_TI_1752_SILL_ID,
         "severity": "Critical",
         "description": "זרימת מים בקיר מרתף.",
         "engineering_impact": "נזק מבנה.",
@@ -802,6 +809,44 @@ SUPERVISION_CATALOG_ISSUES: tuple[dict, ...] = (
         "rectification_action": "לתקן/לצבוע מחדש.",
         "scope": _CHECKLIST_SCOPE_PUBLIC_AREA,
         "public_area_id": "OUTDOOR",
+        "allowed_stages": _STAGE_FINISHING,
+    },
+    {
+        "issue_id": "SUP-SAFE-001",
+        "catalog_reference_id": "IL-STD-MAMAD-SLAB-WINDOW",
+        "top_family": "FINISHING_WORKS",
+        "category_id": "MAMAD",
+        "category_name_he": "ממ\"ד",
+        "category_standard_id": 'תקנות ממ"ד',
+        "target_elements": "חלון הדף, משקוף גזים",
+        "issue_name_he": "חלון הדף/משקוף גזים לא תקין בממ\"ד",
+        "standard_ref": 'תקנות ממ"ד',
+        "standard_id": STANDARD_MAMAD_REGS_ID,
+        "severity": "Critical",
+        "description": "חלון הדף או משקוף הגזים אינם עומדים בדרישות הממ\"ד.",
+        "engineering_impact": "כשל מיגון.",
+        "rectification_action": "להחליף/לאשר לפי תקנות הממ\"ד.",
+        "scope": _CHECKLIST_SCOPE_APARTMENT,
+        "public_area_id": None,
+        "allowed_stages": _STAGE_FINISHING,
+    },
+    {
+        "issue_id": "SUP-MEP-VENT-001",
+        "catalog_reference_id": "IL-STD-HLT-VENT-4M3",
+        "top_family": "MECHANICAL_ELECTRICAL_SYSTEMS",
+        "category_id": "VENTILATION",
+        "category_name_he": "אוורור",
+        "category_standard_id": 'הל"ת',
+        "target_elements": "חדרים רטובים, וונטה",
+        "issue_name_he": "וונטה ללא 4 מ\"ק/שעה לצול",
+        "standard_ref": 'הל"ת',
+        "standard_id": STANDARD_HLT_VENT_4M3_ID,
+        "severity": "High",
+        "description": "מערכת האוורור אינה מספקת 4 מ\"ק/שעה לצול.",
+        "engineering_impact": "לחות ועובש.",
+        "rectification_action": "להתקין/לכייל וונטה לפי הל\"ת.",
+        "scope": _CHECKLIST_SCOPE_APARTMENT,
+        "public_area_id": None,
         "allowed_stages": _STAGE_FINISHING,
     },
 )

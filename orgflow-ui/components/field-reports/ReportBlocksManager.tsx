@@ -24,6 +24,7 @@ import type {
   FindingsTableBlock,
   FreeTextBlock,
   ImageBlock,
+  InspectMode,
   ProgressTableBlock,
   ReportBlock,
   ReportBlockKind,
@@ -43,6 +44,7 @@ type ReportBlocksManagerProps = {
   projectId?: string | null;
   organizationId?: string | null;
   reportId?: string | null;
+  inspectMode?: InspectMode;
   linkingRowId?: string | null;
   onLinkFindingRow?: (
     rowId: string,
@@ -64,6 +66,7 @@ export default function ReportBlocksManager({
   projectId = null,
   organizationId = null,
   reportId = null,
+  inspectMode = "standard",
   linkingRowId = null,
   onLinkFindingRow,
   hasExplicitBlocks,
@@ -259,6 +262,7 @@ export default function ReportBlocksManager({
                 <SupervisionChecklistEditor
                   block={block as SupervisionChecklistBlock}
                   reportId={reportId}
+                  inspectMode={inspectMode}
                   disabled={disabled}
                   onChange={(next) => patchBlock(block.id, () => next)}
                 />

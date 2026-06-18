@@ -18,6 +18,19 @@ export type ChecklistCloseValidationResult =
   | { ok: true }
   | { ok: false; errors: ChecklistCloseError[] };
 
+/** ליקוי ללא תמונה — חוסם רק בסגירה (V2), לא בסימון X. */
+export function isDefectMissingClosePhoto(
+  item: Pick<SupervisionChecklistItem, "status" | "photo_ids">
+): boolean {
+  return item.status === "DEFECT" && item.photo_ids.length === 0;
+}
+
+export function listDefectsMissingClosePhoto(
+  block: SupervisionChecklistBlock
+): SupervisionChecklistItem[] {
+  return block.items.filter(isDefectMissingClosePhoto);
+}
+
 function defectMissingPhotoError(
   item: SupervisionChecklistItem
 ): ChecklistCloseError {
@@ -47,7 +60,7 @@ export function validateChecklistForClose(
   const errors: ChecklistCloseError[] = [];
 
   for (const item of block.items) {
-    if (item.status === "DEFECT" && item.photo_ids.length === 0) {
+    if (isDefectMissingClosePhoto(item)) {
       errors.push(defectMissingPhotoError(item));
     }
 

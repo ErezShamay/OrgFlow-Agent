@@ -25,6 +25,7 @@ from app.schemas.quality_issue import (
     IssueVisibility,
     QualityIssueCreateRequest,
     QualityIssueEventType,
+    QualityIssueListQuery,
     QualityIssueStatus,
     build_match_key,
     build_materialization_key,
@@ -39,8 +40,12 @@ from app.services.field_report_catalog_service import (
 
 LEGACY_LINE_PHOTO_ID = "legacy"
 CLOSED_REPORT_STATUS = "CLOSED"
+IN_PROGRESS_REPORT_STATUS = "IN_PROGRESS"
 MATERIALIZE_ELIGIBLE_REPORT_STATUSES = frozenset(
     {"CLOSED", "FINALIZING"}
+)
+DRAFT_MATERIALIZE_ELIGIBLE_REPORT_STATUSES = frozenset(
+    {IN_PROGRESS_REPORT_STATUS}
 )
 
 
@@ -51,10 +56,33 @@ class MaterializationResult(BaseModel):
     project_id: str
     created_count: int = Field(ge=0)
     linked_count: int = Field(ge=0)
+    promoted_count: int = Field(ge=0, default=0)
     skipped_count: int = Field(ge=0)
     created_issue_ids: list[str] = Field(default_factory=list)
     linked_issue_ids: list[str] = Field(default_factory=list)
+    promoted_issue_ids: list[str] = Field(default_factory=list)
     skipped_line_ids: list[str] = Field(default_factory=list)
+
+
+class PromoteDraftsResult(BaseModel):
+    """Outcome of promoting draft issues during Finalize C04 (L2)."""
+
+    report_id: str
+    project_id: str
+    promoted_count: int = Field(ge=0)
+    promoted_issue_ids: list[str] = Field(default_factory=list)
+    skipped_issue_ids: list[str] = Field(default_factory=list)
+
+
+class DraftMaterializationResult(BaseModel):
+    """Outcome of instant draft materialization from a field defect (L1)."""
+
+    report_id: str
+    line_id: str
+    project_id: str
+    issue_id: str
+    created: bool
+    visibility: str = IssueVisibility.DRAFT.value
 
 
 @dataclass(frozen=True)
@@ -240,6 +268,243 @@ class QualityIssueMaterializationService:
             skipped_line_ids=skipped_line_ids,
         )
 
+    def materialize_draft_from_defect(
+        self,
+        *,
+        organization_id: str,
+        report_id: str,
+        line_id: str,
+        actor_id: str | None = None,
+        checklist_item_id: str | None = None,
+    ) -> DraftMaterializationResult:
+        """
+        Create or return a DRAFT quality issue for an in-progress defect line.
+
+        Idempotent per ``materialization_key`` ({report_id}:{line_id}).
+        """
+        record = self._get_in_progress_report(
+            organization_id=organization_id,
+            report_id=report_id,
+        )
+        project_id = str(record["project_id"])
+        line = self._get_report_line(report_id=report_id, line_id=line_id)
+        row = self._materializable_row_from_line(line)
+        if row is None:
+            raise ValidationError(
+                message="Line does not qualify for draft materialization",
+                details={"report_id": report_id, "line_id": line_id},
+            )
+
+        materialization_key = build_materialization_key(report_id, line_id)
+        existing = self.issue_repository.get_by_materialization_key(
+            organization_id=organization_id,
+            materialization_key=materialization_key,
+        )
+        if existing is not None:
+            return DraftMaterializationResult(
+                report_id=report_id,
+                line_id=line_id,
+                project_id=project_id,
+                issue_id=str(existing["id"]),
+                created=False,
+                visibility=str(
+                    existing.get("visibility") or IssueVisibility.DRAFT.value
+                ),
+            )
+
+        seen_at = datetime.now(UTC)
+        catalog_issue = (
+            self.catalog_service.find_issue(row.catalog_issue_id)
+            if row.catalog_issue_id
+            else None
+        )
+        catalog_issue_name = (
+            catalog_issue.get("issue_name_he") if catalog_issue else None
+        )
+        catalog_severity = (
+            catalog_issue.get("severity") if catalog_issue else None
+        )
+        standard_ref = row.standard_ref or (
+            catalog_issue.get("standard_ref")
+            or catalog_issue.get("category_standard_id")
+            if catalog_issue
+            else None
+        )
+        catalog_reference_id = row.catalog_reference_id or (
+            catalog_issue.get("catalog_reference_id")
+            if catalog_issue
+            else None
+        )
+        trade = row.trade or (
+            catalog_issue.get("trade") if catalog_issue else None
+        )
+        description = row.description or (
+            catalog_issue.get("description") if catalog_issue else None
+        )
+
+        request = QualityIssueCreateRequest(
+            title=derive_issue_title(
+                description=description,
+                location=row.location,
+                trade=trade,
+                catalog_issue_name=catalog_issue_name,
+            ),
+            description=description,
+            location=row.location,
+            trade=trade,
+            group_key=row.group_key,
+            group_label_he=row.group_label_he,
+            standard_ref=standard_ref,
+            severity=resolve_issue_severity(
+                catalog_severity=catalog_severity,
+                row_severity=row.row_severity,
+            ),
+            catalog_issue_id=row.catalog_issue_id,
+            catalog_reference_id=catalog_reference_id,
+            first_seen_report_id=report_id,
+            first_seen_line_id=line_id,
+            first_seen_at=seen_at,
+            last_seen_report_id=report_id,
+            last_seen_line_id=line_id,
+            last_seen_at=seen_at,
+            photo_ids=row.photo_ids,
+            materialization_key=materialization_key,
+            visibility=IssueVisibility.DRAFT,
+        )
+
+        issue = self.issue_repository.create(
+            organization_id=organization_id,
+            project_id=project_id,
+            request=request,
+            status=QualityIssueStatus.OPEN.value,
+        )
+        self._append_created_from_field_event(
+            issue=issue,
+            actor_id=actor_id,
+            checklist_item_id=checklist_item_id,
+        )
+
+        return DraftMaterializationResult(
+            report_id=report_id,
+            line_id=line_id,
+            project_id=project_id,
+            issue_id=str(issue["id"]),
+            created=True,
+        )
+
+    def promote_drafts_for_report(
+        self,
+        *,
+        organization_id: str,
+        report_id: str,
+        actor_id: str | None = None,
+    ) -> PromoteDraftsResult:
+        """
+        Promote DRAFT quality issues linked to a closed report to PUBLISHED.
+
+        Matches drafts by ``materialization_key`` for report lines and by
+        ``first_seen_report_id``. Idempotent per issue/report pair.
+        """
+        record = self._get_closed_report(
+            organization_id=organization_id,
+            report_id=report_id,
+        )
+        project_id = str(record["project_id"])
+        seen_at = _resolve_first_seen_at(record)
+        lines = self._load_report_lines(report_id)
+        rows = collect_materializable_finding_rows(
+            header_fields=record.get("header_fields") or {},
+            lines=lines,
+        )
+        rows_by_line_id = {row.line_id: row for row in rows}
+
+        candidates: dict[str, tuple[dict, _MaterializableRow | None]] = {}
+
+        for row in rows:
+            materialization_key = build_materialization_key(
+                report_id,
+                row.line_id,
+            )
+            existing = self.issue_repository.get_by_materialization_key(
+                organization_id=organization_id,
+                materialization_key=materialization_key,
+            )
+            if existing is None or not _is_draft_issue(existing):
+                continue
+            candidates[str(existing["id"])] = (existing, row)
+
+        project_issues = self.issue_repository.list_by_project(
+            organization_id=organization_id,
+            project_id=project_id,
+            query=QualityIssueListQuery(limit=200),
+        )
+        for issue in project_issues:
+            if str(issue.get("first_seen_report_id") or "") != report_id:
+                continue
+            if not _is_draft_issue(issue):
+                continue
+            issue_id = str(issue["id"])
+            if issue_id in candidates:
+                continue
+            line_id = str(issue.get("first_seen_line_id") or "").strip()
+            row = rows_by_line_id.get(line_id)
+            candidates[issue_id] = (issue, row)
+
+        promoted_issue_ids: list[str] = []
+        skipped_issue_ids: list[str] = []
+
+        for issue_id, (issue, row) in candidates.items():
+            if self._has_published_from_finalize_event(
+                issue_id=issue_id,
+                report_id=report_id,
+            ):
+                skipped_issue_ids.append(issue_id)
+                continue
+
+            if not _is_draft_issue(issue):
+                skipped_issue_ids.append(issue_id)
+                continue
+
+            line_id = str(
+                issue.get("first_seen_line_id")
+                or (row.line_id if row is not None else "")
+                or ""
+            ).strip()
+            update_payload: dict[str, Any] = {
+                "visibility": IssueVisibility.PUBLISHED.value,
+                "last_seen_report_id": report_id,
+                "last_seen_at": seen_at.isoformat(),
+            }
+            if line_id:
+                update_payload["last_seen_line_id"] = line_id
+            if row is not None and row.photo_ids:
+                merged_photos = list(
+                    dict.fromkeys(
+                        [
+                            *(issue.get("photo_ids") or []),
+                            *row.photo_ids,
+                        ]
+                    )
+                )
+                update_payload["photo_ids"] = merged_photos
+
+            updated = self.issue_repository.update(issue_id, update_payload)
+            promoted_issue = updated or issue
+            self._append_published_from_finalize_event(
+                issue=promoted_issue,
+                actor_id=actor_id,
+                previous_visibility=IssueVisibility.DRAFT,
+            )
+            promoted_issue_ids.append(issue_id)
+
+        return PromoteDraftsResult(
+            report_id=report_id,
+            project_id=project_id,
+            promoted_count=len(promoted_issue_ids),
+            promoted_issue_ids=promoted_issue_ids,
+            skipped_issue_ids=skipped_issue_ids,
+        )
+
     def _link_existing_issue(
         self,
         *,
@@ -353,6 +618,82 @@ class QualityIssueMaterializationService:
 
         return record
 
+    def _get_in_progress_report(
+        self,
+        *,
+        organization_id: str,
+        report_id: str,
+    ) -> dict:
+        record = self.report_repository.get_by_id(report_id)
+        if (
+            record is None
+            or str(record.get("organization_id")) != organization_id
+        ):
+            raise NotFoundError(
+                message="Field visit report not found",
+                resource_type="field_visit_report",
+                resource_id=report_id,
+            )
+
+        status = str(record.get("status") or "")
+        if status not in DRAFT_MATERIALIZE_ELIGIBLE_REPORT_STATUSES:
+            raise ValidationError(
+                message="Draft issues can only be materialized from in-progress reports",
+                details={"report_id": report_id, "status": status},
+            )
+
+        return record
+
+    def _get_report_line(
+        self,
+        *,
+        report_id: str,
+        line_id: str,
+    ) -> dict:
+        if not self.line_repository.is_storage_available():
+            raise ValidationError(
+                message="Line storage is not available",
+                details={"report_id": report_id, "line_id": line_id},
+            )
+
+        line = self.line_repository.get_by_id(line_id)
+        if line is None or str(line.get("report_id")) != report_id:
+            raise NotFoundError(
+                message="Field visit report line not found",
+                resource_type="field_visit_report_line",
+                resource_id=line_id,
+            )
+
+        return line
+
+    def _materializable_row_from_line(
+        self,
+        line: dict,
+    ) -> _MaterializableRow | None:
+        line_id = str(line["id"])
+        photo_ids = self._photo_ids_for_line(line)
+        rows = materializable_rows_from_lines(
+            [
+                {
+                    "id": line_id,
+                    "location": line.get("location"),
+                    "trade": line.get("trade"),
+                    "description": line.get("description"),
+                    "notes": line.get("notes"),
+                    "severity": line.get("severity"),
+                    "standard_ref": line.get("standard_ref"),
+                    "catalog_reference_id": line.get("catalog_reference_id"),
+                    "issue_id": line.get("issue_id"),
+                    "group_key": line.get("group_key"),
+                    "group_label_he": line.get("group_label_he"),
+                    "linked_issue_id": line.get("linked_issue_id"),
+                    "photo_ids": photo_ids,
+                    "has_photo": bool(photo_ids),
+                }
+            ]
+        )
+        return rows[0] if rows else None
+
     def _load_report_lines(self, report_id: str) -> list[dict]:
         if not self.line_repository.is_storage_available():
             return []
@@ -414,6 +755,87 @@ class QualityIssueMaterializationService:
         self.event_repository.create(
             issue_id=str(issue["id"]),
             event_type=QualityIssueEventType.DETECTED.value,
+            report_id=str(issue.get("first_seen_report_id") or ""),
+            line_id=issue.get("first_seen_line_id"),
+            actor_id=actor_id,
+            payload=payload,
+        )
+
+    def _has_published_from_finalize_event(
+        self,
+        *,
+        issue_id: str,
+        report_id: str,
+    ) -> bool:
+        for event in self.event_repository.list_by_issue_id(issue_id):
+            if (
+                event.get("event_type")
+                == QualityIssueEventType.PUBLISHED_FROM_FINALIZE.value
+                and str(event.get("report_id") or "") == report_id
+            ):
+                return True
+        return False
+
+    def _append_published_from_finalize_event(
+        self,
+        *,
+        issue: dict,
+        actor_id: str | None,
+        previous_visibility: IssueVisibility,
+    ) -> None:
+        payload = validate_event_fields(
+            event_type=QualityIssueEventType.PUBLISHED_FROM_FINALIZE,
+            report_id=str(issue.get("last_seen_report_id") or issue.get("first_seen_report_id") or ""),
+            actor_id=actor_id,
+            payload={
+                "materialization_key": issue.get("materialization_key"),
+                "previous_visibility": previous_visibility.value,
+                "severity": issue.get("severity"),
+                "title": issue.get("title"),
+                "catalog_issue_id": issue.get("catalog_issue_id"),
+                "location": issue.get("location"),
+                "trade": issue.get("trade"),
+                "group_key": issue.get("group_key"),
+            },
+        )
+        self.event_repository.create(
+            issue_id=str(issue["id"]),
+            event_type=QualityIssueEventType.PUBLISHED_FROM_FINALIZE.value,
+            report_id=str(
+                issue.get("last_seen_report_id")
+                or issue.get("first_seen_report_id")
+                or ""
+            ),
+            line_id=issue.get("last_seen_line_id") or issue.get("first_seen_line_id"),
+            actor_id=actor_id,
+            payload=payload,
+        )
+
+    def _append_created_from_field_event(
+        self,
+        *,
+        issue: dict,
+        actor_id: str | None,
+        checklist_item_id: str | None = None,
+    ) -> None:
+        payload = validate_event_fields(
+            event_type=QualityIssueEventType.CREATED_FROM_FIELD,
+            report_id=str(issue.get("first_seen_report_id") or ""),
+            actor_id=actor_id,
+            payload={
+                "materialization_key": issue.get("materialization_key"),
+                "severity": issue.get("severity"),
+                "title": issue.get("title"),
+                "catalog_issue_id": issue.get("catalog_issue_id"),
+                "checklist_item_id": checklist_item_id,
+                "location": issue.get("location"),
+                "trade": issue.get("trade"),
+                "group_key": issue.get("group_key"),
+            },
+        )
+        self.event_repository.create(
+            issue_id=str(issue["id"]),
+            event_type=QualityIssueEventType.CREATED_FROM_FIELD.value,
             report_id=str(issue.get("first_seen_report_id") or ""),
             line_id=issue.get("first_seen_line_id"),
             actor_id=actor_id,
@@ -595,6 +1017,11 @@ def _resolve_first_seen_at(record: dict[str, Any]) -> datetime:
         if parsed is not None:
             return parsed
     return datetime.now(UTC)
+
+
+def _is_draft_issue(issue: dict) -> bool:
+    visibility = str(issue.get("visibility") or IssueVisibility.DRAFT.value).upper()
+    return visibility == IssueVisibility.DRAFT.value
 
 
 def _parse_timestamp(value: Any) -> datetime | None:

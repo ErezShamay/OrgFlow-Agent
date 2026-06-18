@@ -11,7 +11,7 @@ let nativeListener: PluginListenerHandle | null = null;
 const connectivityListeners = new Set<(connected: boolean) => void>();
 
 /** מקור `navigatorOnline` ב-APK - `@capacitor/network` (FR-033). */
-export function useCapacitorFieldReportNetwork(): boolean {
+export function isCapacitorFieldReportNetwork(): boolean {
   return isCapacitorNativePlatform();
 }
 
@@ -20,7 +20,7 @@ export function readCapacitorNetworkConnectedSync(): boolean | null {
 }
 
 export async function refreshCapacitorNetworkStatus(): Promise<boolean> {
-  if (!useCapacitorFieldReportNetwork()) {
+  if (!isCapacitorFieldReportNetwork()) {
     if (typeof navigator === "undefined") {
       return true;
     }
@@ -40,7 +40,7 @@ function notifyConnectivityListeners(connected: boolean): void {
 }
 
 async function ensureCapacitorNetworkWatch(): Promise<void> {
-  if (!useCapacitorFieldReportNetwork() || watchStarted) {
+  if (!isCapacitorFieldReportNetwork() || watchStarted) {
     return;
   }
 
@@ -67,7 +67,7 @@ async function ensureCapacitorNetworkWatch(): Promise<void> {
 export function subscribeCapacitorNetworkConnectivity(
   listener: (connected: boolean) => void
 ): () => void {
-  if (!useCapacitorFieldReportNetwork()) {
+  if (!isCapacitorFieldReportNetwork()) {
     return () => undefined;
   }
 

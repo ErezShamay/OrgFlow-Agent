@@ -25,6 +25,7 @@ import {
   type OfflinePrepBundle,
 } from "@/lib/field-reports/offline-store";
 import { listApartmentsFromOfflineBundle } from "@/lib/field-reports/offline-prep-apartments";
+import { ensureOfflinePrepForProject } from "@/lib/field-reports/offline-prep-runner";
 import { projectPrefillSourceFromRecord } from "@/lib/field-reports/project-header-prefill";
 import { isExpired } from "@/lib/field-reports/repositories/catalog-repository";
 import { fieldReportDetailPath } from "@/lib/field-reports/routes";
@@ -102,26 +103,26 @@ export default function ProjectSupervisionNewReportPage() {
       setLoading(true);
       setError("");
 
-      const bundle = await hydrateOfflinePrepBundle(organizationId);
-      setOfflinePrepBundle(bundle);
-      const catalogReady =
-        bundle && isOfflinePrepValid(bundle) && !isExpired(bundle);
+      let bundle = await hydrateOfflinePrepBundle(organizationId);
+      let catalogReady =
+        Boolean(bundle)
+        && isOfflinePrepValid(bundle)
+        && !isExpired(bundle);
 
-      if (useLocalCatalog) {
-        if (!catalogReady || !bundle) {
-          throw new Error(
-            "אין חבילת הכנה לא מקוון תקפה. חזור לפרויקט ובצע «הכנה לא מקוון» כשיש רשת."
-          );
+      if (!catalogReady && projectId) {
+        const refreshed = await ensureOfflinePrepForProject({
+          organizationId,
+          projectId,
+          userId: profile?.id ?? null,
+        });
+        if (refreshed) {
+          bundle = refreshed;
+          catalogReady =
+            isOfflinePrepValid(refreshed) && !isExpired(refreshed);
         }
-
-        const parsed = loadSupervisionCatalogFromOfflineBundle(bundle);
-        setCatalog(parsed);
-        setCatalogVersion(bundle.catalog_version ?? parsed.catalog_version ?? null);
-        setOrganizationProfileSnapshot(
-          (bundle.organization_profile as Record<string, unknown>) ?? null
-        );
-        return;
       }
+
+      setOfflinePrepBundle(bundle);
 
       if (catalogReady && bundle) {
         try {
@@ -133,8 +134,18 @@ export default function ProjectSupervisionNewReportPage() {
           );
           return;
         } catch {
-          // fall through to API
+          if (useLocalCatalog) {
+            throw new Error(
+              "אין חבילת נתונים לא מקוונת זמינה. התחבר לרשת ונסה שוב."
+            );
+          }
         }
+      }
+
+      if (useLocalCatalog) {
+        throw new Error(
+          "אין חבילת נתונים לא מקוונת זמינה. התחבר לרשת ונסה שוב."
+        );
       }
 
       if (canCallVisitReportApi) {
@@ -146,7 +157,7 @@ export default function ProjectSupervisionNewReportPage() {
       }
 
       throw new Error(
-        "אין קטלוג supervision זמין. בצע «הכנה לא מקוון» כשיש רשת."
+        "אין קטלוג supervision זמין. התחבר לרשת ונסה שוב."
       );
     } catch (err: unknown) {
       setCatalog(null);
@@ -157,7 +168,13 @@ export default function ProjectSupervisionNewReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [organizationId, useLocalCatalog, canCallVisitReportApi]);
+  }, [
+    organizationId,
+    projectId,
+    profile?.id,
+    useLocalCatalog,
+    canCallVisitReportApi,
+  ]);
 
   useEffect(() => {
     if (moduleLoading || !isEnabled || !organizationId) {

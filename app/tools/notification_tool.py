@@ -242,6 +242,62 @@ class NotificationTool:
 
         return reminders
 
+    def build_draft_contractor_issue_messages(
+        self,
+        digests: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Heads-up email when a draft defect is recorded (L3 — not portal-visible)."""
+        reminders: list[dict[str, Any]] = []
+
+        for digest in digests:
+            contractor_email = (digest.get("contractor_email") or "").strip()
+            if not contractor_email:
+                continue
+
+            contractor_name = (
+                digest.get("contractor_name") or "קבלן"
+            ).strip()
+            project_name = (
+                digest.get("project_name") or "הפרויקט"
+            ).strip()
+            issue_title = str(digest.get("issue_title") or "ליקוי").strip()
+            trade = str(digest.get("trade") or "").strip()
+            location = str(digest.get("location") or "").strip()
+
+            detail_parts = [
+                part
+                for part in (
+                    f"מלאכה: {trade}" if trade else None,
+                    f"מיקום: {location}" if location else None,
+                )
+                if part
+            ]
+            detail_suffix = (
+                f" ({', '.join(detail_parts)})" if detail_parts else ""
+            )
+
+            subject = f"ליקוי חדש נרשם בדוח פיקוח - {project_name}"
+            body = (
+                f"שלום {contractor_name},\n\n"
+                f"נרשם ליקוי חדש בדוח פיקוח בפרויקט {project_name}:\n"
+                f"- {issue_title}{detail_suffix}\n\n"
+                "הליקוי יופיע במערכת לאחר פרסום הדוח.\n\n"
+                "תודה,\n"
+                "OrgFlow"
+            )
+
+            reminders.append(
+                {
+                    "to": contractor_email,
+                    "subject": subject,
+                    "body": body,
+                    "issue_id": digest.get("issue_id"),
+                    "report_id": digest.get("report_id"),
+                }
+            )
+
+        return reminders
+
     def send_reminders(
         self,
         reminders

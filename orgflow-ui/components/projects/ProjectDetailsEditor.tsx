@@ -3,8 +3,13 @@
 import { useState } from "react";
 
 import ProjectIllustrationUpload from "@/components/projects/ProjectIllustrationUpload";
+import ProjectSchemeSelect, {
+  projectSchemeDisplayLabel,
+} from "@/components/projects/ProjectSchemeSelect";
 import Button from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api/client";
+import type { ProjectScheme } from "@/lib/field-reports/schema/types";
+import { PROJECT_SCHEME_OPTIONS } from "@/lib/field-reports/project-scheme-labels";
 import { showToast } from "@/lib/ui/toast";
 
 export type EditableProjectDetails = {
@@ -20,7 +25,9 @@ export type EditableProjectDetails = {
   architect_name?: string | null;
   site_manager_name?: string | null;
   city?: string | null;
+  scheme?: string | null;
   housing_units_count?: number | null;
+  floors_count?: number | null;
   illustration_url?: string | null;
   illustration_source_he?: string | null;
   developer_email?: string | null;
@@ -50,7 +57,9 @@ type FormState = {
   architect_name: string;
   site_manager_name: string;
   city: string;
+  scheme: ProjectScheme | "";
   housing_units_count: string;
+  floors_count: string;
   developer_email: string;
   developer_pm_email: string;
   site_manager_email: string;
@@ -73,10 +82,18 @@ function toFormState(project: EditableProjectDetails): FormState {
     architect_name: project.architect_name?.trim() ?? "",
     site_manager_name: project.site_manager_name?.trim() ?? "",
     city: project.city?.trim() ?? "",
+    scheme:
+      PROJECT_SCHEME_OPTIONS.some(
+        (option) => option.value === project.scheme
+      )
+        ? (project.scheme as ProjectScheme)
+        : "",
     housing_units_count:
       project.housing_units_count != null
         ? String(project.housing_units_count)
         : "",
+    floors_count:
+      project.floors_count != null ? String(project.floors_count) : "",
     developer_email: project.developer_email?.trim() ?? "",
     developer_pm_email: project.developer_pm_email?.trim() ?? "",
     site_manager_email: project.site_manager_email?.trim() ?? "",
@@ -129,9 +146,10 @@ export default function ProjectDetailsEditor({
       || !form.contractor_name.trim()
       || !form.lawyer_name.trim()
       || !form.supervisor_name.trim()
+      || !form.scheme
     ) {
       showToast(
-        "יש למלא את כל שדות החובה: שם פרויקט, יזם, קבלן, עו״ד מלווה ומפקח מלווה",
+        "יש למלא את כל שדות החובה: שם פרויקט, סוג פרויקט, יזם, קבלן, עו״ד מלווה ומפקח מלווה",
         "error"
       );
       return;
@@ -142,11 +160,23 @@ export default function ProjectDetailsEditor({
 
     if (housingUnitsRaw) {
       const parsed = Number(housingUnitsRaw);
-      if (!Number.isInteger(parsed) || parsed < 0) {
+      if (!Number.isInteger(parsed) || parsed < 1) {
         showToast("מספר יחידות דיור חייב להיות מספר שלם חיובי", "error");
         return;
       }
       housing_units_count = parsed;
+    }
+
+    const floorsRaw = form.floors_count.trim();
+    let floors_count: number | null = null;
+
+    if (floorsRaw) {
+      const parsed = Number(floorsRaw);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        showToast("מספר קומות חייב להיות מספר שלם חיובי", "error");
+        return;
+      }
+      floors_count = parsed;
     }
 
     try {
@@ -166,7 +196,9 @@ export default function ProjectDetailsEditor({
           architect_name: form.architect_name.trim() || null,
           site_manager_name: form.site_manager_name.trim() || null,
           city: form.city.trim() || null,
+          scheme: form.scheme,
           housing_units_count,
+          floors_count,
           developer_email: form.developer_email.trim() || null,
           developer_pm_email: form.developer_pm_email.trim() || null,
           site_manager_email: form.site_manager_email.trim() || null,
@@ -227,7 +259,21 @@ export default function ProjectDetailsEditor({
 
           <DetailsSection title="פרטים כלליים">
             <InfoCard title="שם הפרויקט" value={displayValue(project.project_name)} />
+            <InfoCard
+              title="סוג פרויקט"
+              value={
+                projectSchemeDisplayLabel(project.scheme) ?? "לא צוין"
+              }
+            />
             <InfoCard title="עיר" value={displayValue(project.city)} />
+            <InfoCard
+              title="מספר קומות"
+              value={
+                project.floors_count != null
+                  ? String(project.floors_count)
+                  : "לא צוין"
+              }
+            />
             <InfoCard
               title="יחידות דיור"
               value={
@@ -329,6 +375,31 @@ export default function ProjectDetailsEditor({
             onChange={(value) =>
               setForm((current) => ({ ...current, city: value }))
             }
+          />
+          <div>
+            <label
+              htmlFor="edit-project-scheme"
+              className="mb-2 block text-sm font-medium text-zinc-600 dark:text-zinc-400"
+            >
+              סוג פרויקט *
+            </label>
+            <ProjectSchemeSelect
+              id="edit-project-scheme"
+              value={form.scheme}
+              onChange={(scheme) =>
+                setForm((current) => ({ ...current, scheme }))
+              }
+              required
+            />
+          </div>
+          <Field
+            label="מספר קומות"
+            value={form.floors_count}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, floors_count: value }))
+            }
+            type="number"
+            min={1}
           />
           <Field
             label="יחידות דיור"

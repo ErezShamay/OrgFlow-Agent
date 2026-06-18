@@ -71,6 +71,31 @@ _STATUS_LABELS_HE: dict[QualityIssueStatus, str] = {
     QualityIssueStatus.REOPENED: "נפתח מחדש",
 }
 
+_TENANT_VIEW_STATUS_HE_BY_STATUS: dict[QualityIssueStatus, str] = {
+    QualityIssueStatus.OPEN: "הקבלן זומן לתיקון הליקוי",
+    QualityIssueStatus.IN_REMEDIATION: "הקבלן זומן לתיקון הליקוי",
+    QualityIssueStatus.REOPENED: "הקבלן זומן לתיקון הליקוי",
+    QualityIssueStatus.PENDING_VERIFICATION: "הליקוי בבדיקה על ידי המפקח",
+    QualityIssueStatus.CLOSED: "הליקוי טופל",
+}
+
+
+def resolve_tenant_view_status_he(
+    status: QualityIssueStatus | str | None,
+) -> str | None:
+    if status is None:
+        return None
+    if isinstance(status, QualityIssueStatus):
+        return _TENANT_VIEW_STATUS_HE_BY_STATUS.get(status)
+    normalized = str(status).strip().upper()
+    if not normalized:
+        return None
+    try:
+        resolved = QualityIssueStatus(normalized)
+    except ValueError:
+        return None
+    return _TENANT_VIEW_STATUS_HE_BY_STATUS.get(resolved)
+
 CATALOG_SEVERITY_TO_REGISTRY: dict[str, QualityIssueSeverity] = {
     "critical": QualityIssueSeverity.CRITICAL,
     "high": QualityIssueSeverity.HIGH,
@@ -241,9 +266,11 @@ class QualityIssue(BaseModel):
     group_key: str | None = None
     group_label_he: str | None = None
     standard_ref: str | None = None
+    standard_id: str | None = None
 
     severity: QualityIssueSeverity = DEFAULT_QUALITY_ISSUE_SEVERITY
     status: QualityIssueStatus = DEFAULT_QUALITY_ISSUE_STATUS
+    tenant_view_status_he: str | None = None
     visibility: IssueVisibility = DEFAULT_ISSUE_VISIBILITY
 
     catalog_issue_id: str | None = None
@@ -268,6 +295,8 @@ class QualityIssue(BaseModel):
 
 class QualityIssueEventType(StrEnum):
     DETECTED = "DETECTED"
+    CREATED_FROM_FIELD = "CREATED_FROM_FIELD"
+    PUBLISHED_FROM_FINALIZE = "PUBLISHED_FROM_FINALIZE"
     LINKED = "LINKED"
     REMEDIATION_SUBMITTED = "REMEDIATION_SUBMITTED"
     VERIFIED_CLOSED = "VERIFIED_CLOSED"
@@ -281,6 +310,8 @@ class QualityIssueEventType(StrEnum):
 
 _EVENT_TYPE_LABELS_HE: dict[QualityIssueEventType, str] = {
     QualityIssueEventType.DETECTED: "התגלות",
+    QualityIssueEventType.CREATED_FROM_FIELD: "נוצר משטח",
+    QualityIssueEventType.PUBLISHED_FROM_FINALIZE: "פורסם ב-Finalize",
     QualityIssueEventType.LINKED: "קישור לליקוי קיים",
     QualityIssueEventType.REMEDIATION_SUBMITTED: "הוגש תיקון",
     QualityIssueEventType.VERIFIED_CLOSED: "אושר ונסגר",
@@ -299,6 +330,8 @@ _EVENT_TYPES_REQUIRING_ACTOR: frozenset[QualityIssueEventType] = frozenset(
 _EVENT_TYPES_REQUIRING_REPORT: frozenset[QualityIssueEventType] = frozenset(
     {
         QualityIssueEventType.DETECTED,
+        QualityIssueEventType.CREATED_FROM_FIELD,
+        QualityIssueEventType.PUBLISHED_FROM_FINALIZE,
         QualityIssueEventType.LINKED,
         QualityIssueEventType.VERIFIED_CLOSED,
         QualityIssueEventType.REOPENED,
@@ -317,6 +350,28 @@ class DetectedEventPayload(BaseModel):
     source: str | None = None
     finding_id: str | None = None
     finding_type: str | None = None
+
+
+class CreatedFromFieldEventPayload(BaseModel):
+    materialization_key: str
+    severity: QualityIssueSeverity
+    title: str
+    catalog_issue_id: str | None = None
+    checklist_item_id: str | None = None
+    location: str | None = None
+    trade: str | None = None
+    group_key: str | None = None
+
+
+class PublishedFromFinalizeEventPayload(BaseModel):
+    materialization_key: str
+    previous_visibility: IssueVisibility = IssueVisibility.DRAFT
+    severity: QualityIssueSeverity
+    title: str
+    catalog_issue_id: str | None = None
+    location: str | None = None
+    trade: str | None = None
+    group_key: str | None = None
 
 
 class LinkedEventPayload(BaseModel):
@@ -372,6 +427,8 @@ class StatusChangedEventPayload(BaseModel):
 
 _EVENT_PAYLOAD_MODELS: dict[QualityIssueEventType, type[BaseModel]] = {
     QualityIssueEventType.DETECTED: DetectedEventPayload,
+    QualityIssueEventType.CREATED_FROM_FIELD: CreatedFromFieldEventPayload,
+    QualityIssueEventType.PUBLISHED_FROM_FINALIZE: PublishedFromFinalizeEventPayload,
     QualityIssueEventType.LINKED: LinkedEventPayload,
     QualityIssueEventType.REMEDIATION_SUBMITTED: RemediationSubmittedEventPayload,
     QualityIssueEventType.VERIFIED_CLOSED: VerifiedClosedEventPayload,
@@ -646,6 +703,15 @@ class QualityPortfolioSummaryResponse(BaseModel):
     projects: list[QualityPortfolioProjectSummary] = Field(default_factory=list)
 
 
+class QualityPortfolioLiveSnapshot(BaseModel):
+    """Lightweight portfolio counters for R1 live updates."""
+
+    organization_id: str
+    total_open: int = Field(ge=0)
+    total_open_critical: int = Field(ge=0)
+    updated_at: datetime
+
+
 class QualityTradeHeatmapCell(BaseModel):
     """Open-issue counts for a single trade row."""
 
@@ -780,6 +846,7 @@ class QualityIssueCatalogLink(BaseModel):
     category_name_he: str
     standard_ref: str | None = None
     category_standard_id: str | None = None
+    standard_id: str | None = None
 
 
 class QualityIssuePhotoUploadResponse(BaseModel):
@@ -908,7 +975,11 @@ def _validate_payload_status_transitions(
     event_type: QualityIssueEventType,
     payload: BaseModel,
 ) -> None:
-    if event_type == QualityIssueEventType.DETECTED:
+    if event_type in {
+        QualityIssueEventType.DETECTED,
+        QualityIssueEventType.CREATED_FROM_FIELD,
+        QualityIssueEventType.PUBLISHED_FROM_FINALIZE,
+    }:
         return
 
     from_status = getattr(payload, "from_status", None)

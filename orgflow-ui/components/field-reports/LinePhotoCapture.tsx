@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import {
   pickLinePhotoFromNativeGallery,
-  useNativeLinePhotoGallery,
+  isNativeLinePhotoGallery,
 } from "@/lib/capacitor/line-photo-picker";
 import { apiFetch } from "@/lib/api/client";
 import { useFieldReportNetworkStatus } from "@/hooks/useFieldReportNetworkStatus";
@@ -65,7 +65,7 @@ export default function LinePhotoCapture({
 }: LinePhotoCaptureProps) {
   const { isOnline } = useOffline();
   const { canSync } = useFieldReportNetworkStatus();
-  const nativeGalleryPicker = useNativeLinePhotoGallery();
+  const nativeGalleryPicker = isNativeLinePhotoGallery();
   const androidEmulator = useMemo(() => isLikelyAndroidEmulator(), []);
   const useDeviceCameraCapture = !androidEmulator;
   const cameraInputRef = useRef<HTMLInputElement>(null);

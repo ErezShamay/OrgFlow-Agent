@@ -9,6 +9,8 @@ on:
 env:
   AUTH_JWT_SECRET: ci-dev-secret-change-me-at-least-32-chars-long
   ORG_FLOW_LLM_MODE: mock
+  SUPABASE_URL: https://ci-placeholder.supabase.co
+  SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.placeholder
 
 jobs:
   backend-lint:

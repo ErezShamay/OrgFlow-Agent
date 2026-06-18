@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { apiFetch } from "@/lib/api/client";
 import {
-  importInProgressReportsFromOfflinePrep,
-  type ImportInProgressReportsResult,
-} from "@/lib/field-reports/import-in-progress-reports";
+  fetchAndPersistOfflinePrepBundle,
+  type OfflinePrepFetchResult,
+} from "@/lib/field-reports/offline-prep-runner";
 import { clearOfflinePrepUiDismiss } from "@/lib/field-reports/offline-prep-ui-dismiss";
 import {
   clearOfflinePrepBundle,
@@ -18,13 +17,22 @@ import {
 } from "@/lib/field-reports/offline-store";
 import {
   hydrateOpenIssuesCache,
-  refreshOpenIssuesCacheForOrganization,
 } from "@/lib/quality-issues/open-issues-offline";
 import { useFieldReportModule } from "@/hooks/useFieldReportModule";
+import { useOffline } from "@/providers/OfflineProvider";
 
-export function useFieldReportOfflinePrep() {
+type UseFieldReportOfflinePrepOptions = {
+  autoPrepare?: boolean;
+  projectId?: string;
+};
+
+export function useFieldReportOfflinePrep(
+  options: UseFieldReportOfflinePrepOptions = {}
+) {
+  const { autoPrepare = true, projectId } = options;
   const { status } = useFieldReportModule();
   const { profile } = useAuth();
+  const { isOnline } = useOffline();
   const organizationId = status?.organization_id || "";
   const isModuleEnabled = Boolean(status?.is_enabled);
   const [storedBundle, setStoredBundle] = useState<OfflinePrepBundle | null>(
@@ -39,7 +47,8 @@ export function useFieldReportOfflinePrep() {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const [importSummary, setImportSummary] =
-    useState<ImportInProgressReportsResult | null>(null);
+    useState<OfflinePrepFetchResult["importSummary"] | null>(null);
+  const autoPrepareAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (!organizationId || !isModuleEnabled) {
@@ -75,6 +84,19 @@ export function useFieldReportOfflinePrep() {
       ? preparedBundle.bundle
       : storedBundle;
 
+  const applyPrepResult = useCallback(
+    (result: OfflinePrepFetchResult) => {
+      setImportSummary(result.importSummary);
+      setPreparedBundle({
+        organizationId,
+        bundle: result.bundle,
+      });
+      setStoredBundle(result.bundle);
+      return result.bundle;
+    },
+    [organizationId]
+  );
+
   const prepare = useCallback(async () => {
     if (!organizationId || !isModuleEnabled) {
       return null;
@@ -84,43 +106,11 @@ export function useFieldReportOfflinePrep() {
       setLoading(true);
       setError("");
 
-      const response = await apiFetch("/field-reports/offline-prep");
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(
-          payload.error?.message
-            || payload.message
-            || "הכנה לא מקוון נכשלה"
-        );
-      }
-
-      const payload = await response.json();
-      const saved = await saveOfflinePrepBundle(organizationId, payload);
-      const projectIds = (payload.projects ?? [])
-        .map((project: { id?: string | null }) => project.id?.trim())
-        .filter((projectId: string | undefined): projectId is string =>
-          Boolean(projectId)
-        );
-      if (projectIds.length > 0 && saved.expires_at) {
-        await refreshOpenIssuesCacheForOrganization({
-          organizationId,
-          projectIds,
-          expiresAt: saved.expires_at,
-        });
-      }
-      const imported = await importInProgressReportsFromOfflinePrep({
+      const result = await fetchAndPersistOfflinePrepBundle({
         organizationId,
         userId: profile?.id ?? null,
-        prepReports: payload.reports ?? [],
       });
-      setImportSummary(imported);
-      setPreparedBundle({
-        organizationId,
-        bundle: saved,
-      });
-      setStoredBundle(saved);
-      return saved;
+      return applyPrepResult(result);
     } catch (err: unknown) {
       setError(
         err instanceof Error
@@ -131,7 +121,38 @@ export function useFieldReportOfflinePrep() {
     } finally {
       setLoading(false);
     }
-  }, [organizationId, isModuleEnabled, profile?.id]);
+  }, [organizationId, isModuleEnabled, profile?.id, projectId, applyPrepResult]);
+
+  useEffect(() => {
+    autoPrepareAttemptedRef.current = false;
+  }, [organizationId, projectId]);
+
+  useEffect(() => {
+    if (!autoPrepare || !organizationId || !isModuleEnabled || !isOnline) {
+      return;
+    }
+    if (hydrating || loading) {
+      return;
+    }
+    if (isOfflinePrepValid(bundle)) {
+      return;
+    }
+    if (autoPrepareAttemptedRef.current) {
+      return;
+    }
+
+    autoPrepareAttemptedRef.current = true;
+    void prepare();
+  }, [
+    autoPrepare,
+    organizationId,
+    isModuleEnabled,
+    isOnline,
+    hydrating,
+    loading,
+    bundle,
+    prepare,
+  ]);
 
   const cancel = useCallback(async () => {
     if (!organizationId || !isModuleEnabled) {

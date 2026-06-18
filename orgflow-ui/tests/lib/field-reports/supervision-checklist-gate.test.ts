@@ -106,13 +106,21 @@ describe("supervision checklist final gate (§16.H + §17)", () => {
     expect(pdfSection).toContain("groupSupervisionChecklistItems");
   });
 
-  it("§17.3 photos — max 3, DEFECT requires photo before close", () => {
+  it("§17.3 photos — max 3, DEFECT photo required at close not at mark (V2)", () => {
     const validation = readUiSource("lib/field-reports/checklist-close-validation.ts");
     const constants = readUiSource("lib/field-reports/checklist-photo-constants.ts");
+    const editor = readUiSource("components/field-reports/SupervisionChecklistEditor.tsx");
+    const photoCapture = readUiSource(
+      "components/field-reports/supervision/ChecklistItemPhotoCapture.tsx"
+    );
 
     expect(constants).toContain("MAX_CHECKLIST_ITEM_PHOTOS = 3");
     expect(validation).toContain("DEFECT_MISSING_PHOTO");
+    expect(validation).toContain("isDefectMissingClosePhoto");
     expect(validation).not.toContain('status === "OK"');
+    expect(editor).toContain("SupervisionChecklistItemPhotoCapture");
+    expect(photoCapture).toContain("ניתן לסמן ליקוי בלי תמונה");
+    expect(editor).not.toContain("חובה לפני סימון");
   });
 
   it("§17.4 validation — UNCHECKED requires note to close", () => {

@@ -22,6 +22,7 @@ import type {
   VisitScope,
 } from "@/lib/field-reports/schema/types";
 import { PUBLIC_AREA_DEFINITIONS } from "@/lib/field-reports/schema/types";
+import { defaultInspectModeForDocumentType } from "@/lib/field-reports/quick-inspect";
 import { buildSupervisionChecklist } from "@/lib/field-reports/supervision-checklist-builder";
 import {
   saveLocalReport,
@@ -118,8 +119,11 @@ function buildSupervisionMeta(
     (area) => area.id === params.publicAreaId
   );
 
+  const documentType = params.documentType ?? "weekly_inspection";
+
   return {
-    document_type: params.documentType ?? "weekly_inspection",
+    document_type: documentType,
+    inspect_mode: defaultInspectModeForDocumentType(documentType),
     construction_stage: params.constructionStage,
     visit_scope: params.visitScope,
     apartment_id: params.apartmentId ?? null,

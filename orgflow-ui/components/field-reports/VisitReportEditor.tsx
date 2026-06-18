@@ -69,7 +69,9 @@ import {
   localVisitReportToView,
   type VisitReportView,
 } from "@/lib/field-reports/visit-report-view";
+import { syncSupervisionDefectDraftsForReport } from "@/lib/field-reports/checklist-defect-draft";
 import { isSupervisionChecklistReport } from "@/lib/field-reports/supervision-checklist-builder";
+import { resolveInspectMode } from "@/lib/field-reports/quick-inspect";
 import type { SupervisionChecklistBlock } from "@/lib/field-reports/schema/types";
 import {
   deleteLine as deleteLocalLine,
@@ -514,6 +516,11 @@ export default function VisitReportEditor({
     return match ?? null;
   }, [headerFields.blocks]);
 
+  const inspectMode = useMemo(
+    () => resolveInspectMode(report.header_fields?.supervision_meta),
+    [report.header_fields?.supervision_meta]
+  );
+
   function updateSupervisionChecklistBlock(nextBlock: SupervisionChecklistBlock) {
     setHeaderFields((current) =>
       patchHeaderFieldsBlocks(
@@ -524,6 +531,42 @@ export default function VisitReportEditor({
         report.visit_type
       )
     );
+
+    void (async () => {
+      const record = await getLocalReport(clientReportUuid);
+      if (!record) {
+        return;
+      }
+
+      const currentHeader = normalizeHeaderFields(
+        record.header_fields,
+        record.visit_type,
+        {
+          lines: record.lines,
+          visitDate: record.visit_date,
+        }
+      );
+      const patchedHeader = patchHeaderFieldsBlocks(
+        currentHeader,
+        currentHeader.blocks.map((block) =>
+          block.id === nextBlock.id ? nextBlock : block
+        ),
+        record.visit_type
+      );
+      const patchedRecord = {
+        ...record,
+        header_fields: serializeHeaderFieldsForApi(patchedHeader),
+      };
+
+      try {
+        const withDrafts = await syncSupervisionDefectDraftsForReport(
+          patchedRecord
+        );
+        await saveLocalReport(withDrafts);
+      } catch {
+        // Draft sync is best-effort until report sync completes.
+      }
+    })();
   }
 
   async function shouldSaveLinesLocally(): Promise<boolean> {
@@ -1057,6 +1100,7 @@ export default function VisitReportEditor({
         <SupervisionChecklistEditor
           block={supervisionChecklistBlock}
           reportId={report.server_report_id ?? clientReportUuid}
+          inspectMode={inspectMode}
           disabled={!report.is_editable}
           onChange={updateSupervisionChecklistBlock}
         />
@@ -1319,6 +1363,7 @@ export default function VisitReportEditor({
         projectId={report.project_id}
         organizationId={organizationId}
         reportId={report.server_report_id ?? clientReportUuid}
+        inspectMode={inspectMode}
         linkingRowId={linkingRowId}
         onLinkFindingRow={linkFindingRow}
         hasExplicitBlocks={hasExplicitBlocks}

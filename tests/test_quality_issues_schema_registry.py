@@ -12,7 +12,7 @@ from app.services.rls_policy_service import RlsPolicyService
 
 
 def test_schema_version_includes_quality_issue_migrations() -> None:
-    assert SCHEMA_VERSION == "2026061401"
+    assert SCHEMA_VERSION == "2026061803"
 
 
 def test_quality_issues_registered_in_tables() -> None:

@@ -130,7 +130,7 @@ export function applySupervisionDefectLinesToReport(
   const updatedItems = block.items.map((item) => {
     const existingLine = findLineByLinkedId(lines, item.linked_line_id);
 
-    if (item.status === "DEFECT" && item.photo_ids.length > 0) {
+    if (item.status === "DEFECT") {
       const payload = buildDefectFindingLine({
         item,
         block,

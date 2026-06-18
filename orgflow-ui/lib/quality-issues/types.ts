@@ -145,6 +145,7 @@ export function buildMatchKey(parts: {
 
 export const QUALITY_ISSUE_EVENT_TYPES = [
   "DETECTED",
+  "CREATED_FROM_FIELD",
   "LINKED",
   "REMEDIATION_SUBMITTED",
   "VERIFIED_CLOSED",
@@ -159,6 +160,7 @@ export const QUALITY_ISSUE_EVENT_TYPE_LABELS_HE: Record<
   string
 > = {
   DETECTED: "התגלות",
+  CREATED_FROM_FIELD: "נוצר משטח",
   LINKED: "קישור לליקוי קיים",
   REMEDIATION_SUBMITTED: "הוגש תיקון",
   VERIFIED_CLOSED: "אושר ונסגר",
@@ -170,7 +172,7 @@ export const EVENT_TYPES_REQUIRING_ACTOR: ReadonlySet<QualityIssueEventType> =
   new Set(["REMEDIATION_SUBMITTED", "VERIFIED_CLOSED", "STATUS_CHANGED"]);
 
 export const EVENT_TYPES_REQUIRING_REPORT: ReadonlySet<QualityIssueEventType> =
-  new Set(["DETECTED", "LINKED", "VERIFIED_CLOSED", "REOPENED"]);
+  new Set(["DETECTED", "CREATED_FROM_FIELD", "LINKED", "VERIFIED_CLOSED", "REOPENED"]);
 
 export type DetectedEventPayload = {
   materialization_key: string;

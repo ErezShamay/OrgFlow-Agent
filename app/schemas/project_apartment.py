@@ -111,6 +111,7 @@ class ResidentPortalIssueSummary(BaseModel):
     id: str
     title: str | None = None
     status: str | None = None
+    tenant_view_status_he: str | None = None
     trade: str | None = None
     location: str | None = None
     severity: str | None = None

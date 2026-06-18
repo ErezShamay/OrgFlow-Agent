@@ -32,7 +32,11 @@ from app.repositories.project_apartment_repository import (
 from app.repositories.project_repository import (
     ProjectRepository,
 )
-from app.schemas.quality_issue import DEFAULT_ISSUE_VISIBILITY, IssueVisibility
+from app.schemas.quality_issue import (
+    DEFAULT_ISSUE_VISIBILITY,
+    IssueVisibility,
+    parse_quality_issue_row,
+)
 from app.services.field_report_catalog_service import (
     FieldReportCatalogService,
 )
@@ -61,6 +65,7 @@ from app.services.quality_issue_materialization_service import (
     QualityIssueMaterializationService,
     collect_materializable_finding_rows,
 )
+from app.services.qc_notification_service import QcNotificationService
 from app.services.report_processing_service import (
     ReportProcessingService,
 )
@@ -121,6 +126,8 @@ class FieldVisitReportService:
             ReportProcessingService | None = None,
         materialization_service:
             QualityIssueMaterializationService | None = None,
+        qc_notification_service:
+            QcNotificationService | None = None,
     ) -> None:
         self.report_repository = (
             report_repository or FieldVisitReportRepository()
@@ -157,6 +164,7 @@ class FieldVisitReportService:
         self.materialization_service = (
             materialization_service or QualityIssueMaterializationService()
         )
+        self.qc_notification_service = qc_notification_service
 
     def is_storage_available(self) -> bool:
         return self.report_repository.is_storage_available()
@@ -280,6 +288,41 @@ class FieldVisitReportService:
             )["reports"],
             "lines_storage_available": self.are_lines_available(),
         }
+
+    def build_offline_prep_bundle_for_project(
+        self,
+        organization_id: str,
+        project_id: str,
+    ) -> dict:
+        project = self.project_repository.get_project_by_id(project_id)
+        if project is None:
+            raise NotFoundError(message="Project not found")
+        if str(project.get("organization_id")) != organization_id:
+            raise NotFoundError(message="Project not found")
+
+        bundle = self.build_offline_prep_bundle(organization_id)
+        project_key = str(project_id)
+        apartments_by_project = bundle.get("apartments_by_project") or {}
+        if not isinstance(apartments_by_project, dict):
+            apartments_by_project = {}
+
+        bundle["focused_project_id"] = project_key
+        bundle["projects"] = [
+            item
+            for item in bundle.get("projects") or []
+            if str(item.get("id")) == project_key
+        ]
+        bundle["apartments_by_project"] = {
+            key: value
+            for key, value in apartments_by_project.items()
+            if str(key) == project_key
+        }
+        bundle["reports"] = [
+            item
+            for item in bundle.get("reports") or []
+            if str(item.get("project_id")) == project_key
+        ]
+        return bundle
 
     def list_reports(
         self,
@@ -1210,6 +1253,57 @@ class FieldVisitReportService:
             updated,
             current_catalog_version=current_catalog_version,
         )
+
+    def materialize_draft_issue_from_line(
+        self,
+        *,
+        organization_id: str,
+        report_id: str,
+        line_id: str,
+        actor_id: str | None = None,
+        checklist_item_id: str | None = None,
+    ) -> dict:
+        """Instant-loop L1 — DRAFT quality issue from an in-progress defect line."""
+        self._get_org_line(
+            organization_id=organization_id,
+            report_id=report_id,
+            line_id=line_id,
+        )
+
+        result = self.materialization_service.materialize_draft_from_defect(
+            organization_id=organization_id,
+            report_id=report_id,
+            line_id=line_id,
+            actor_id=actor_id,
+            checklist_item_id=checklist_item_id,
+        )
+        issue = self.materialization_service.issue_repository.get_for_organization(
+            issue_id=result.issue_id,
+            organization_id=organization_id,
+        )
+        if issue is None:
+            raise NotFoundError(
+                message="Quality issue not found after draft materialization",
+                resource_type="quality_issue",
+                resource_id=result.issue_id,
+            )
+
+        response: dict = {
+            "draft_materialization": result.model_dump(),
+            "issue": parse_quality_issue_row(issue),
+        }
+        if result.created and self.qc_notification_service is not None:
+            notification = self.qc_notification_service.notify_contractor_on_draft_issue(
+                organization_id=organization_id,
+                project_id=str(issue.get("project_id") or result.project_id),
+                report_id=report_id,
+                issue_id=result.issue_id,
+                line_id=line_id,
+                actor_id=actor_id,
+            )
+            response["draft_notification"] = notification.model_dump()
+
+        return response
 
     def delete_line(
         self,

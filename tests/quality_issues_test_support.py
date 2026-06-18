@@ -13,6 +13,7 @@ from app.schemas.quality_issue import (
     QualityIssueCreateRequest,
     QualityIssueListQuery,
     QualityIssueStatus,
+    resolve_tenant_view_status_he,
 )
 
 
@@ -81,11 +82,15 @@ class InMemoryQualityIssueRepository:
         self._counter += 1
         issue_id = f"issue-{self._counter}"
         payload = request.model_dump(mode="json", exclude_none=True)
+        status_value = status or QualityIssueStatus.OPEN.value
         record = {
             "id": issue_id,
             "organization_id": organization_id,
             "project_id": project_id,
-            "status": status or QualityIssueStatus.OPEN.value,
+            "status": status_value,
+            "tenant_view_status_he": resolve_tenant_view_status_he(
+                status_value
+            ),
             "visibility": payload.get(
                 "visibility",
                 DEFAULT_ISSUE_VISIBILITY.value,

@@ -42,7 +42,7 @@ class TableSchema:
     audited: bool = True
 
 
-SCHEMA_VERSION = "2026061401"
+SCHEMA_VERSION = "2026061803"
 
 # Matches deploy/sql/20260604_enable_rls_best_practice.sql (authenticated SELECT + service_role bypass).
 ORGFLOW_TENANT_ISOLATION = (
@@ -584,6 +584,73 @@ TABLES: dict[str, TableSchema] = {
             ),
         ),
     ),
+    "project_templates": TableSchema(
+        name="project_templates",
+        tenant_column="organization_id",
+        soft_delete_column=None,
+        foreign_keys=(
+            ForeignKeyDef(
+                "organization_id",
+                "organizations",
+                on_delete="CASCADE",
+            ),
+        ),
+        indexes=(
+            IndexDef("project_templates_pkey", ("id",), unique=True),
+            IndexDef("project_templates_scheme_idx", ("scheme",)),
+            IndexDef(
+                "project_templates_org_scheme_idx",
+                ("organization_id", "scheme"),
+            ),
+        ),
+        rls_policies=(
+            RlsPolicyDef(
+                name="project_templates_authenticated_select",
+                command="SELECT",
+                using_expression=(
+                    "organization_id IS NULL OR "
+                    f"{ORGFLOW_TENANT_ISOLATION}"
+                ),
+            ),
+        ),
+        audited=False,
+    ),
+    "standards_and_regulations": TableSchema(
+        name="standards_and_regulations",
+        tenant_column=None,
+        soft_delete_column=None,
+        foreign_keys=(
+            ForeignKeyDef(
+                "superseded_by",
+                "standards_and_regulations",
+                on_delete="SET NULL",
+            ),
+        ),
+        indexes=(
+            IndexDef(
+                "standards_and_regulations_pkey",
+                ("id",),
+                unique=True,
+            ),
+            IndexDef(
+                "standards_and_regulations_code_idx",
+                ("standard_code",),
+                unique=True,
+            ),
+            IndexDef(
+                "standards_and_regulations_category_idx",
+                ("category",),
+            ),
+        ),
+        rls_policies=(
+            RlsPolicyDef(
+                name="standards_and_regulations_authenticated_select",
+                command="SELECT",
+                using_expression="true",
+            ),
+        ),
+        audited=False,
+    ),
     "automation_locks": TableSchema(
         name="automation_locks",
         tenant_column=None,
@@ -808,6 +875,30 @@ MIGRATION_SCRIPTS: list[dict] = [
             "Draft/Published visibility on quality issues and field report lines"
         ),
         "tables": ["quality_issues", "field_visit_report_lines"],
+    },
+    {
+        "version": "2026061801",
+        "name": "project_templates",
+        "description": (
+            "Zero Setup spatial project templates per scheme (Competitive Layer Z2)"
+        ),
+        "tables": ["project_templates"],
+    },
+    {
+        "version": "2026061802",
+        "name": "standards_and_regulations",
+        "description": (
+            "Standards knowledge base for catalog and quality issue linking (L4)"
+        ),
+        "tables": ["standards_and_regulations"],
+    },
+    {
+        "version": "2026061803",
+        "name": "quality_issues_tenant_view_status_he",
+        "description": (
+            "Resident-portal friendly Hebrew status labels on quality issues (L5)"
+        ),
+        "tables": ["quality_issues"],
     },
 ]
 

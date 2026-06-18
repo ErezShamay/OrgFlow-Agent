@@ -13,6 +13,7 @@ from app.schemas.quality_issue import (
     QualityIssueCreateRequest,
     QualityIssueListQuery,
     QualityIssueStatus,
+    resolve_tenant_view_status_he,
 )
 
 QUALITY_ISSUES_MIGRATION = (
@@ -20,6 +21,9 @@ QUALITY_ISSUES_MIGRATION = (
 )
 QUALITY_ISSUE_EVENTS_MIGRATION = (
     "db/migrations/2026060913_quality_issue_events.sql"
+)
+QUALITY_ISSUE_TENANT_VIEW_MIGRATION = (
+    "db/migrations/2026061803_quality_issues_tenant_view_status_he.sql"
 )
 
 OPEN_ISSUE_STATUSES: frozenset[str] = frozenset(
@@ -44,6 +48,7 @@ NULLABLE_ISSUE_UPDATE_FIELDS: frozenset[str] = frozenset(
         "last_seen_at",
         "closed_at",
         "closed_by",
+        "tenant_view_status_he",
     }
 )
 
@@ -133,11 +138,15 @@ class QualityIssueRepository:
 
         now = _utc_now_iso()
         payload = request.model_dump(mode="json", exclude_none=True)
+        status_value = status or DEFAULT_QUALITY_ISSUE_STATUS.value
         payload.update(
             {
                 "organization_id": organization_id,
                 "project_id": project_id,
-                "status": status or DEFAULT_QUALITY_ISSUE_STATUS.value,
+                "status": status_value,
+                "tenant_view_status_he": resolve_tenant_view_status_he(
+                    status_value
+                ),
                 "visibility": payload.get(
                     "visibility",
                     DEFAULT_ISSUE_VISIBILITY.value,

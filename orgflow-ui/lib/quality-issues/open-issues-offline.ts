@@ -25,7 +25,7 @@ import {
 export type { OpenIssuesCacheRecord };
 
 export const OPEN_ISSUES_CACHE_UNAVAILABLE_MESSAGE =
-  "אין ליקויים פתוחים מקומיים - בצע «הכנה לא מקוון» כשיש רשת.";
+  "אין ליקויים פתוחים מקומיים - הנתונים ייטענו אוטומטית כשיש רשת.";
 
 const openIssuesCache = new Map<string, OpenIssuesCacheRecord>();
 

@@ -39,12 +39,12 @@ describe("field-report-network (FR-033)", () => {
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
   });
 
-  it("useCapacitorFieldReportNetwork is false on web", async () => {
-    const { useCapacitorFieldReportNetwork, refreshCapacitorNetworkStatus } =
+  it("isCapacitorFieldReportNetwork is false on web", async () => {
+    const { isCapacitorFieldReportNetwork, refreshCapacitorNetworkStatus } =
       await import("@/lib/capacitor/field-report-network");
 
     vi.stubGlobal("navigator", { onLine: true });
-    expect(useCapacitorFieldReportNetwork()).toBe(false);
+    expect(isCapacitorFieldReportNetwork()).toBe(false);
     await expect(refreshCapacitorNetworkStatus()).resolves.toBe(true);
     expect(getStatus).not.toHaveBeenCalled();
   });

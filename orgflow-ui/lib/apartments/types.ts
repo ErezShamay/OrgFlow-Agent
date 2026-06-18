@@ -70,6 +70,7 @@ export type ResidentPortalIssueSummary = {
   id: string;
   title?: string | null;
   status?: string | null;
+  tenant_view_status_he?: string | null;
   trade?: string | null;
   location?: string | null;
   severity?: string | null;

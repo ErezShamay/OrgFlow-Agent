@@ -155,4 +155,25 @@ describe("applySupervisionDefectLinesToReport", () => {
       supervisionBlockFromHeader(cleared.header_fields)?.items[0]?.linked_line_id
     ).toBeNull();
   });
+
+  it("creates finding line for DEFECT without photo (L1 instant loop)", () => {
+    const synced = applySupervisionDefectLinesToReport({
+      ...baseRecord,
+      header_fields: {
+        ...baseRecord.header_fields,
+        blocks: [
+          {
+            ...baseSupervisionBlock,
+            items: [{ ...checklistItem, photo_ids: [], linked_line_id: null }],
+          },
+        ],
+      },
+    });
+
+    expect(synced.lines).toHaveLength(1);
+    expect(synced.lines[0]?.issue_id).toBe("SUP-FIN-004");
+    expect(
+      supervisionBlockFromHeader(synced.header_fields)?.items[0]?.linked_line_id
+    ).toBeTruthy();
+  });
 });

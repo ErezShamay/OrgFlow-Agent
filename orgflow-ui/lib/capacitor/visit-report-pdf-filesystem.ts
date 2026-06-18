@@ -15,7 +15,7 @@ type PdfFilesystemMeta = {
 };
 
 /** שמירת PDF ב-Filesystem ב-APK; ב-web - IndexedDB blobs בלבד. */
-export function useNativeVisitReportPdfFilesystem(): boolean {
+export function isNativeVisitReportPdfFilesystem(): boolean {
   return isCapacitorNativePlatform();
 }
 
@@ -47,7 +47,7 @@ export async function syncVisitReportPdfToFilesystem(
   filename: string,
   generatedAt: Date = new Date()
 ): Promise<void> {
-  if (!useNativeVisitReportPdfFilesystem()) {
+  if (!isNativeVisitReportPdfFilesystem()) {
     return;
   }
 
@@ -77,7 +77,7 @@ export async function syncVisitReportPdfToFilesystem(
 export async function loadVisitReportPdfFromFilesystem(
   reportId: string
 ): Promise<StoredVisitReportPdf | null> {
-  if (!useNativeVisitReportPdfFilesystem()) {
+  if (!isNativeVisitReportPdfFilesystem()) {
     return null;
   }
 
@@ -129,7 +129,7 @@ export async function loadVisitReportPdfFromFilesystem(
 export async function deleteVisitReportPdfFromFilesystem(
   reportId: string
 ): Promise<void> {
-  if (!useNativeVisitReportPdfFilesystem()) {
+  if (!isNativeVisitReportPdfFilesystem()) {
     return;
   }
 
@@ -153,7 +153,7 @@ export async function openVisitReportPdfOnNative(
   blob: Blob,
   filename: string
 ): Promise<boolean> {
-  if (!useNativeVisitReportPdfFilesystem()) {
+  if (!isNativeVisitReportPdfFilesystem()) {
     return false;
   }
 

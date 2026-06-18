@@ -27,6 +27,16 @@ def is_valid_project_scheme(value: str | None) -> bool:
     return value in VALID_PROJECT_SCHEMES
 
 
+def parse_project_scheme(value: str | None) -> ProjectScheme:
+    """Z1 — scheme חובה בהקמת/עדכון פרויקט."""
+    if not value or not is_valid_project_scheme(value):
+        raise ValueError(
+            "project scheme is required and must be one of: "
+            + ", ".join(sorted(VALID_PROJECT_SCHEMES))
+        )
+    return value  # type: ignore[return-value]
+
+
 def project_scheme_label_he(scheme: str) -> str:
     if scheme == "NEW_CONSTRUCTION":
         return "בנייה חדשה"

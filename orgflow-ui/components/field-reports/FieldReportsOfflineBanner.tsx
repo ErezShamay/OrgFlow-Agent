@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useFieldReportOfflinePrep } from "@/hooks/useFieldReportOfflinePrep";
@@ -32,14 +31,11 @@ export default function FieldReportsOfflineBanner() {
         <strong>אין רשת</strong> - עריכת דוחות ומפרט מהנתונים במכשיר.
         {offlinePrep.isReady
           ? " ההכנה לא מקוון בתוקף."
-          : " בצע «הכנה לא מקוון» כשתחזור רשת."}
+          : " ממתין להכנת נתונים לא מקוון כשתחזור רשת."}
       </p>
       {!offlinePrep.isReady ? (
         <p className="mt-1 text-xs">
-          <Link href="/field-reports" className="font-medium underline">
-            חזור להפקת דוחות
-          </Link>
-          {" "}להפעלת הכנה.
+          הנתונים ייטענו אוטומטית כשהרשת תחזור.
         </p>
       ) : null}
     </div>

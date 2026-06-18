@@ -3,7 +3,7 @@ import {
   readCapacitorNetworkConnectedSync,
   refreshCapacitorNetworkStatus,
   subscribeCapacitorNetworkConnectivity,
-  useCapacitorFieldReportNetwork,
+  isCapacitorFieldReportNetwork,
 } from "@/lib/capacitor/field-report-network";
 
 export type FieldReportNetworkSnapshot = {
@@ -54,7 +54,7 @@ export function readNavigatorOnline(
     return read();
   }
 
-  if (useCapacitorFieldReportNetwork()) {
+  if (isCapacitorFieldReportNetwork()) {
     const cached = readCapacitorNetworkConnectedSync();
     if (cached !== null) {
       return cached;
@@ -116,7 +116,7 @@ export async function probeFieldReportNetworkStatus(
   options?: ProbeFieldReportNetworkOptions
 ): Promise<FieldReportNetworkSnapshot> {
   if (
-    useCapacitorFieldReportNetwork()
+    isCapacitorFieldReportNetwork()
     && !options?.readNavigatorOnline
   ) {
     await refreshCapacitorNetworkStatus();
@@ -199,12 +199,12 @@ export function subscribeFieldReportNetworkStatus(
     void emit();
   };
 
-  const useNativeNetwork = useCapacitorFieldReportNetwork();
-  const unsubscribeCapacitor = useNativeNetwork
+  const nativeNetwork = isCapacitorFieldReportNetwork();
+  const unsubscribeCapacitor = nativeNetwork
     ? subscribeCapacitorNetworkConnectivity(handleConnectivityChange)
     : () => undefined;
 
-  if (!useNativeNetwork) {
+  if (!nativeNetwork) {
     window.addEventListener("online", handleConnectivityChange);
     window.addEventListener("offline", handleConnectivityChange);
   }
@@ -219,7 +219,7 @@ export function subscribeFieldReportNetworkStatus(
     cancelled = true;
     unsubscribeCapacitor();
 
-    if (!useNativeNetwork) {
+    if (!nativeNetwork) {
       window.removeEventListener("online", handleConnectivityChange);
       window.removeEventListener("offline", handleConnectivityChange);
     }

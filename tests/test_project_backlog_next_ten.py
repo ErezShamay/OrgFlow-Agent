@@ -236,6 +236,7 @@ def test_create_project_flow(monkeypatch):
             "contractor_name": "Build Co",
             "lawyer_name": "Legal Co",
             "supervisor_name": "Noa",
+            "scheme": "TAMA38_STRENGTHENING",
             "tags": ["Critical"],
         },
         headers=_auth_headers(),

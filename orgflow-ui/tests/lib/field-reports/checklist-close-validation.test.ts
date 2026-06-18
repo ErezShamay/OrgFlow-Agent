@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isDefectMissingClosePhoto,
   validateChecklistForClose,
 } from "@/lib/field-reports/checklist-close-validation";
 import type { SupervisionChecklistBlock } from "@/lib/field-reports/schema/types";
@@ -20,7 +21,7 @@ function sampleBlock(
 }
 
 describe("validateChecklistForClose (§8.1)", () => {
-  it("blocks DEFECT without photo", () => {
+  it("blocks DEFECT without photo at close (V2)", () => {
     const result = validateChecklistForClose(
       sampleBlock([
         {
@@ -43,6 +44,18 @@ describe("validateChecklistForClose (§8.1)", () => {
       expect(result.errors[0]?.code).toBe("DEFECT_MISSING_PHOTO");
       expect(result.errors[0]?.message).toContain("פוגות");
     }
+  });
+
+  it("isDefectMissingClosePhoto — marking helper, close-only gate", () => {
+    expect(
+      isDefectMissingClosePhoto({ status: "DEFECT", photo_ids: [] })
+    ).toBe(true);
+    expect(
+      isDefectMissingClosePhoto({ status: "DEFECT", photo_ids: ["p1"] })
+    ).toBe(false);
+    expect(
+      isDefectMissingClosePhoto({ status: "OK", photo_ids: [] })
+    ).toBe(false);
   });
 
   it("blocks UNCHECKED without note", () => {

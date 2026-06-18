@@ -7,7 +7,9 @@ One Stop Shop לניהול פרויקט בנייה — FastAPI + Next.js.
 | מסמך | תפקיד |
 |------|--------|
 | [`docs/PRODUCT-SPEC-LOCKED.md`](docs/PRODUCT-SPEC-LOCKED.md) | מוצר נעול (מה/למה) |
-| [`docs/FIELD-REPORT-FINALIZE-PIPELINE.md`](docs/FIELD-REPORT-FINALIZE-PIPELINE.md) | מימוש Finalize + PROGRESS |
+| [`docs/FIELD-REPORT-FINALIZE-PIPELINE.md`](docs/FIELD-REPORT-FINALIZE-PIPELINE.md) | מימוש Finalize + PROGRESS (F1–F8 הושלם) |
+| [`docs/COMPETITIVE-LAYER-SPEC.md`](docs/COMPETITIVE-LAYER-SPEC.md) | שכבת תחרות v2 — חזון (Zero Setup, V/X, Instant Loop) |
+| [`docs/COMPETITIVE-LAYER-TASKS.md`](docs/COMPETITIVE-LAYER-TASKS.md) | **משימות לסוכן** — Z/V/L/R gates + PROGRESS |
 | [`docs/FIELD-REPORT-CHECKLISTS.md`](docs/FIELD-REPORT-CHECKLISTS.md) | צ'קליסטים |
 | [`docs/HANDOFF-AGENT-PROMPT.md`](docs/HANDOFF-AGENT-PROMPT.md) | handoff לסוכן |
 | [`docs/PILOT-CHECKLIST.md`](docs/PILOT-CHECKLIST.md) | פיילוט שטח |

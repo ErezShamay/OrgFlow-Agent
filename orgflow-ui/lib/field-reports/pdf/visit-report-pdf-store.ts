@@ -2,7 +2,7 @@ import {
   deleteVisitReportPdfFromFilesystem,
   loadVisitReportPdfFromFilesystem,
   syncVisitReportPdfToFilesystem,
-  useNativeVisitReportPdfFilesystem,
+  isNativeVisitReportPdfFilesystem,
 } from "@/lib/capacitor/visit-report-pdf-filesystem";
 import {
   deleteReportPdfBlob,
@@ -118,7 +118,7 @@ export async function saveVisitReportPdfLocally(
 ): Promise<void> {
   await saveReportPdfBlob(reportId, blob, filename, generatedAt);
 
-  if (useNativeVisitReportPdfFilesystem()) {
+  if (isNativeVisitReportPdfFilesystem()) {
     await syncVisitReportPdfToFilesystem(
       reportId,
       blob,
@@ -162,7 +162,7 @@ export async function hasVisitReportPdfLocally(
     return true;
   }
 
-  if (useNativeVisitReportPdfFilesystem()) {
+  if (isNativeVisitReportPdfFilesystem()) {
     const fromFilesystem = await loadVisitReportPdfFromFilesystem(reportId);
     if (fromFilesystem?.blob) {
       return true;

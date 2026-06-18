@@ -218,6 +218,12 @@ class FieldVisitReportLineUpdateRequest(BaseModel):
     visibility: IssueVisibility = DEFAULT_ISSUE_VISIBILITY
 
 
+class FieldVisitReportDraftIssueRequest(BaseModel):
+    """POST draft-issue — instant materialization from supervision defect (L1)."""
+
+    checklist_item_id: str | None = Field(default=None, max_length=120)
+
+
 class FieldVisitReportSummary(BaseModel):
     id: str
     client_report_uuid: str | None = None

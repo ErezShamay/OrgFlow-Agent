@@ -12,7 +12,7 @@ import {
 import {
   refreshCapacitorNetworkStatus,
   subscribeCapacitorNetworkConnectivity,
-  useCapacitorFieldReportNetwork,
+  isCapacitorFieldReportNetwork,
 } from "@/lib/capacitor/field-report-network";
 
 type OfflineContextValue = {
@@ -45,7 +45,7 @@ export function OfflineProvider({
       applyOnline(window.navigator.onLine);
     };
 
-    if (useCapacitorFieldReportNetwork()) {
+    if (isCapacitorFieldReportNetwork()) {
       void refreshCapacitorNetworkStatus().then(applyOnline);
 
       const unsubscribe = subscribeCapacitorNetworkConnectivity(applyOnline);
