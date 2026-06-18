@@ -52,11 +52,6 @@ export default function ProjectOverviewListCard({
           <h2 className="text-2xl font-semibold">
             {project.project_name}
           </h2>
-          <p className="mt-2 text-zinc-500">
-            יזם: {displayStakeholder(project.developer_name)}
-            {" · "}
-            קבלן: {displayStakeholder(project.contractor_name)}
-          </p>
         </div>
 
         <Badge variant="success">
@@ -66,6 +61,16 @@ export default function ProjectOverviewListCard({
 
       {expanded ? (
         <div className="mt-6 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-700">
+          <div>
+            <h3 className="mb-2 font-semibold">יזם</h3>
+            <p>{displayStakeholder(project.developer_name)}</p>
+          </div>
+
+          <div>
+            <h3 className="mb-2 font-semibold">קבלן</h3>
+            <p>{displayStakeholder(project.contractor_name)}</p>
+          </div>
+
           <div>
             <h3 className="mb-2 font-semibold">עו״ד מלווה</h3>
             <p>{displayStakeholder(project.lawyer_name)}</p>

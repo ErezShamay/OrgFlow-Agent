@@ -27,6 +27,11 @@ import {
   getApiBaseUrl,
   isSupabaseConfigured,
 } from "@/lib/env/public-env";
+import {
+  clearSavedLoginEmail,
+  readSavedLoginEmail,
+  saveLoginEmail,
+} from "@/lib/auth/login-form-persistence";
 import { resolvePostLoginRoute } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -43,10 +48,19 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberEmail, setRememberEmail] = useState(false);
   const [passwordRevealed, setPasswordRevealed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [awaitingRedirect, setAwaitingRedirect] = useState(false);
+
+  useEffect(() => {
+    const savedEmail = readSavedLoginEmail();
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberEmail(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!awaitingRedirect) {
@@ -133,6 +147,11 @@ export default function LoginPage() {
       }
 
       logAuthInfo("login:supabase:ok", { email });
+      if (rememberEmail) {
+        saveLoginEmail(email);
+      } else {
+        clearSavedLoginEmail();
+      }
       redirectPending = true;
       setAwaitingRedirect(true);
     } catch (err: unknown) {
@@ -198,6 +217,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="username email"
               className="of-input of-focus-ring"
             />
           </div>
@@ -252,6 +272,16 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <input
+              type="checkbox"
+              checked={rememberEmail}
+              onChange={(e) => setRememberEmail(e.target.checked)}
+              className="h-4 w-4 rounded border-zinc-300 text-brand focus:ring-brand dark:border-zinc-600"
+            />
+            זכור את האימייל שלי
+          </label>
 
           {error || authBootstrapError ? (
             <div className="of-card of-card-p6 of-badge-danger rounded-2xl text-sm">

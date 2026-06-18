@@ -23,6 +23,7 @@ export const ELAYOAI_THEME_KEY = "elayoai-theme";
 export const ELAYOAI_LOCALE_KEY = "elayoai-locale";
 export const ELAYOAI_ACCESS_TOKEN_KEY = "elayoai_access_token";
 export const ELAYOAI_ORG_ID_KEY = "elayoai_org_id";
+export const ELAYOAI_LOGIN_SAVED_EMAIL_KEY = "elayoai-login-saved-email";
 
 export const ELAYOAI_FIELD_REPORT_DB_NAME = "elayoai-field-reports";
 export const ELAYOAI_FIELD_REPORT_SYNC_ERRORS_KEY =
