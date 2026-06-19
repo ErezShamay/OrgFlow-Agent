@@ -373,6 +373,7 @@ class FakeProjectRepository:
                 "id": "proj-1",
                 "organization_id": "org-1",
                 "project_name": "האורנים 7",
+                "supervisor_email": "supervisor@test.com",
             },
             "proj-2": {
                 "id": "proj-2",

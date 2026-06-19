@@ -14,3 +14,35 @@ def freeze_quality_portfolio_now(monkeypatch):
         "app.services.quality_issue_service._utc_now",
         qc_now,
     )
+
+
+@pytest.fixture(autouse=True)
+def patch_supervisor_profile_lookup_for_tests(monkeypatch):
+    from tests.test_supervisor_project_scope import FakeProfileRepository
+
+    class PermissiveProfileRepository(FakeProfileRepository):
+        def __init__(self) -> None:
+            super().__init__({})
+
+        def get_profile_by_id(self, profile_id: str):
+            if not profile_id:
+                return None
+            return {
+                "id": profile_id,
+                "email": "supervisor@test.com",
+            }
+
+    profile_repository = PermissiveProfileRepository()
+
+    import app.main as main_module
+
+    monkeypatch.setattr(
+        main_module.tenant_scope_service,
+        "profile_repository",
+        profile_repository,
+    )
+    monkeypatch.setattr(
+        main_module.quality_issue_service,
+        "profile_repository",
+        profile_repository,
+    )

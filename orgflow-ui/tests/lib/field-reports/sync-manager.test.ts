@@ -20,6 +20,7 @@ import {
   loadPendingSendRequests,
 } from "@/lib/field-reports/send-queue";
 import { buildVisitReportSyncBody } from "@/lib/field-reports/sync/build-sync-body";
+import { matchFinalizeApi } from "../../helpers/mock-finalize-api";
 import {
   listFieldReportSyncErrorLog,
   resetFieldReportSyncErrorMonitorForTests,
@@ -113,7 +114,7 @@ describe("SyncManager (FR-025)", () => {
     expect(body.lines[0].client_line_uuid).toBe(CLIENT_LINE);
   });
 
-  it("runs full offline pipeline: upsert, photos, close, request-send", async () => {
+  it("runs full offline pipeline: upsert, photos, close, finalize", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     await seedClosedLocalReport();
     await enqueueSyncQueueRecord({
@@ -127,6 +128,11 @@ describe("SyncManager (FR-025)", () => {
     });
 
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
+      const finalize = matchFinalizeApi(path, init, { reportId: SERVER_ID });
+      if (finalize) {
+        return finalize;
+      }
+
       if (path === "/field-reports/visits/sync" && init?.method === "PUT") {
         return {
           ok: true,
@@ -174,13 +180,6 @@ describe("SyncManager (FR-025)", () => {
         return {
           ok: true,
           json: async () => ({ id: SERVER_ID, status: "CLOSED" }),
-        } as Response;
-      }
-
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        return {
-          ok: true,
-          json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
         } as Response;
       }
 
@@ -236,7 +235,7 @@ describe("SyncManager (FR-025)", () => {
     });
     const firstKey = record.idempotency_key;
 
-    let requestSendCalls = 0;
+    let finalizeCalls = 0;
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
       if (path === "/field-reports/visits/sync" && init?.method === "PUT") {
         return {
@@ -262,9 +261,9 @@ describe("SyncManager (FR-025)", () => {
         } as Response;
       }
 
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        requestSendCalls += 1;
-        if (requestSendCalls === 1) {
+      if (path.endsWith("/finalize") && init?.method === "POST") {
+        finalizeCalls += 1;
+        if (finalizeCalls === 1) {
           return {
             ok: false,
             json: async () => ({
@@ -275,10 +274,11 @@ describe("SyncManager (FR-025)", () => {
             }),
           } as Response;
         }
-        return {
-          ok: true,
-          json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
-        } as Response;
+      }
+
+      const finalize = matchFinalizeApi(path, init, { reportId: SERVER_ID });
+      if (finalize) {
+        return finalize;
       }
 
       return { ok: true, json: async () => ({}) } as Response;
@@ -295,7 +295,7 @@ describe("SyncManager (FR-025)", () => {
 
     const afterFail = await getSyncQueueRecord(CLIENT_UUID);
     expect(afterFail?.idempotency_key).toBe(firstKey);
-    expect(afterFail?.sync_phase).toBe("request_send");
+    expect(afterFail?.sync_phase).toBe("finalize");
 
     const second = await SyncManager.runForOrganization(ORG_ID);
     expect(second.processed[0].success).toBe(true);
@@ -306,11 +306,9 @@ describe("SyncManager (FR-025)", () => {
   it("delegates server-only queue entries to process-send-queue", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        return {
-          ok: true,
-          json: async () => ({ id: "report-a", status: "LOCKED" }),
-        } as Response;
+      const finalize = matchFinalizeApi(path, init, { reportId: "report-a" });
+      if (finalize) {
+        return finalize;
       }
       return { ok: true, json: async () => ({}) } as Response;
     });
@@ -339,6 +337,11 @@ describe("SyncManager (FR-025)", () => {
     });
 
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
+      const finalize = matchFinalizeApi(path, init, { reportId: SERVER_ID });
+      if (finalize) {
+        return finalize;
+      }
+
       if (path === "/field-reports/visits/sync" && init?.method === "PUT") {
         return {
           ok: true,
@@ -358,13 +361,6 @@ describe("SyncManager (FR-025)", () => {
 
       if (path.endsWith("/close") && init?.method === "POST") {
         throw new Error("close should not be called");
-      }
-
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        return {
-          ok: true,
-          json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
-        } as Response;
       }
 
       return { ok: true, json: async () => ({}) } as Response;
@@ -410,8 +406,8 @@ describe("SyncManager (FR-025)", () => {
           }),
         } as Response;
       }
-      if (path.endsWith("/request-send")) {
-        throw new Error("request-send should not run");
+      if (path.endsWith("/finalize")) {
+        throw new Error("finalize should not run");
       }
       return { ok: true, json: async () => ({}) } as Response;
     });

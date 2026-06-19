@@ -43,6 +43,7 @@ import {
   loadVisitReportForPage,
   localVisitReportToView,
 } from "@/lib/field-reports/visit-report-view";
+import { matchFinalizeApi } from "../../helpers/mock-finalize-api";
 
 import config from "../../../capacitor.config";
 
@@ -447,11 +448,18 @@ describe("phase D gate acceptance (FR-035)", () => {
         } as Response;
       }
 
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        return {
-          ok: true,
-          json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
-        } as Response;
+      if (path.endsWith("/finalize") && init?.method === "POST") {
+        return (
+          matchFinalizeApi(path, init, { reportId: SERVER_ID })
+          ?? ({ ok: true, json: async () => ({}) } as Response)
+        );
+      }
+
+      const finalizeStatus = matchFinalizeApi(path, init, {
+        reportId: SERVER_ID,
+      });
+      if (finalizeStatus) {
+        return finalizeStatus;
       }
 
       return { ok: true, json: async () => ({}) } as Response;

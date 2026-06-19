@@ -291,7 +291,7 @@ async function processOfflineSyncQueueRecord(
   try {
     await setPhase("upsert");
     const upserted = await upsertVisitReportOnServer(local);
-    let workingRecord = upserted.record;
+    const workingRecord = upserted.record;
     const serverReportId = upserted.serverReportId;
 
     await updateSyncQueueRecord(clientReportUuid, {

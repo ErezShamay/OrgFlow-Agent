@@ -104,7 +104,7 @@ describe("send-queue IndexedDB bridge (FR-024)", () => {
 
   it("maps sync phases to Hebrew labels", () => {
     expect(pendingSendPhaseLabelHe("photos")).toContain("תמונות");
-    expect(pendingSendPhaseLabelHe("request_send")).toContain("ליבה");
+    expect(pendingSendPhaseLabelHe("request_send")).toContain("מעבד דוח");
   });
 
   it("migrates legacy localStorage queue into IndexedDB once", async () => {

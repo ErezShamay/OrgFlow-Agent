@@ -67,6 +67,7 @@ describe("quality issue events (spec 0.2)", () => {
   it("defines event types matching backend", () => {
     expect(QUALITY_ISSUE_EVENT_TYPES).toEqual([
       "DETECTED",
+      "CREATED_FROM_FIELD",
       "LINKED",
       "REMEDIATION_SUBMITTED",
       "VERIFIED_CLOSED",

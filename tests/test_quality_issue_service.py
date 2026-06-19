@@ -28,6 +28,7 @@ from tests.quality_issues_test_support import (
     qc_published_create_request,
     qc_now,
 )
+from tests.test_supervisor_project_scope import FakeProfileRepository
 
 
 def _now() -> datetime:
@@ -45,6 +46,12 @@ def service() -> QualityIssueService:
         event_repository=InMemoryQualityIssueEventRepository(),
         project_repository=FakeProjectRepository(),
         report_repository=FakeFieldVisitReportRepository(),
+        profile_repository=FakeProfileRepository({
+            "supervisor-1": {
+                "id": "supervisor-1",
+                "email": "supervisor@test.com",
+            },
+        }),
     )
 
 
@@ -73,6 +80,7 @@ def test_create_issue_rejects_duplicate_materialization_key(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     with pytest.raises(ConflictError):
@@ -81,6 +89,7 @@ def test_create_issue_rejects_duplicate_materialization_key(
             project_id="proj-1",
             request=_create_request(),
             actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
         )
 
 
@@ -105,6 +114,7 @@ def test_create_issue_rejects_unknown_project(
             project_id="missing",
             request=_create_request(),
             actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
         )
 
 
@@ -119,6 +129,7 @@ def test_list_issues_filters_contractor_visible_statuses(
             materialization_key="report-1:line-1",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.create_issue(
         organization_id="org-1",
@@ -128,6 +139,7 @@ def test_list_issues_filters_contractor_visible_statuses(
             materialization_key="report-1:line-2",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     closed = service.issue_repository.list_by_project(
         organization_id="org-1",
@@ -150,6 +162,7 @@ def test_list_issues_filters_contractor_visible_statuses(
         organization_id="org-1",
         project_id="proj-1",
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     assert supervisor_list.total == 2
 
@@ -162,6 +175,7 @@ def test_get_issue_detail_hides_closed_from_contractor(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.issue_repository.update(
         created["id"],
@@ -184,6 +198,7 @@ def test_update_issue_status_to_closed_creates_verified_event(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     updated = service.update_issue(
@@ -213,6 +228,7 @@ def test_update_issue_open_to_in_remediation_creates_status_changed_event(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     updated = service.update_issue(
@@ -247,6 +263,7 @@ def test_contractor_cannot_mark_open_issue_in_remediation(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     with pytest.raises(ForbiddenError):
@@ -269,6 +286,7 @@ def test_update_issue_rejects_invalid_transition(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     with pytest.raises(ValidationError):
@@ -291,6 +309,7 @@ def test_contractor_can_submit_remediation(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.issue_repository.update(
         created["id"],
@@ -326,6 +345,7 @@ def test_contractor_remediation_submission_requires_photo(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.issue_repository.update(
         created["id"],
@@ -353,6 +373,7 @@ def test_supervisor_verifies_close_from_pending_verification(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.issue_repository.update(
         created["id"],
@@ -392,6 +413,7 @@ def test_contractor_cannot_close_issue(service: QualityIssueService) -> None:
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     with pytest.raises(ForbiddenError):
@@ -415,6 +437,7 @@ def test_reopen_increments_recurrence_count(
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.update_issue(
         organization_id="org-1",
@@ -459,6 +482,7 @@ def test_closure_lifecycle_events_sequence(service: QualityIssueService) -> None
         project_id="proj-1",
         request=_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     issue_id = created["id"]
 
@@ -537,6 +561,7 @@ def test_list_open_issues(service: QualityIssueService) -> None:
         project_id="proj-1",
         request=_create_request(materialization_key="k1"),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     closed = service.create_issue(
         organization_id="org-1",
@@ -546,6 +571,7 @@ def test_list_open_issues(service: QualityIssueService) -> None:
             materialization_key="k2",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.issue_repository.update(
         closed["id"],
@@ -556,6 +582,7 @@ def test_list_open_issues(service: QualityIssueService) -> None:
         organization_id="org-1",
         project_id="proj-1",
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     assert open_issues.total == 1
     assert open_issues.items[0].status == QualityIssueStatus.OPEN
@@ -575,6 +602,7 @@ def test_suggest_matches_returns_ranked_open_issues(
             materialization_key="k1",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.create_issue(
         organization_id="org-1",
@@ -587,6 +615,7 @@ def test_suggest_matches_returns_ranked_open_issues(
             materialization_key="k2",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     response = service.suggest_matches(
@@ -598,6 +627,7 @@ def test_suggest_matches_returns_ranked_open_issues(
             group_key="bath",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     assert response.project_id == "proj-1"
@@ -618,6 +648,7 @@ def test_list_issues_respects_query_filters(
             materialization_key="k1",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.create_issue(
         organization_id="org-1",
@@ -628,6 +659,7 @@ def test_list_issues_respects_query_filters(
             materialization_key="k2",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     response = service.list_issues(
@@ -635,6 +667,7 @@ def test_list_issues_respects_query_filters(
         project_id="proj-1",
         query=QualityIssueListQuery(severity=[QualityIssueSeverity.CRITICAL]),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     assert response.total == 1
@@ -655,6 +688,7 @@ def test_portfolio_quality_summary_aggregates_kpis(
             materialization_key="k1",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.create_issue(
         organization_id="org-1",
@@ -665,6 +699,7 @@ def test_portfolio_quality_summary_aggregates_kpis(
             materialization_key="k2",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     closed = service.create_issue(
         organization_id="org-1",
@@ -674,6 +709,7 @@ def test_portfolio_quality_summary_aggregates_kpis(
             materialization_key="k3",
         ),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.update_issue(
         organization_id="org-1",
@@ -689,6 +725,7 @@ def test_portfolio_quality_summary_aggregates_kpis(
     summary = service.get_portfolio_quality_summary(
         organization_id="org-1",
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
 
     assert summary.total_open == 2

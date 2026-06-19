@@ -32,6 +32,7 @@ import {
 } from "@/lib/field-reports/sync-panel-view";
 import { buildVisitReportSyncBody } from "@/lib/field-reports/sync/build-sync-body";
 import type { SyncManagerProgressEvent } from "@/lib/field-reports/sync/sync-manager";
+import { matchFinalizeApi } from "../../helpers/mock-finalize-api";
 
 const ORG_ID = "org-phase-c-gate";
 const USER_ID = "user-phase-c-gate";
@@ -44,6 +45,17 @@ vi.mock("@/lib/api/client", () => ({
 
 vi.mock("@/lib/field-reports/report-metadata-draft", () => ({
   flushReportMetadataDraft: vi.fn(async () => undefined),
+}));
+
+vi.mock("@/lib/field-reports/pdf/visit-report-pdf-store", () => ({
+  hasVisitReportPdfLocally: vi.fn(async () => true),
+  loadVisitReportPdfLocally: vi.fn(async () => ({
+    reportId: "pdf-gate-c",
+    blob: new Blob(["pdf-gate-c"], { type: "application/pdf" }),
+    filename: "report.pdf",
+    generatedAt: new Date().toISOString(),
+  })),
+  deleteVisitReportPdfLocally: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/lib/field-reports/pdf/visit-report-pdf-store", () => ({
@@ -135,6 +147,11 @@ async function createFieldReportReadyForSync() {
 async function mockSuccessfulSyncPipeline(clientReportUuid: string) {
   const { apiFetch } = await import("@/lib/api/client");
   vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
+    const finalize = matchFinalizeApi(path, init, { reportId: SERVER_ID });
+    if (finalize) {
+      return finalize;
+    }
+
     if (path === "/field-reports/visits/sync" && init?.method === "PUT") {
       return {
         ok: true,
@@ -163,17 +180,6 @@ async function mockSuccessfulSyncPipeline(clientReportUuid: string) {
       return {
         ok: true,
         json: async () => ({ id: SERVER_ID, status: "CLOSED" }),
-      } as Response;
-    }
-
-    if (path.endsWith("/request-send") && init?.method === "POST") {
-      const key = (init?.headers as Record<string, string>)?.[
-        "X-Idempotency-Key"
-      ];
-      expect(key).toBeTruthy();
-      return {
-        ok: true,
-        json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
       } as Response;
     }
 
@@ -242,13 +248,13 @@ describe("phase C gate acceptance (FR-028)", () => {
       "X-Idempotency-Key": clientReportUuid,
     });
 
-    const requestSendCall = vi.mocked(apiFetch).mock.calls.find(
+    const finalizeCall = vi.mocked(apiFetch).mock.calls.find(
       (call) =>
         typeof call[0] === "string"
-        && call[0].endsWith("/request-send")
+        && call[0].endsWith("/finalize")
     );
-    expect(requestSendCall?.[0]).toBe(
-      `/field-reports/visits/${SERVER_ID}/request-send`
+    expect(finalizeCall?.[0]).toBe(
+      `/field-reports/visits/${SERVER_ID}/finalize`
     );
 
     const local = await getLocalReport(clientReportUuid);
@@ -265,7 +271,7 @@ describe("phase C gate acceptance (FR-028)", () => {
     const idempotencyKey = queueBefore!.idempotency_key;
 
     let syncPutCount = 0;
-    let requestSendCount = 0;
+    let finalizeCount = 0;
 
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
       if (path === "/field-reports/visits/sync" && init?.method === "PUT") {
@@ -296,9 +302,9 @@ describe("phase C gate acceptance (FR-028)", () => {
         } as Response;
       }
 
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        requestSendCount += 1;
-        if (requestSendCount === 1) {
+      if (path.endsWith("/finalize") && init?.method === "POST") {
+        finalizeCount += 1;
+        if (finalizeCount === 1) {
           return {
             ok: false,
             json: async () => ({
@@ -306,10 +312,17 @@ describe("phase C gate acceptance (FR-028)", () => {
             }),
           } as Response;
         }
-        return {
-          ok: true,
-          json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
-        } as Response;
+        return (
+          matchFinalizeApi(path, init, { reportId: SERVER_ID })
+          ?? ({ ok: true, json: async () => ({}) } as Response)
+        );
+      }
+
+      const finalizeStatus = matchFinalizeApi(path, init, {
+        reportId: SERVER_ID,
+      });
+      if (finalizeStatus) {
+        return finalizeStatus;
       }
 
       return { ok: true, json: async () => ({}) } as Response;
@@ -321,7 +334,7 @@ describe("phase C gate acceptance (FR-028)", () => {
 
     const first = await SyncManager.runForOrganization(ORG_ID);
     expect(first.processed[0].success).toBe(false);
-    expect(requestSendCount).toBe(1);
+    expect(finalizeCount).toBe(1);
     expect(syncPutCount).toBe(1);
 
     const afterFail = await getSyncQueueRecord(clientReportUuid);
@@ -330,13 +343,13 @@ describe("phase C gate acceptance (FR-028)", () => {
 
     const second = await SyncManager.runForOrganization(ORG_ID);
     expect(second.processed[0].success).toBe(true);
-    expect(requestSendCount).toBe(2);
+    expect(finalizeCount).toBe(2);
     expect(syncPutCount).toBe(2);
     expect(await loadPendingSendRequests(ORG_ID)).toHaveLength(0);
 
     const third = await SyncManager.runForOrganization(ORG_ID);
     expect(third.processed).toHaveLength(0);
-    expect(requestSendCount).toBe(2);
+    expect(finalizeCount).toBe(2);
   });
 
   it("§7.3 - sync progress phases and per-report errors for SyncPanel", async () => {
@@ -370,13 +383,20 @@ describe("phase C gate acceptance (FR-028)", () => {
         } as Response;
       }
 
-      if (path.endsWith("/request-send") && init?.method === "POST") {
+      if (path.endsWith("/finalize") && init?.method === "POST") {
         return {
           ok: false,
           json: async () => ({
             error: { message: "שגיאת ליבה - Gate ג" },
           }),
         } as Response;
+      }
+
+      const finalizeStatus = matchFinalizeApi(path, init, {
+        reportId: SERVER_ID,
+      });
+      if (finalizeStatus) {
+        return finalizeStatus;
       }
 
       return { ok: true, json: async () => ({}) } as Response;
@@ -394,7 +414,7 @@ describe("phase C gate acceptance (FR-028)", () => {
 
     expect(progressEvents.length).toBeGreaterThan(0);
     expect(progressEvents.some((event) => event.phase === "upsert")).toBe(true);
-    expect(progressEvents.some((event) => event.phase === "request_send")).toBe(
+    expect(progressEvents.some((event) => event.phase === "finalize")).toBe(
       true
     );
 

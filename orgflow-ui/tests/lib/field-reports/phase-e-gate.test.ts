@@ -48,6 +48,7 @@ import {
   listFieldReportSyncErrorLog,
   resetFieldReportSyncErrorMonitorForTests,
 } from "@/lib/field-reports/sync/sync-error-monitor";
+import { matchFinalizeApi } from "../../helpers/mock-finalize-api";
 import { loadVisitReportForPage } from "@/lib/field-reports/visit-report-view";
 
 const REPO_ROOT = path.resolve(
@@ -137,6 +138,11 @@ async function mockSuccessfulCoreSync(
   const photoUploadPaths: string[] = [];
 
   vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
+    const finalize = matchFinalizeApi(path, init, { reportId: SERVER_ID });
+    if (finalize) {
+      return finalize;
+    }
+
     if (path === "/field-reports/visits/sync" && init?.method === "PUT") {
       return {
         ok: true,
@@ -182,13 +188,6 @@ async function mockSuccessfulCoreSync(
           id: `server-line-${photoUploadPaths.length}`,
           client_line_uuid: lineUuids[0],
         }),
-      } as Response;
-    }
-
-    if (path.endsWith("/request-send") && init?.method === "POST") {
-      return {
-        ok: true,
-        json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
       } as Response;
     }
 
@@ -485,7 +484,7 @@ describe("phase E gate acceptance (FR-038)", () => {
     });
 
     const { apiFetch } = await import("@/lib/api/client");
-    let requestSendCount = 0;
+    let finalizeCount = 0;
 
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
       if (path === "/field-reports/visits/sync" && init?.method === "PUT") {
@@ -520,9 +519,9 @@ describe("phase E gate acceptance (FR-038)", () => {
         } as Response;
       }
 
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        requestSendCount += 1;
-        if (requestSendCount === 1) {
+      if (path.endsWith("/finalize") && init?.method === "POST") {
+        finalizeCount += 1;
+        if (finalizeCount === 1) {
           return {
             ok: false,
             json: async () => ({
@@ -530,10 +529,11 @@ describe("phase E gate acceptance (FR-038)", () => {
             }),
           } as Response;
         }
-        return {
-          ok: true,
-          json: async () => ({ id: SERVER_ID, status: "LOCKED" }),
-        } as Response;
+      }
+
+      const finalize = matchFinalizeApi(path, init, { reportId: SERVER_ID });
+      if (finalize) {
+        return finalize;
       }
 
       return { ok: true, json: async () => ({}) } as Response;

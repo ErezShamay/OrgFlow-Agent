@@ -24,6 +24,7 @@ from tests.quality_issues_test_support import (
     qc_issue_payload,
     qc_now_iso,
 )
+from tests.test_supervisor_project_scope import FakeProfileRepository
 
 
 def _build_access_token(
@@ -67,6 +68,12 @@ def service() -> QualityIssueService:
         issue_repository=InMemoryQualityIssueRepository(),
         event_repository=InMemoryQualityIssueEventRepository(),
         project_repository=FakeProjectRepository(),
+        profile_repository=FakeProfileRepository({
+            "supervisor-1": {
+                "id": "supervisor-1",
+                "email": "supervisor@test.com",
+            },
+        }),
     )
 
 
@@ -76,6 +83,12 @@ def qc_setup(monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, QualityIssueS
         issue_repository=InMemoryQualityIssueRepository(),
         event_repository=InMemoryQualityIssueEventRepository(),
         project_repository=FakeProjectRepository(),
+        profile_repository=FakeProfileRepository({
+            "supervisor-1": {
+                "id": "supervisor-1",
+                "email": "supervisor@test.com",
+            },
+        }),
     )
     monkeypatch.setattr(
         "app.main.quality_issue_service",
@@ -1269,6 +1282,7 @@ def test_service_create_issue_appends_detected_event(
         project_id="proj-1",
         request=qc_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     events = service.event_repository.list_by_issue_id(created["id"])
     assert created["status"] == "OPEN"
@@ -1284,6 +1298,7 @@ def test_service_create_issue_rejects_duplicate_materialization_key(
         project_id="proj-1",
         request=qc_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     with pytest.raises(ConflictError):
         service.create_issue(
@@ -1291,6 +1306,7 @@ def test_service_create_issue_rejects_duplicate_materialization_key(
             project_id="proj-1",
             request=qc_create_request(),
             actor_role="SUPERVISOR",
+            actor_id="supervisor-1",
         )
 
 
@@ -1302,6 +1318,7 @@ def test_service_close_issue_creates_verified_closed_event(
         project_id="proj-1",
         request=qc_create_request(),
         actor_role="SUPERVISOR",
+        actor_id="supervisor-1",
     )
     service.update_issue(
         organization_id="org-1",

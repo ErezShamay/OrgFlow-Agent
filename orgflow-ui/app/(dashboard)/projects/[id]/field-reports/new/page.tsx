@@ -102,7 +102,7 @@ export default function ProjectSupervisionNewReportPage() {
       setLoading(true);
       setError("");
 
-      let bundle = await hydrateOfflinePrepBundle(organizationId);
+      const bundle = await hydrateOfflinePrepBundle(organizationId);
       const catalogReady =
         Boolean(bundle)
         && isOfflinePrepValid(bundle)

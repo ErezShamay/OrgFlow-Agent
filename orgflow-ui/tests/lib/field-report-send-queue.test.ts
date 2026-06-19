@@ -10,6 +10,7 @@ import {
   enqueuePendingSendRequest,
   loadPendingSendRequests,
 } from "@/lib/field-reports/send-queue";
+import { matchFinalizeApi } from "../helpers/mock-finalize-api";
 
 function createLocalStorageMock() {
   const store = new Map<string, string>();
@@ -68,14 +69,12 @@ describe("process-send-queue", () => {
     vi.clearAllMocks();
   });
 
-  it("processes queued send through metadata, photos, pdf, and request-send", async () => {
+  it("processes queued send through metadata, photos, pdf, and finalize", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        return {
-          ok: true,
-          json: async () => ({ id: "report-a", status: "LOCKED" }),
-        } as Response;
+      const finalize = matchFinalizeApi(path, init, { reportId: "report-a" });
+      if (finalize) {
+        return finalize;
       }
       return { ok: true, json: async () => ({}) } as Response;
     });
@@ -91,7 +90,7 @@ describe("process-send-queue", () => {
     expect(result.success).toBe(true);
     expect(await loadPendingSendRequests("org-1")).toHaveLength(0);
     expect(apiFetch).toHaveBeenCalledWith(
-      "/field-reports/visits/report-a/request-send",
+      "/field-reports/visits/report-a/finalize",
       expect.objectContaining({
         method: "POST",
         headers: {
@@ -104,14 +103,15 @@ describe("process-send-queue", () => {
     expect(callArgs?.body).toBeInstanceOf(FormData);
   });
 
-  it("keeps queue entry when server does not return LOCKED", async () => {
+  it("keeps queue entry when finalize does not complete successfully", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        return {
-          ok: true,
-          json: async () => ({ id: "report-a", status: "CLOSED" }),
-        } as Response;
+      const finalize = matchFinalizeApi(path, init, {
+        reportId: "report-a",
+        finalizeStatus: "FINALIZE_FAILED",
+      });
+      if (finalize) {
+        return finalize;
       }
       return { ok: true, json: async () => ({}) } as Response;
     });
@@ -124,29 +124,24 @@ describe("process-send-queue", () => {
     const result = await processPendingSendRequest(queued);
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain("לא אישר נעילת דוח");
+    expect(result.error).toContain("עיבוד הדוח נכשל");
 
     const [entry] = await loadPendingSendRequests("org-1");
     expect(entry.reportId).toBe("report-a");
-    expect(entry.syncPhase).toBe("request_send");
-    expect(entry.lastError).toContain("לא אישר נעילת דוח");
+    expect(entry.syncPhase).toBe("finalize");
+    expect(entry.lastError).toContain("עיבוד הדוח נכשל");
   });
 
-  it("stores request-send error with API error code for retry", async () => {
+  it("stores finalize error with API error code for retry", async () => {
     const { apiFetch } = await import("@/lib/api/client");
     vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        return {
-          ok: false,
-          json: async () => ({
-            error: {
-              message: "שליחה לליבה נכשלה",
-              details: {
-                error_code: "CORE_PIPELINE_FAILED",
-              },
-            },
-          }),
-        } as Response;
+      const finalize = matchFinalizeApi(path, init, {
+        reportId: "report-a",
+        failFinalizePost: true,
+        failFinalizeMessage: "שליחה לליבה נכשלה",
+      });
+      if (finalize) {
+        return finalize;
       }
       return { ok: true, json: async () => ({}) } as Response;
     });
@@ -159,42 +154,34 @@ describe("process-send-queue", () => {
     const result = await processPendingSendRequest(queued);
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain("CORE_PIPELINE_FAILED");
+    expect(result.error).toContain("שליחה לליבה נכשלה");
 
     const [entry] = await loadPendingSendRequests("org-1");
     expect(entry.reportId).toBe("report-a");
-    expect(entry.syncPhase).toBe("request_send");
-    expect(entry.lastError).toContain("CORE_PIPELINE_FAILED");
+    expect(entry.syncPhase).toBe("finalize");
+    expect(entry.lastError).toContain("שליחה לליבה נכשלה");
   });
 
   it("retries after failure without changing idempotency key", async () => {
     const { apiFetch } = await import("@/lib/api/client");
-    let requestSendCalls = 0;
-    vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
-      if (path.endsWith("/request-send") && init?.method === "POST") {
-        requestSendCalls += 1;
-        const headers = init?.headers as Record<string, string>;
-        const idempotencyKey = headers?.["X-Idempotency-Key"];
+    let finalizeCalls = 0;
 
-        if (requestSendCalls === 1) {
+    vi.mocked(apiFetch).mockImplementation(async (path: string, init) => {
+      if (path.endsWith("/finalize") && init?.method === "POST") {
+        finalizeCalls += 1;
+        if (finalizeCalls === 1) {
           return {
             ok: false,
             json: async () => ({
-              error: {
-                message: "שליחה לליבה נכשלה",
-                details: {
-                  error_code: "TRANSIENT_CORE_ERROR",
-                },
-              },
-              idempotencyKey,
+              error: { message: "שגיאה זמנית" },
             }),
           } as Response;
         }
+      }
 
-        return {
-          ok: true,
-          json: async () => ({ id: "report-a", status: "LOCKED" }),
-        } as Response;
+      const finalize = matchFinalizeApi(path, init, { reportId: "report-a" });
+      if (finalize) {
+        return finalize;
       }
 
       return { ok: true, json: async () => ({}) } as Response;
@@ -204,36 +191,34 @@ describe("process-send-queue", () => {
       "@/lib/field-reports/process-send-queue"
     );
 
-    await enqueuePendingSendRequest("org-1", "report-a");
-    const [firstEntry] = await loadPendingSendRequests("org-1");
-    const firstKey = firstEntry.idempotencyKey;
+    const queued = await enqueuePendingSendRequest("org-1", "report-a");
+    const firstKey = queued.idempotencyKey;
 
-    const result1 = await processPendingSendRequest(firstEntry);
-    expect(result1.success).toBe(false);
+    const first = await processPendingSendRequest(queued);
+    expect(first.success).toBe(false);
 
     const [afterFail] = await loadPendingSendRequests("org-1");
     expect(afterFail.idempotencyKey).toBe(firstKey);
-    expect(afterFail.lastError).toContain("TRANSIENT_CORE_ERROR");
 
-    const result2 = await processPendingSendRequest(afterFail);
-    expect(result2.success).toBe(true);
+    const second = await processPendingSendRequest(afterFail);
+    expect(second.success).toBe(true);
+    expect(finalizeCalls).toBe(2);
     expect(await loadPendingSendRequests("org-1")).toHaveLength(0);
 
-    const requestSendCallsArgs = vi.mocked(apiFetch).mock.calls.filter(
+    const finalizeCallsMade = vi.mocked(apiFetch).mock.calls.filter(
       (call) =>
-        typeof call[0] === "string" && call[0].endsWith("/request-send")
+        typeof call[0] === "string" && call[0].endsWith("/finalize")
     );
-
-    const key1 = (requestSendCallsArgs[0][1]?.headers as Record<
-      string,
-      string
-    >)?.["X-Idempotency-Key"];
-    const key2 = (requestSendCallsArgs[1][1]?.headers as Record<
-      string,
-      string
-    >)?.["X-Idempotency-Key"];
-
-    expect(key1).toBe(firstKey);
-    expect(key2).toBe(firstKey);
+    expect(finalizeCallsMade).toHaveLength(2);
+    expect(
+      (finalizeCallsMade[0]?.[1]?.headers as Record<string, string>)?.[
+        "X-Idempotency-Key"
+      ]
+    ).toBe(firstKey);
+    expect(
+      (finalizeCallsMade[1]?.[1]?.headers as Record<string, string>)?.[
+        "X-Idempotency-Key"
+      ]
+    ).toBe(firstKey);
   });
 });

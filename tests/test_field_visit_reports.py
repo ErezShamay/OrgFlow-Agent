@@ -22,6 +22,7 @@ from app.services.field_report_catalog_service import (
 from app.services.field_visit_report_service import (
     FieldVisitReportService,
 )
+from tests.test_supervisor_project_scope import FakeProfileRepository
 
 
 def _structure_catalog_issue_id() -> str:
@@ -314,6 +315,7 @@ class FakeProjectRepository:
             "developer_pm_name": "מנהל בדיקה",
             "lawyer_name": "עו״ד בדיקה",
             "city": "תל אביב",
+            "supervisor_email": "supervisor@test.com",
         }
 
     def get_projects_by_organization(
@@ -325,6 +327,7 @@ class FakeProjectRepository:
                 "id": "project-1",
                 "organization_id": organization_id,
                 "project_name": "פרויקט בדיקה",
+                "supervisor_email": "supervisor@test.com",
             }
         ]
 
@@ -407,16 +410,24 @@ def _setup_client(
         organization_repository=FakeOrganizationRepository(),
         module_service=module_service,
     )
+    fake_project_repository = FakeProjectRepository()
     visit_service = field_visit_report_service or FieldVisitReportService(
         report_repository=FakeVisitReportRepository(),
         line_repository=FakeVisitReportLineRepository(),
-        project_repository=FakeProjectRepository(),
+        line_photo_repository=FakeVisitReportLinePhotoRepository(),
+        project_repository=fake_project_repository,
         organization_profile_service=organization_profile_service,
         report_processing_service=(
             report_processing_service
             or FakeReportProcessingService()
         ),
     )
+    fake_profile_repository = FakeProfileRepository({
+        "supervisor-1": {
+            "id": "supervisor-1",
+            "email": "supervisor@test.com",
+        },
+    })
 
     monkeypatch.setattr(
         "app.main.field_report_module_service",
@@ -428,7 +439,15 @@ def _setup_client(
     )
     monkeypatch.setattr(
         "app.main.project_repository",
-        FakeProjectRepository(),
+        fake_project_repository,
+    )
+    monkeypatch.setattr(
+        "app.main.tenant_scope_service.project_repository",
+        fake_project_repository,
+    )
+    monkeypatch.setattr(
+        "app.main.tenant_scope_service.profile_repository",
+        fake_profile_repository,
     )
 
     app.state.field_report_module_service = module_service

@@ -5,6 +5,7 @@ import {
   contractorDeniedRouteRedirect,
   isContractorDeniedRoute,
 } from "@/lib/auth/contractor-route-guard";
+import { recommendedPostLoginRoute } from "@/lib/qc-navigation";
 
 describe("contractor route guard (4.2.4)", () => {
   it("blocks field reports, portfolio, and catalog-related PM routes", () => {
@@ -34,6 +35,8 @@ describe("contractor route guard (4.2.4)", () => {
     );
     expect(canContractorAccessRoute("CONTRACTOR", "/issues")).toBe(true);
     expect(canContractorAccessRoute("SUPERVISOR", "/field-reports")).toBe(true);
-    expect(contractorDeniedRouteRedirect("CONTRACTOR")).toBe("/settings");
+    expect(contractorDeniedRouteRedirect("CONTRACTOR")).toBe(
+      recommendedPostLoginRoute("CONTRACTOR")
+    );
   });
 });
