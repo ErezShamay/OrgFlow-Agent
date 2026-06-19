@@ -39,9 +39,8 @@ function lockElementOverflow(element: HTMLElement | null) {
 
 /**
  * Locks dashboard background scroll while a full-screen overlay is open on
- * viewports below Tailwind `lg`. Uses `.of-dashboard-main` instead of
- * `document.body` so touch scrolling inside the overlay still works in
- * Capacitor / Android WebView.
+ * viewports below Tailwind `lg`. Locks `body`/`html` on mobile (document
+ * scroll) and `.of-dashboard-main` when it is the scroll container.
  */
 export function useLockBackgroundScrollWhileOverlay(open: boolean) {
   const belowLg = useMatchesMaxWidth(LG_MAX_WIDTH_PX, open);
@@ -51,8 +50,16 @@ export function useLockBackgroundScrollWhileOverlay(open: boolean) {
       return;
     }
 
+    const unlockBody = lockElementOverflow(document.body);
+    const unlockHtml = lockElementOverflow(document.documentElement);
     const main = document.querySelector<HTMLElement>(".of-dashboard-main");
-    return lockElementOverflow(main);
+    const unlockMain = lockElementOverflow(main);
+
+    return () => {
+      unlockMain();
+      unlockHtml();
+      unlockBody();
+    };
   }, [open, belowLg]);
 }
 

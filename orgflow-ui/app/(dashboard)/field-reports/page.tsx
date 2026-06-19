@@ -273,9 +273,77 @@ export default function FieldReportsPage() {
     );
   }
 
+  const statusFilterButtons = (
+    <div className="flex flex-wrap gap-2">
+      {STATUS_FILTERS.map((filter) => {
+        const isActive = statusFilter === filter.value;
+        return (
+          <button
+            key={filter.value || "all"}
+            type="button"
+            className={
+              isActive
+                ? FR_FILTER_BUTTON_ACTIVE
+                : FR_FILTER_BUTTON_INACTIVE
+            }
+            onClick={() => setStatusFilter(filter.value)}
+          >
+            {filter.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const inProgressHint =
+    inProgressCount > 0 && statusFilter !== "IN_PROGRESS" ? (
+      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        {inProgressCount} דוחות בעבודה - ניתן לערוך דוח אחד בכל רגע במכשיר.
+        <button
+          type="button"
+          className="mr-2 text-brand hover:underline"
+          onClick={() => setStatusFilter("IN_PROGRESS")}
+        >
+          הצג רק בעבודה
+        </button>
+      </p>
+    ) : null;
+
   return (
     <div className="of-container mx-auto max-w-3xl space-y-6 p-4 md:p-8">
-      <header className="space-y-1">
+      <header className="hidden flex-wrap items-center justify-between gap-4 lg:flex">
+        <div className="space-y-1">
+          <h1 className="of-page-title text-2xl">הפקת דוחות</h1>
+          <p className="of-page-desc text-sm">הדוחות שלי</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className={FR_PRIMARY_ACTION_BUTTON}
+            onClick={() => setProjectPickerOpen(true)}
+          >
+            הפקת דוח
+          </button>
+          <Link
+            href={FIELD_REPORTS_UPLOAD_ROUTE.href}
+            className={FR_PRIMARY_ACTION_BUTTON}
+          >
+            {FIELD_REPORTS_UPLOAD_ROUTE.label}
+          </Link>
+          <button
+            type="button"
+            className={FR_PRIMARY_ACTION_BUTTON}
+            disabled={offlinePrep.loading}
+            onClick={() => void handleOfflinePrep()}
+          >
+            {offlinePrep.loading
+              ? "מכין..."
+              : "הכנה לא מקוון"}
+          </button>
+        </div>
+      </header>
+
+      <header className="space-y-1 lg:hidden">
         <h1 className="of-page-title text-2xl">הפקת דוחות</h1>
         <p className="of-page-desc text-sm">הדוחות שלי</p>
       </header>
@@ -291,6 +359,7 @@ export default function FieldReportsPage() {
           dark:border-zinc-800
           dark:bg-zinc-900
           md:p-5
+          lg:hidden
         "
       >
         <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
@@ -378,43 +447,20 @@ export default function FieldReportsPage() {
           dark:border-zinc-800
           dark:bg-zinc-900
           md:p-5
+          lg:hidden
         "
       >
         <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
           סינון
         </h2>
-        {inProgressCount > 0 && statusFilter !== "IN_PROGRESS" ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            {inProgressCount} דוחות בעבודה - ניתן לערוך דוח אחד בכל רגע במכשיר.
-            <button
-              type="button"
-              className="mr-2 text-brand hover:underline"
-              onClick={() => setStatusFilter("IN_PROGRESS")}
-            >
-              הצג רק בעבודה
-            </button>
-          </p>
-        ) : null}
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((filter) => {
-            const isActive = statusFilter === filter.value;
-            return (
-              <button
-                key={filter.value || "all"}
-                type="button"
-                className={
-                  isActive
-                    ? FR_FILTER_BUTTON_ACTIVE
-                    : FR_FILTER_BUTTON_INACTIVE
-                }
-                onClick={() => setStatusFilter(filter.value)}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
+        {inProgressHint}
+        {statusFilterButtons}
       </section>
+
+      <div className="hidden space-y-4 lg:block">
+        {inProgressHint}
+        {statusFilterButtons}
+      </div>
 
       {reportsLoading ? (
         <p className="text-sm text-zinc-500">טוען דוחות...</p>

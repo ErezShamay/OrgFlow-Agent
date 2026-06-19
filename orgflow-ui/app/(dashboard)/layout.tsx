@@ -14,7 +14,7 @@ export default function DashboardLayout({
 }) {
   return (
     <DashboardProviders>
-    <div className="of-app-bg flex min-h-screen lg:flex-row">
+    <div className="of-app-bg flex flex-col lg:min-h-screen lg:flex-row">
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -27,6 +27,7 @@ export default function DashboardLayout({
             flex
             h-auto
             min-h-[4.5rem]
+            shrink-0
             items-center
             justify-between
             gap-3
@@ -36,7 +37,7 @@ export default function DashboardLayout({
             md:px-8
           "
         >
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3 lg:contents">
             <MobileNavMenu />
             <WorkspaceContextBar />
           </div>
@@ -45,7 +46,7 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <main className="of-dashboard-main flex-1 overflow-auto">
+        <main className="of-dashboard-main max-lg:flex-none max-lg:overflow-visible flex-1 overflow-auto">
           <ContractorRouteGuard>
             <ResidentRouteGuard>{children}</ResidentRouteGuard>
           </ContractorRouteGuard>

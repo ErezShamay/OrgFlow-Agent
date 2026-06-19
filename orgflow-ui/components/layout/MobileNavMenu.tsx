@@ -69,18 +69,17 @@ export default function MobileNavMenu() {
       {open ? (
         <>
           <div
-            className="fixed inset-0 z-50 bg-black/40 lg:hidden"
+            className="fixed inset-0 z-[60] bg-black/55 lg:hidden"
             role="presentation"
             onClick={closeMenu}
           />
 
           <aside
             className="
-              of-glass-sidebar
               fixed
               start-0
               top-0
-              z-50
+              z-[70]
               flex
               h-dvh
               max-h-dvh
@@ -90,8 +89,14 @@ export default function MobileNavMenu() {
               overflow-y-auto
               overscroll-contain
               border-l
+              border-zinc-200
+              border-s-[3px]
+              border-s-[var(--of-color-accent-secondary)]
+              bg-white
               p-4
               shadow-2xl
+              dark:border-zinc-700
+              dark:bg-zinc-950
               lg:hidden
             "
             aria-label="תפריט ניווט"
