@@ -4,24 +4,18 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
+import ProjectSupervisionDashboard from "@/components/projects/ProjectSupervisionDashboard";
+import ProjectVisitIssueDiffSummary from "@/components/quality-issues/ProjectVisitIssueDiffSummary";
+import LoadingState from "@/components/ui/LoadingState";
+import PageLoadingOverlay from "@/components/ui/PageLoadingOverlay";
 import { useProjectWorkspace } from "@/hooks/useProjectWorkspace";
 import { useEffectiveRole } from "@/hooks/useEffectiveRole";
 import { useOrgQuery } from "@/hooks/useOrgQuery";
-
-import Badge from "@/components/ui/Badge";
-import LoadingState from "@/components/ui/LoadingState";
-import PageLoadingOverlay from "@/components/ui/PageLoadingOverlay";
-import ProjectFieldReportLink from "@/components/field-reports/ProjectFieldReportLink";
-import ProjectActivityTimeline from "@/components/projects/ProjectActivityTimeline";
-import ProjectVisitIssueDiffSummary from "@/components/quality-issues/ProjectVisitIssueDiffSummary";
-
-import ProjectDetailsEditor from "@/components/projects/ProjectDetailsEditor";
-import ProjectDocumentsArchive from "@/components/projects/ProjectDocumentsArchive";
 import { isContractorLimitedProjectView } from "@/lib/auth/contractor-project-view";
-import { canEditProjects } from "@/lib/auth/permissions";
 import { listProjectFieldVisitReports } from "@/lib/field-reports/project-visits";
 import { listProjectQualityIssues } from "@/lib/quality-issues/api";
 import { hasQCPermission } from "@/lib/quality-issues/permissions";
+import { canViewProjectSupervisionDashboard } from "@/lib/projects/supervision-dashboard";
 import {
   isVisibleToResident,
   type QualityIssue,
@@ -58,14 +52,15 @@ export default function ProjectDetailsPage() {
   const projectId = params.id as string;
   const effectiveRole = useEffectiveRole();
   const contractorLimitedView = isContractorLimitedProjectView(effectiveRole);
+  const showSupervisionDashboard =
+    canViewProjectSupervisionDashboard(effectiveRole)
+    && !contractorLimitedView;
   const canReadIssues = hasQCPermission(effectiveRole, "quality_issues:read");
 
   const {
     project,
-    activities,
     loading,
     isValidating,
-    reloadWorkspace,
   } = useProjectWorkspace(projectId);
 
   const loadIssues = useCallback(async () => {
@@ -80,7 +75,7 @@ export default function ProjectDetailsPage() {
     `projects/${projectId}/supervision-kpis/issues`,
     loadIssues,
     {
-      enabled: canReadIssues && !contractorLimitedView,
+      enabled: canReadIssues && contractorLimitedView,
       showErrorToast: false,
     }
   );
@@ -89,7 +84,7 @@ export default function ProjectDetailsPage() {
     `projects/${projectId}/supervision-kpis/field-reports`,
     loadFieldReports,
     {
-      enabled: !contractorLimitedView,
+      enabled: contractorLimitedView,
       showErrorToast: false,
     }
   );
@@ -99,17 +94,6 @@ export default function ProjectDetailsPage() {
       window.scrollTo({ top: 0, left: 0 });
     }
   }, [loading, projectId]);
-
-  function getStatusLabel(status: string) {
-    switch (status) {
-      case "ACTIVE":
-        return "פעיל";
-      case "COMPLETED":
-        return "הושלם";
-      default:
-        return status;
-    }
-  }
 
   if (loading && !project) {
     return (
@@ -127,6 +111,21 @@ export default function ProjectDetailsPage() {
     );
   }
 
+  if (showSupervisionDashboard) {
+    return (
+      <main className="of-dashboard-page">
+        {isValidating ? <PageLoadingOverlay /> : null}
+        <ProjectSupervisionDashboard projectId={projectId} />
+        <div className="mt-10">
+          <ProjectVisitIssueDiffSummary
+            projectId={projectId}
+            role={effectiveRole}
+          />
+        </div>
+      </main>
+    );
+  }
+
   const supervisionKpis = countProjectSupervisionKpis(
     issuesResponse?.items ?? []
   );
@@ -139,83 +138,38 @@ export default function ProjectDetailsPage() {
       <div className="of-card of-card-p10 of-card-xl shadow-sm">
         <div className="mb-8 flex items-start justify-between">
           <div>
-            <h1 className="of-page-title">
-              {project.project_name}
-            </h1>
-
+            <h1 className="of-page-title">{project.project_name}</h1>
             <p className="of-page-desc mt-4">
-              {contractorLimitedView
-                ? "ליקויים פתוחים לטיפול בפרויקט"
-                : "סביבת פיקוח הנדסי"}
+              ליקויים פתוחים לטיפול בפרויקט
             </p>
-
-            {contractorLimitedView ? null : (
-              <div className="mt-3">
-                <ProjectFieldReportLink projectId={projectId} />
-              </div>
-            )}
           </div>
-
-          <Badge variant="success">
-            {getStatusLabel(project.status)}
-          </Badge>
-        </div>
-
-        <ProjectDetailsEditor
-          project={project}
-          canEdit={canEditProjects(effectiveRole)}
-          onSaved={() => reloadWorkspace({ silent: true })}
-        />
-
-        <div className="mt-6">
-          <InfoCard
-            title="תאריך יצירה"
-            value={
-              new Date(project.created_at).toLocaleDateString("he-IL")
-            }
-          />
         </div>
       </div>
 
-      <ProjectVisitIssueDiffSummary
-        projectId={projectId}
-        role={effectiveRole}
-      />
+      <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <KpiCard
+          title="ליקויים פתוחים (שפורסמו)"
+          value={supervisionKpis.openTotal}
+        />
+        <KpiCard
+          title="קריטיים פתוחים"
+          value={supervisionKpis.openCritical}
+          danger={supervisionKpis.openCritical > 0}
+        />
+        <KpiCard
+          title="דוחות שטח"
+          value={fieldReportCount}
+        />
+      </div>
 
-      {contractorLimitedView ? null : (
-        <>
-          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
-            <KpiCard
-              title="ליקויים פתוחים (שפורסמו)"
-              value={supervisionKpis.openTotal}
-            />
-            <KpiCard
-              title="קריטיים פתוחים"
-              value={supervisionKpis.openCritical}
-              danger={supervisionKpis.openCritical > 0}
-            />
-            <KpiCard
-              title="דוחות שטח"
-              value={fieldReportCount}
-            />
-          </div>
-
-          <div className="mt-6">
-            <Link
-              href={`/projects/${encodeURIComponent(projectId)}/issues`}
-              className="text-sm font-medium text-brand hover:underline dark:text-brand-light"
-            >
-              צפייה בכל הליקויים שפורסמו
-            </Link>
-          </div>
-
-          <ProjectDocumentsArchive projectId={projectId} />
-
-          <div className="mt-10">
-            <ProjectActivityTimeline activities={activities} />
-          </div>
-        </>
-      )}
+      <div className="mt-6">
+        <Link
+          href={`/projects/${encodeURIComponent(projectId)}/issues`}
+          className="text-sm font-medium text-brand hover:underline dark:text-brand-light"
+        >
+          צפייה בכל הליקויים שפורסמו
+        </Link>
+      </div>
     </main>
   );
 }
@@ -250,22 +204,6 @@ function KpiCard({ title, value, danger }: KpiCardProps) {
       >
         {value}
       </h2>
-    </div>
-  );
-}
-
-type InfoCardProps = {
-  title: string;
-  value: string;
-};
-
-function InfoCard({ title, value }: InfoCardProps) {
-  return (
-    <div className="rounded-2xl bg-zinc-50 p-6 dark:bg-zinc-800/50">
-      <h3 className="mb-3 font-semibold">
-        {title}
-      </h3>
-      <p>{value}</p>
     </div>
   );
 }

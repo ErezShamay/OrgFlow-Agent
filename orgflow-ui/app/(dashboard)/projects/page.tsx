@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -16,11 +16,18 @@ import ProjectOverviewListCard from "@/components/projects/ProjectOverviewListCa
 import ProjectSchemeSelect from "@/components/projects/ProjectSchemeSelect";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { useEffectiveRole } from "@/hooks/useEffectiveRole";
+import { useOrgQuery } from "@/hooks/useOrgQuery";
 import { useFiltering } from "@/hooks/useFiltering";
 import { usePagination } from "@/hooks/usePagination";
 import { useSorting } from "@/hooks/useSorting";
 import { apiFetch } from "@/lib/api/client";
 import type { ProjectScheme } from "@/lib/field-reports/schema/types";
+import {
+  canViewProjectSupervisionDashboard,
+  fetchProjectSupervisionSummaries,
+} from "@/lib/projects/supervision-dashboard";
+import type { SupervisionOverallStatus } from "@/lib/projects/supervision-dashboard-types";
 import { showToast } from "@/lib/ui/toast";
 import { useI18n } from "@/providers/I18nProvider";
 import { useOffline } from "@/providers/OfflineProvider";
@@ -43,6 +50,9 @@ export default function ProjectsPage() {
   const { t } = useI18n();
   const { isOnline } = useOffline();
   const { profile, currentOrgId } = useAuth();
+  const effectiveRole = useEffectiveRole();
+  const canLoadSupervisionSummaries =
+    canViewProjectSupervisionDashboard(effectiveRole);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [expandedProjectIds, setExpandedProjectIds] = useState<
@@ -87,6 +97,27 @@ export default function ProjectsPage() {
   });
 
   const projectList = projects ?? [];
+
+  const loadSupervisionSummaries = useCallback(async () => {
+    return fetchProjectSupervisionSummaries();
+  }, []);
+
+  const { data: supervisionSummaries } = useOrgQuery(
+    "projects/supervision-summaries",
+    loadSupervisionSummaries,
+    {
+      enabled: canLoadSupervisionSummaries && Boolean(projects?.length),
+      showErrorToast: false,
+    }
+  );
+
+  const supervisionStatusByProjectId = useMemo(() => {
+    const map = new Map<string, SupervisionOverallStatus>();
+    for (const item of supervisionSummaries?.items ?? []) {
+      map.set(item.project_id, item.overall_status);
+    }
+    return map;
+  }, [supervisionSummaries?.items]);
 
   const { filteredItems, searchQuery, setSearchQuery } =
     useFiltering<Project, "project_name">(
@@ -422,6 +453,9 @@ export default function ProjectsPage() {
               project={project}
               expanded={expandedProjectIds.has(project.id)}
               onToggleExpanded={() => toggleProjectExpanded(project.id)}
+              supervisionStatus={
+                supervisionStatusByProjectId.get(project.id) ?? null
+              }
             />
           ))}
         </div>

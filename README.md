@@ -13,6 +13,8 @@ One Stop Shop לניהול פרויקט בנייה — FastAPI + Next.js.
 | [`docs/FIELD-REPORT-CHECKLISTS.md`](docs/FIELD-REPORT-CHECKLISTS.md) | צ'קליסטים |
 | [`docs/HANDOFF-AGENT-PROMPT.md`](docs/HANDOFF-AGENT-PROMPT.md) | handoff לסוכן |
 | [`docs/PILOT-CHECKLIST.md`](docs/PILOT-CHECKLIST.md) | פיילוט שטח |
+| [`docs/PROJECT-SUPERVISION-DASHBOARD-SPEC.md`](docs/PROJECT-SUPERVISION-DASHBOARD-SPEC.md) | דשבורד פרויקט למפקח — מפרט מוצר (זרימה, UI, חישוב ג) |
+| [`docs/PROJECT-SUPERVISION-DASHBOARD-TASKS.md`](docs/PROJECT-SUPERVISION-DASHBOARD-TASKS.md) | **משימות לסוכן** — gates D1–D10 + PROGRESS |
 
 ## Run locally
 

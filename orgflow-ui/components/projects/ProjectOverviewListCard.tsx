@@ -5,6 +5,11 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import {
+  SUPERVISION_OVERALL_STATUS_BADGE,
+  SUPERVISION_OVERALL_STATUS_LABELS,
+  type SupervisionOverallStatus,
+} from "@/lib/projects/supervision-dashboard-types";
 
 export type ProjectOverviewListItem = {
   id: string;
@@ -38,20 +43,32 @@ type ProjectOverviewListCardProps = {
   project: ProjectOverviewListItem;
   expanded: boolean;
   onToggleExpanded: () => void;
+  supervisionStatus?: SupervisionOverallStatus | null;
 };
 
 export default function ProjectOverviewListCard({
   project,
   expanded,
   onToggleExpanded,
+  supervisionStatus = null,
 }: ProjectOverviewListCardProps) {
   return (
     <Card>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-2xl font-semibold">
-            {project.project_name}
+            <Link
+              href={`/projects/${encodeURIComponent(project.id)}`}
+              className="text-brand hover:underline dark:text-brand-light"
+            >
+              {project.project_name}
+            </Link>
           </h2>
+          {supervisionStatus ? (
+            <Badge variant={SUPERVISION_OVERALL_STATUS_BADGE[supervisionStatus]}>
+              {SUPERVISION_OVERALL_STATUS_LABELS[supervisionStatus]}
+            </Badge>
+          ) : null}
         </div>
 
         <Badge variant="success">

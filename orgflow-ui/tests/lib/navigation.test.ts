@@ -121,7 +121,7 @@ describe("navigation (supervision pivot — stage A)", () => {
     expect(resolvePostLoginRoute("PLATFORM_ADMIN")).toBe(
       PLATFORM_ADMIN_HOME_ROUTE.href
     );
-    expect(resolvePostLoginRoute("SUPERVISOR")).toBe("/field-reports");
+    expect(resolvePostLoginRoute("SUPERVISOR")).toBe("/projects");
     expect(resolvePostLoginRoute("ADMIN")).toBe("/projects");
     expect(POST_LOGIN_ROUTE).toBe("/projects");
     expect(PLATFORM_ADMIN_NAV_LINKS[0]).toEqual(PLATFORM_ADMIN_HOME_ROUTE);

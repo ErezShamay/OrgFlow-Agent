@@ -60,14 +60,23 @@ describe("supervision portfolio gate (P4 + §11.3)", () => {
 
   it("refactors project overview to field-first supervision", () => {
     const projectPage = readUiSource("app/(dashboard)/projects/[id]/page.tsx");
+    const settingsPage = readUiSource(
+      "app/(dashboard)/projects/[id]/settings/page.tsx"
+    );
+    const dashboard = readUiSource(
+      "components/projects/ProjectSupervisionDashboard.tsx"
+    );
     const nav = readUiSource("lib/qc-navigation.ts");
 
-    expect(projectPage).toContain("סביבת פיקוח הנדסי");
-    expect(projectPage).toContain("ProjectFieldReportLink");
+    expect(projectPage).toContain("ProjectSupervisionDashboard");
     expect(projectPage).toContain("ProjectVisitIssueDiffSummary");
-    expect(projectPage).toContain("ProjectDocumentsArchive");
-    expect(projectPage).toContain("ProjectActivityTimeline");
     expect(projectPage).toContain("isVisibleToResident");
+    expect(dashboard).toContain("דשבורד פיקוח הנדסי");
+    expect(dashboard).toContain("ProjectFieldReportLink");
+    expect(dashboard).toContain("כל הליקויים");
+    expect(settingsPage).toContain("ProjectDetailsEditor");
+    expect(settingsPage).toContain("ProjectDocumentsArchive");
+    expect(settingsPage).toContain("ProjectActivityTimeline");
     expect(projectPage).not.toContain("ProjectInsightsPanel");
     expect(projectPage).not.toContain("health.score");
     expect(projectPage).not.toContain("operationalSummary");

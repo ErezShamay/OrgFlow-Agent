@@ -100,7 +100,7 @@ describe("supervision navigation (PRODUCT-SPEC-LOCKED §11)", () => {
   });
 
   it("recommends post-login route by role", () => {
-    expect(recommendedPostLoginRoute("SUPERVISOR")).toBe("/field-reports");
+    expect(recommendedPostLoginRoute("SUPERVISOR")).toBe("/projects");
     expect(recommendedPostLoginRoute("ADMIN")).toBe("/projects");
     expect(recommendedPostLoginRoute("MANAGER")).toBe("/projects");
     expect(recommendedPostLoginRoute("CONTRACTOR")).toBe("/projects");

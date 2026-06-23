@@ -199,6 +199,9 @@ from app.services.field_report_finalize_service import (
 from app.services.quality_issue_service import (
     QualityIssueService,
 )
+from app.services.project_supervision_dashboard_service import (
+    ProjectSupervisionDashboardService,
+)
 from app.services.deliverable_reports_service import (
     DeliverableReportsService,
 )
@@ -206,6 +209,11 @@ from app.services.qc_notification_service import (
     build_qc_notification_service,
 )
 
+from app.schemas.project_supervision_dashboard import (
+    ProjectSupervisionDashboardResponse,
+    SupervisionProjectSummariesResponse,
+    SupervisionTradeDetailResponse,
+)
 from app.schemas.quality_issue import (
     QualityIssue,
     QualityIssueCreateRequest,
@@ -810,6 +818,10 @@ field_visit_report_service = FieldVisitReportService(
 field_visit_report_export_service = FieldVisitReportExportService()
 
 quality_issue_service = QualityIssueService()
+
+project_supervision_dashboard_service = (
+    ProjectSupervisionDashboardService()
+)
 
 portfolio_live_service = PortfolioLiveService(
     quality_issue_service=quality_issue_service,
@@ -3813,6 +3825,51 @@ def set_project_lifecycle(project_id: str, request: ProjectLifecycleRequest):
     if not updated:
         raise HTTPException(status_code=404, detail="Project not found")
     return updated
+
+
+@app.get(
+    "/projects/{project_id}/supervision-dashboard",
+    response_model=ProjectSupervisionDashboardResponse,
+)
+def get_project_supervision_dashboard(
+    project_id: str,
+    auth=Depends(get_auth_context),
+):
+    return project_supervision_dashboard_service.build_dashboard_for_actor(
+        organization_id=auth.org_id,
+        project_id=project_id,
+        actor_role=auth.role,
+    )
+
+
+@app.get(
+    "/projects/supervision-summaries",
+    response_model=SupervisionProjectSummariesResponse,
+)
+def get_project_supervision_summaries(
+    auth=Depends(get_auth_context),
+):
+    return project_supervision_dashboard_service.build_summaries_for_actor(
+        organization_id=auth.org_id,
+        actor_role=auth.role,
+    )
+
+
+@app.get(
+    "/projects/{project_id}/supervision-dashboard/trades/{trade_key}",
+    response_model=SupervisionTradeDetailResponse,
+)
+def get_project_supervision_trade_detail(
+    project_id: str,
+    trade_key: str,
+    auth=Depends(get_auth_context),
+):
+    return project_supervision_dashboard_service.build_trade_detail_for_actor(
+        organization_id=auth.org_id,
+        project_id=project_id,
+        trade_key=trade_key,
+        actor_role=auth.role,
+    )
 
 
 @app.get("/projects/{project_id}/dashboard-widgets")

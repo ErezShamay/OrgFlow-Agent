@@ -32,6 +32,7 @@ import {
   syncNewVisitReportToServer,
   type SyncNewVisitReportToServerResult,
 } from "@/lib/field-reports/new-report-form";
+import type { ApartmentSelection } from "@/components/field-reports/supervision/ApartmentPicker";
 
 export type { SyncNewVisitReportToServerResult };
 
@@ -196,3 +197,101 @@ export async function createSupervisionLocalReport(
 }
 
 export { syncNewVisitReportToServer };
+
+export type SupervisionNewReportPrefill = {
+  apartmentNumber: string | null;
+  apartmentId: string | null;
+};
+
+export function parseSupervisionNewReportPrefill(
+  searchParams: Pick<URLSearchParams, "get">
+): SupervisionNewReportPrefill {
+  const apartmentNumber =
+    searchParams.get("apartment_number")?.trim()
+    || searchParams.get("apartment")?.trim()
+    || null;
+  const apartmentId = searchParams.get("apartment_id")?.trim() || null;
+
+  return {
+    apartmentNumber,
+    apartmentId,
+  };
+}
+
+export function hasSupervisionNewReportApartmentPrefill(
+  prefill: SupervisionNewReportPrefill
+): boolean {
+  return Boolean(prefill.apartmentNumber || prefill.apartmentId);
+}
+
+export type SupervisionNewReportPublicAreaPrefill = {
+  publicAreaId: string | null;
+};
+
+export function parseSupervisionNewReportPublicAreaPrefill(
+  searchParams: Pick<URLSearchParams, "get">
+): SupervisionNewReportPublicAreaPrefill {
+  return {
+    publicAreaId: searchParams.get("public_area_id")?.trim() || null,
+  };
+}
+
+export function hasSupervisionNewReportPublicAreaPrefill(
+  prefill: SupervisionNewReportPublicAreaPrefill
+): boolean {
+  return Boolean(prefill.publicAreaId);
+}
+
+type ApartmentPrefillSource = {
+  id: string;
+  apartment_number: string;
+  owner_name?: string | null;
+};
+
+/** Resolves dashboard deep-link query params to wizard apartment selection. */
+export function resolveApartmentSelectionFromPrefill(
+  apartments: ApartmentPrefillSource[],
+  prefill: SupervisionNewReportPrefill
+): ApartmentSelection | null {
+  if (!hasSupervisionNewReportApartmentPrefill(prefill)) {
+    return null;
+  }
+
+  const byId = prefill.apartmentId
+    ? apartments.find((apartment) => apartment.id === prefill.apartmentId)
+    : undefined;
+  if (byId) {
+    return {
+      apartmentId: byId.id,
+      apartmentNumber: byId.apartment_number,
+      ownerName: byId.owner_name ?? null,
+      adHocApartment: false,
+    };
+  }
+
+  const normalizedNumber = prefill.apartmentNumber?.trim();
+  const byNumber = normalizedNumber
+    ? apartments.find(
+        (apartment) => apartment.apartment_number.trim() === normalizedNumber
+      )
+    : undefined;
+  if (byNumber) {
+    return {
+      apartmentId: byNumber.id,
+      apartmentNumber: byNumber.apartment_number,
+      ownerName: byNumber.owner_name ?? null,
+      adHocApartment: false,
+    };
+  }
+
+  if (normalizedNumber) {
+    return {
+      apartmentId: prefill.apartmentId ?? crypto.randomUUID(),
+      apartmentNumber: normalizedNumber,
+      ownerName: null,
+      adHocApartment: !prefill.apartmentId,
+    };
+  }
+
+  return null;
+}

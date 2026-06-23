@@ -368,7 +368,7 @@ export function recommendedPostLoginRoute(role?: string | null): string {
   }
 
   if (normalizeRole(role) === "SUPERVISOR") {
-    return SUPERVISION_FIELD_REPORTS_ROUTE.href;
+    return SUPERVISION_PROJECTS_ROUTE.href;
   }
 
   return SUPERVISION_PROJECTS_ROUTE.href;

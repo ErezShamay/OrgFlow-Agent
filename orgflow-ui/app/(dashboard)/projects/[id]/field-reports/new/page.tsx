@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, startTransition, useCallback, useEffect, useMemo, useState } from "react";
 
 import ApartmentPicker, {
@@ -25,6 +25,7 @@ import {
   type OfflinePrepBundle,
 } from "@/lib/field-reports/offline-store";
 import { listApartmentsFromOfflineBundle } from "@/lib/field-reports/offline-prep-apartments";
+import { listProjectApartments } from "@/lib/apartments/api";
 import { projectPrefillSourceFromRecord } from "@/lib/field-reports/project-header-prefill";
 import { isExpired } from "@/lib/field-reports/repositories/catalog-repository";
 import { fieldReportDetailPath } from "@/lib/field-reports/routes";
@@ -42,7 +43,12 @@ import type {
 import {
   createSupervisionLocalReport,
   fetchSupervisionCatalogFromApi,
+  hasSupervisionNewReportApartmentPrefill,
+  hasSupervisionNewReportPublicAreaPrefill,
   loadSupervisionCatalogFromOfflineBundle,
+  parseSupervisionNewReportPrefill,
+  parseSupervisionNewReportPublicAreaPrefill,
+  resolveApartmentSelectionFromPrefill,
   syncNewVisitReportToServer,
 } from "@/lib/field-reports/supervision-new-report";
 
@@ -50,6 +56,21 @@ export default function ProjectSupervisionNewReportPage() {
   const params = useParams();
   const projectId = String(params.id ?? "");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const apartmentPrefill = useMemo(
+    () => parseSupervisionNewReportPrefill(searchParams),
+    [searchParams]
+  );
+  const publicAreaPrefill = useMemo(
+    () => parseSupervisionNewReportPublicAreaPrefill(searchParams),
+    [searchParams]
+  );
+  const hasApartmentPrefill = hasSupervisionNewReportApartmentPrefill(
+    apartmentPrefill
+  );
+  const hasPublicAreaPrefill = hasSupervisionNewReportPublicAreaPrefill(
+    publicAreaPrefill
+  );
   const { profile } = useAuth();
   const { project, loading: projectLoading } = useProjectWorkspace(projectId);
   const {
@@ -173,7 +194,9 @@ export default function ProjectSupervisionNewReportPage() {
 
   useEffect(() => {
     if (documentKind !== "WEEKLY_APARTMENT") {
-      setApartmentSelection(null);
+      if (!hasApartmentPrefill) {
+        setApartmentSelection(null);
+      }
     }
     if (documentKind !== "WEEKLY_PUBLIC_AREA") {
       setPublicAreaId(null);
@@ -181,7 +204,68 @@ export default function ProjectSupervisionNewReportPage() {
     if (!isWeeklyDocumentWizardKind(documentKind)) {
       setConstructionStage(null);
     }
-  }, [documentKind]);
+  }, [documentKind, hasApartmentPrefill]);
+
+  useEffect(() => {
+    if (!hasApartmentPrefill) {
+      return;
+    }
+
+    setDocumentKind("WEEKLY_APARTMENT");
+  }, [hasApartmentPrefill]);
+
+  useEffect(() => {
+    if (!hasPublicAreaPrefill || !publicAreaPrefill.publicAreaId) {
+      return;
+    }
+
+    setDocumentKind("WEEKLY_PUBLIC_AREA");
+    setPublicAreaId(publicAreaPrefill.publicAreaId as PublicAreaId);
+  }, [hasPublicAreaPrefill, publicAreaPrefill.publicAreaId]);
+
+  useEffect(() => {
+    if (!hasApartmentPrefill || apartmentSelection || !projectId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    startTransition(() => {
+      void (async () => {
+        let apartments = offlineApartments;
+        if (canCallVisitReportApi) {
+          try {
+            apartments = await listProjectApartments(projectId);
+          } catch {
+            apartments = offlineApartments;
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const selection = resolveApartmentSelectionFromPrefill(
+          apartments,
+          apartmentPrefill
+        );
+        if (selection) {
+          setApartmentSelection(selection);
+        }
+      })();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    apartmentPrefill,
+    apartmentSelection,
+    canCallVisitReportApi,
+    hasApartmentPrefill,
+    offlineApartments,
+    projectId,
+  ]);
 
   const canSubmit =
     Boolean(catalog)
@@ -308,6 +392,17 @@ export default function ProjectSupervisionNewReportPage() {
         <p className="of-page-desc text-sm">
           בחר סוג מסמך, יחידה ושלב בנייה — ואז התחל את הצ&apos;קליסט.
         </p>
+        {hasApartmentPrefill && apartmentSelection ? (
+          <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
+            דירה {apartmentSelection.apartmentNumber} נבחרה מהדשבורד — השלימו
+            שלב בנייה והתחילו את הביקור.
+          </p>
+        ) : null}
+        {hasPublicAreaPrefill && publicAreaId ? (
+          <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
+            אזור ציבורי נבחר מהדשבורד — השלימו שלב בנייה והתחילו את הביקור.
+          </p>
+        ) : null}
         <p className="text-xs text-zinc-500">
           {fieldReportDataSourceModeLabelHe(dataSourceMode)}
           {pinging ? " · בודק חיבור..." : ""}
