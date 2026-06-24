@@ -11,6 +11,7 @@ import { apiFetch } from "@/lib/api/client";
 import type { ProjectScheme } from "@/lib/field-reports/schema/types";
 import { PROJECT_SCHEME_OPTIONS } from "@/lib/field-reports/project-scheme-labels";
 import { showToast } from "@/lib/ui/toast";
+import { validateOptionalProjectEmails } from "@/lib/validation/email";
 
 export type EditableProjectDetails = {
   id: string;
@@ -177,6 +178,12 @@ export default function ProjectDetailsEditor({
         return;
       }
       floors_count = parsed;
+    }
+
+    const emailError = validateOptionalProjectEmails(form);
+    if (emailError) {
+      showToast(emailError, "error");
+      return;
     }
 
     try {

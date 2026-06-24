@@ -34,6 +34,7 @@ import {
 } from "@/lib/auth/login-form-persistence";
 import { resolvePostLoginRoute } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
+import { validateEmail } from "@/lib/validation/email";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -124,6 +125,12 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setError("");
+
+      const emailError = validateEmail(email);
+      if (emailError) {
+        setError(emailError);
+        return;
+      }
 
       if (!isSupabaseConfigured()) {
         throw new Error(

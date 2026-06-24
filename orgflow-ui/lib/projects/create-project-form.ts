@@ -1,4 +1,5 @@
 import type { ProjectScheme } from "@/lib/field-reports/schema/types";
+import { validateProjectEmails } from "@/lib/validation/email";
 
 export type ProjectCreateFormState = {
   project_name: string;
@@ -139,6 +140,14 @@ export function validateProjectCreateForm(
     return {
       ok: false,
       message: "מספר יחידות דיור חייב להיות מספר שלם חיובי",
+    };
+  }
+
+  const emailError = validateProjectEmails(form);
+  if (emailError) {
+    return {
+      ok: false,
+      message: emailError,
     };
   }
 

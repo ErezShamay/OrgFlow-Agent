@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import logging
-import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -11,6 +10,7 @@ from typing import Any
 import resend
 
 from app.config.settings import settings
+from app.lib.email_validation import is_valid_email, normalize_email
 from app.repositories.project_apartment_repository import (
     ProjectApartmentRepository,
     build_apartment_group_key,
@@ -516,6 +516,6 @@ class FieldReportFinalizeEmailService:
         email = str(value).strip()
         if not email:
             return None
-        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        if not is_valid_email(email):
             return None
-        return email
+        return normalize_email(email)

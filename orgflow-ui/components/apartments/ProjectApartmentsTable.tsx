@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import { updateProjectApartment } from "@/lib/apartments/api";
 import { sortByApartmentNumber } from "@/lib/apartments/sort";
 import type { ProjectApartment } from "@/lib/apartments/types";
+import { validateOptionalEmail } from "@/lib/validation/email";
 
 const INVITE_STATUS_LABELS: Record<string, string> = {
   none: "לא הוזמן",
@@ -77,6 +78,12 @@ export default function ProjectApartmentsTable({
     const ownerName = draft.owner_name.trim();
     if (!apartmentNumber || !ownerName) {
       setRowError("מספר דירה ושם בעל הדירה הם שדות חובה");
+      return;
+    }
+
+    const emailError = validateOptionalEmail(draft.email);
+    if (emailError) {
+      setRowError(emailError);
       return;
     }
 

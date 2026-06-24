@@ -63,6 +63,24 @@ def test_allowed_roles_for_admin_include_contractor():
     assert "DEVELOPER" in roles
 
 
+def test_invite_user_rejects_invalid_email():
+    service = UserManagementService(
+        profile_repository=MagicMock(
+            list_profiles_by_organization=MagicMock(return_value=[]),
+        )
+    )
+
+    with pytest.raises(ValidationError):
+        service.invite_user(
+            organization_id="org-1",
+            email="not-an-email",
+            full_name="Test User",
+            role="VIEWER",
+            invited_by="admin-1",
+            inviter_role="ADMIN",
+        )
+
+
 def test_invite_user_rejects_invalid_role():
     service = UserManagementService(
         profile_repository=MagicMock(

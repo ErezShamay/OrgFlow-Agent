@@ -36,6 +36,10 @@ from app.auth.supabase_session_metadata import (
 from app.config.settings import settings
 from app.config.field_report_project_scheme import is_valid_project_scheme
 from app.config import config_manager
+from app.lib.email_validation import (
+    require_valid_email,
+    validate_optional_email,
+)
 from app.auth import (
     APIAuthorizationMiddleware,
     JWTService,
@@ -1099,10 +1103,7 @@ class CreateProjectRequest(
     )
     @classmethod
     def validate_email_fields(cls, value: str) -> str:
-        normalized = value.strip()
-        if "@" not in normalized or not normalized.split("@", 1)[1]:
-            raise ValueError("invalid email address")
-        return normalized
+        return require_valid_email(value)
 
     @field_validator(
         "project_name",
@@ -1171,6 +1172,25 @@ class EditProjectRequest(
     def validate_positive_counts(cls, value: int | None) -> int | None:
         if value is not None and value < 1:
             raise ValueError("count must be a positive integer")
+        return value
+
+    @field_validator(
+        "supervisor_email",
+        "developer_email",
+        "developer_pm_email",
+        "site_manager_email",
+        "contractor_email",
+        "lawyer_email",
+        "accompanying_lawyer_email",
+        "architect_email",
+        mode="before",
+    )
+    @classmethod
+    def validate_optional_email_fields(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return validate_optional_email(value)
         return value
 
 

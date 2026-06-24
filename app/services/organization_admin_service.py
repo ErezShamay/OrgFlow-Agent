@@ -5,6 +5,7 @@ import logging
 from app.exceptions.exceptions import (
     ValidationError,
 )
+from app.lib.email_validation import require_valid_email
 from app.repositories.organization_repository import (
     OrganizationRepository,
 )
@@ -76,13 +77,14 @@ class OrganizationAdminService:
         owner_profile_id: str,
     ) -> dict:
         normalized_name = organization_name.strip()
-        normalized_email = contact_email.strip().lower()
 
         if not normalized_name:
             raise ValidationError(message="Organization name is required")
 
-        if "@" not in normalized_email:
-            raise ValidationError(message="Invalid contact email")
+        try:
+            normalized_email = require_valid_email(contact_email)
+        except ValueError as error:
+            raise ValidationError(message="Invalid contact email") from error
 
         organization = (
             self.organization_repository.create_organization(

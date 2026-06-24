@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.email_fields import OptionalValidatedEmail
+
 InviteStatus = Literal["none", "pending", "active"]
 
 
@@ -29,7 +31,7 @@ class ProjectApartmentInput(BaseModel):
     apartment_number: str = Field(min_length=1, max_length=40)
     owner_name: str = Field(min_length=1, max_length=200)
     phone: str | None = Field(default=None, max_length=40)
-    email: str | None = Field(default=None, max_length=200)
+    email: OptionalValidatedEmail = None
     building: str | None = Field(default=None, max_length=80)
     entrance: str | None = Field(default=None, max_length=40)
 
@@ -48,7 +50,7 @@ class UpdateProjectApartmentRequest(BaseModel):
     apartment_number: str = Field(min_length=1, max_length=40)
     owner_name: str = Field(min_length=1, max_length=200)
     phone: str | None = Field(default=None, max_length=40)
-    email: str | None = Field(default=None, max_length=200)
+    email: OptionalValidatedEmail = None
 
 
 class UpdateProjectApartmentResponse(BaseModel):

@@ -27,6 +27,7 @@ import {
 import { getRoleLabel } from "@/lib/auth/roleLabels";
 import { apiFetch } from "@/lib/api/client";
 import { dispatchTenantManagerModuleChanged } from "@/lib/tenant-manager/module-events";
+import { validateEmail } from "@/lib/validation/email";
 
 const ALL_ORGANIZATIONS_SCOPE = "__all__";
 
@@ -668,6 +669,13 @@ function AdminUsersContent() {
   async function handleCreateOrganization(e: FormEvent) {
     e.preventDefault();
 
+    const emailError = validateEmail(organizationEmail);
+    if (emailError) {
+      setError(emailError);
+      toast.error(emailError);
+      return;
+    }
+
     try {
       setCreatingOrganization(true);
       setError("");
@@ -725,6 +733,13 @@ function AdminUsersContent() {
 
   async function handleInvite(e: FormEvent) {
     e.preventDefault();
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
+      toast.error(emailError);
+      return;
+    }
 
     try {
       setSubmitting(true);

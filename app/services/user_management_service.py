@@ -14,6 +14,7 @@ from app.exceptions.exceptions import (
     NotFoundError,
     ValidationError,
 )
+from app.lib.email_validation import require_valid_email
 from app.auth.roles import (
     ORG_ADMIN_ROLE,
     PLATFORM_ADMIN_ROLE,
@@ -710,8 +711,10 @@ class UserManagementService:
 
     @staticmethod
     def _validate_email(email: str) -> None:
-        if "@" not in email or "." not in email.split("@")[-1]:
-            raise ValidationError(message="Invalid email address")
+        try:
+            require_valid_email(email)
+        except ValueError as error:
+            raise ValidationError(message="Invalid email address") from error
 
     @staticmethod
     def _allowed_roles_for_inviter(
