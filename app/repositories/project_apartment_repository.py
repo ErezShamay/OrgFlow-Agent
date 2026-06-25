@@ -335,3 +335,22 @@ class ProjectApartmentRepository:
             .execute()
         )
         return True
+
+    def clear_resident_profile_link(self, *, profile_id: str) -> None:
+        if not self.is_storage_available():
+            return
+
+        now = datetime.now(UTC).isoformat()
+        (
+            self.client
+            .table(self.TABLE)
+            .update(
+                {
+                    "resident_profile_id": None,
+                    "invite_status": "none",
+                    "updated_at": now,
+                }
+            )
+            .eq("resident_profile_id", profile_id)
+            .execute()
+        )

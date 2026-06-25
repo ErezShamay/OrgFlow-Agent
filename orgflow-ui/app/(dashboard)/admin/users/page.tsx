@@ -26,12 +26,16 @@ import {
 } from "@/lib/auth/permissions";
 import { isResidentRole } from "@/lib/auth/resident-access";
 import { getRoleLabel } from "@/lib/auth/roleLabels";
-import { listProjectApartments } from "@/lib/apartments/api";
+import {
+  inviteApartmentResident,
+  listProjectApartments,
+  updateProjectApartment,
+} from "@/lib/apartments/api";
 import type { ProjectApartment } from "@/lib/apartments/types";
 import { apiFetch } from "@/lib/api/client";
 import { normalizeProjectList } from "@/lib/api/read-error-message";
 import { dispatchTenantManagerModuleChanged } from "@/lib/tenant-manager/module-events";
-import { validateEmail } from "@/lib/validation/email";
+import { validateEmail, validateOptionalEmail } from "@/lib/validation/email";
 
 const ALL_ORGANIZATIONS_SCOPE = "__all__";
 const MAX_VISIBLE_USER_ROWS = 10;
@@ -190,6 +194,12 @@ function AdminUsersContent() {
   const [loadingTenantProjects, setLoadingTenantProjects] = useState(false);
   const [loadingProjectApartments, setLoadingProjectApartments] =
     useState(false);
+  const [updatingApartmentId, setUpdatingApartmentId] = useState<string | null>(
+    null
+  );
+  const [invitingApartmentId, setInvitingApartmentId] = useState<string | null>(
+    null
+  );
   const [error, setError] = useState("");
 
   const [email, setEmail] = useState("");
@@ -318,6 +328,40 @@ function AdminUsersContent() {
     }
 
     return `?organization_id=${encodeURIComponent(organizationId)}`;
+  }
+
+  function apartmentToManagedUser(
+    apartment: ProjectApartment
+  ): ManagedUser | null {
+    if (!apartment.resident_profile_id) {
+      return null;
+    }
+
+    const linkedUser = users.find(
+      (user) => user.id === apartment.resident_profile_id
+    );
+
+    if (linkedUser) {
+      return linkedUser;
+    }
+
+    return {
+      id: apartment.resident_profile_id,
+      email: apartment.email || "",
+      full_name: apartment.owner_name,
+      role: "RESIDENT",
+      organization_id: apartment.organization_id,
+      account_status:
+        apartment.invite_status === "active" ? "active" : "pending",
+    };
+  }
+
+  async function reloadSelectedProjectApartments() {
+    if (!selectedTenantProjectId) {
+      return;
+    }
+
+    await loadProjectApartments(selectedTenantProjectId);
   }
 
   const loadUsers = useCallback(async () => {
@@ -1112,6 +1156,113 @@ function AdminUsersContent() {
     }
   }
 
+  async function handleEditApartment(apartment: ProjectApartment) {
+    if (!selectedTenantProjectId) {
+      return;
+    }
+
+    const nextOwnerName = window.prompt(
+      "שם דייר",
+      apartment.owner_name || ""
+    );
+
+    if (nextOwnerName === null) {
+      return;
+    }
+
+    const trimmedOwnerName = nextOwnerName.trim();
+    if (!trimmedOwnerName) {
+      toast.error("שם דייר הוא שדה חובה");
+      return;
+    }
+
+    const nextEmail = window.prompt(
+      "אימייל",
+      apartment.email || ""
+    );
+
+    if (nextEmail === null) {
+      return;
+    }
+
+    const emailError = validateOptionalEmail(nextEmail);
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
+    const nextPhone = window.prompt(
+      "טלפון",
+      apartment.phone || ""
+    );
+
+    if (nextPhone === null) {
+      return;
+    }
+
+    try {
+      setUpdatingApartmentId(apartment.id);
+      setError("");
+
+      await updateProjectApartment(
+        selectedTenantProjectId,
+        apartment.id,
+        {
+          apartment_number: apartment.apartment_number,
+          owner_name: trimmedOwnerName,
+          phone: nextPhone.trim() || null,
+          email: nextEmail.trim() || null,
+        }
+      );
+
+      toast.success("פרטי הדייר עודכנו");
+      await reloadSelectedProjectApartments();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "עדכון פרטי הדייר נכשל";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setUpdatingApartmentId(null);
+    }
+  }
+
+  async function handleInviteApartment(apartment: ProjectApartment) {
+    if (!selectedTenantProjectId) {
+      return;
+    }
+
+    if (!apartment.email?.trim()) {
+      toast.error("נדרש מייל לדייר לפני שליחת הזמנה");
+      return;
+    }
+
+    try {
+      setInvitingApartmentId(apartment.id);
+      setError("");
+
+      await inviteApartmentResident(
+        selectedTenantProjectId,
+        apartment.id
+      );
+
+      toast.success("הזמנה נשלחה לדייר");
+      await reloadSelectedProjectApartments();
+      await loadUsers();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "שליחת ההזמנה נכשלה";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setInvitingApartmentId(null);
+    }
+  }
+
   async function handleDelete(user: ManagedUser) {
     if (user.id === profile?.id) {
       toast.error("לא ניתן למחוק את המשתמש שלך");
@@ -1149,6 +1300,9 @@ function AdminUsersContent() {
       setUsers((current) =>
         current.filter((item) => item.id !== user.id)
       );
+      if (isResidentRole(user.role)) {
+        await reloadSelectedProjectApartments();
+      }
     } catch (err: unknown) {
       const message =
         err instanceof Error
@@ -1983,10 +2137,14 @@ function AdminUsersContent() {
                   <th className="px-3 py-3 font-semibold">אימייל</th>
                   <th className="px-3 py-3 font-semibold">טלפון</th>
                   <th className="px-3 py-3 font-semibold">חשבון</th>
+                  <th className="px-3 py-3 font-semibold">פעולות</th>
                 </tr>
               </thead>
               <tbody>
-                {projectApartments.map((apartment) => (
+                {projectApartments.map((apartment) => {
+                  const residentUser = apartmentToManagedUser(apartment);
+
+                  return (
                   <tr
                     key={apartment.id}
                     className="border-b border-zinc-100 dark:border-zinc-800"
@@ -2010,8 +2168,106 @@ function AdminUsersContent() {
                         ] || apartment.invite_status}
                       </Badge>
                     </td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={updatingApartmentId === apartment.id}
+                          onClick={() => void handleEditApartment(apartment)}
+                        >
+                          {updatingApartmentId === apartment.id
+                            ? "מעדכן..."
+                            : "עריכה"}
+                        </Button>
+
+                        {residentUser ? (
+                          <>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              disabled={
+                                resendingUserId === residentUser.id
+                                || residentUser.account_status === "active"
+                              }
+                              onClick={() =>
+                                void handleResendInvite(residentUser)
+                              }
+                            >
+                              {resendingUserId === residentUser.id
+                                ? "שולח..."
+                                : "שליחת הזמנה מחדש"}
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              disabled={resettingUserId === residentUser.id}
+                              onClick={() =>
+                                void handlePasswordReset(residentUser)
+                              }
+                            >
+                              {resettingUserId === residentUser.id
+                                ? "שולח..."
+                                : "איפוס סיסמה"}
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              disabled={
+                                settingPasswordUserId === residentUser.id
+                              }
+                              onClick={() =>
+                                void handleSetPassword(residentUser)
+                              }
+                            >
+                              {settingPasswordUserId === residentUser.id
+                                ? "מגדיר..."
+                                : "הגדרת סיסמה"}
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="danger"
+                              size="sm"
+                              disabled={deletingUserId === residentUser.id}
+                              onClick={() =>
+                                void handleDelete(residentUser)
+                              }
+                            >
+                              {deletingUserId === residentUser.id
+                                ? "מוחק..."
+                                : "מחיקה"}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            disabled={
+                              invitingApartmentId === apartment.id
+                              || !apartment.email?.trim()
+                            }
+                            onClick={() =>
+                              void handleInviteApartment(apartment)
+                            }
+                          >
+                            {invitingApartmentId === apartment.id
+                              ? "שולח..."
+                              : "שליחת הזמנה"}
+                          </Button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

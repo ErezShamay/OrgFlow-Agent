@@ -28,6 +28,9 @@ from app.auth.roles import (
 from app.auth.password_policy import validate_password
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.profile_repository import ProfileRepository
+from app.repositories.project_apartment_repository import (
+    ProjectApartmentRepository,
+)
 from app.schemas.user_management import ALL_ORGANIZATIONS_SCOPE
 from app.services.user_invite_email_service import UserInviteEmailService
 
@@ -572,6 +575,13 @@ class UserManagementService:
             raise ForbiddenError(
                 message="Only platform admins can remove platform admins"
             )
+
+        if target_role == RESIDENT_ROLE:
+            apartment_repository = ProjectApartmentRepository()
+            if apartment_repository.is_storage_available():
+                apartment_repository.clear_resident_profile_link(
+                    profile_id=profile_id,
+                )
 
         try:
             self.auth_client.auth.admin.delete_user(profile_id)
