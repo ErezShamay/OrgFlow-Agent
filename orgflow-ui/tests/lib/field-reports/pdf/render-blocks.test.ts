@@ -13,8 +13,15 @@ import {
   renderProgressTable,
   segmentFindingsRowsByGroup,
 } from "@/lib/field-reports/pdf/render-blocks";
+import {
+  addChecklistItem,
+  createEmptyChecklistItem,
+  removeChecklistItem,
+  updateChecklistItem,
+} from "@/lib/field-reports/schema/checklist-item-mutations";
 import { defaultFinishingChecklistBlock } from "@/lib/field-reports/schema/checklist-presets";
 import type {
+  ChecklistBlock,
   FindingsTableBlock,
   ProgressTableBlock,
   ReportBlock,
@@ -334,6 +341,49 @@ describe("renderChecklist", () => {
     expect(texts).toContain("בעלים");
     expect(texts).toContain("בוצע - תקין");
     expect(texts).toContain("לא בוצע");
+  });
+
+  it("PRD §10 scenario 1 — renders 5 items after remove 2, add 1, and rename", () => {
+    const base = defaultFinishingChecklistBlock();
+    let items = base.items;
+
+    for (const label of ["חשמל", "אינסטלציה"]) {
+      const target = items.find((item) => item.label_he === label);
+      expect(target).toBeDefined();
+      items = removeChecklistItem(items, target!.id);
+    }
+
+    const owners = items.find((item) => item.label_he === "בעלים");
+    expect(owners).toBeDefined();
+    items = updateChecklistItem(items, owners!.id, {
+      label_he: "בעלים + מפרט",
+    });
+
+    items = addChecklistItem(items, {
+      ...createEmptyChecklistItem(items.length),
+      label_he: "בדיקת מעליות",
+    });
+
+    expect(items).toHaveLength(5);
+
+    const block: ChecklistBlock = { ...base, items };
+    const texts = collectTexts(renderChecklist(block));
+    const expectedLabels = [
+      "בעלים + מפרט",
+      "בדיקת חללים",
+      "איטום חדרים רטובים",
+      "איטום מרפסות",
+      "בדיקת מעליות",
+    ];
+
+    for (const label of expectedLabels) {
+      expect(texts).toContain(label);
+    }
+    expect(texts).not.toContain("חשמל");
+    expect(texts).not.toContain("אינסטלציה");
+    expect(
+      expectedLabels.filter((label) => texts.includes(label))
+    ).toHaveLength(5);
   });
 });
 

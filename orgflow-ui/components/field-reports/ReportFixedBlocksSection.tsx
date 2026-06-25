@@ -3,7 +3,9 @@
 import Button from "@/components/ui/Button";
 import {
   buildFixedTextBlocksForNewReport,
+  createEmptyCustomFixedTextBlock,
   FIXED_TEXT_BLOCK_KIND_LABELS,
+  isRemovableFixedTextBlock,
 } from "@/lib/field-reports/schema/fixed-text-inject";
 import type { FixedTextBlock, FixedTextBlockKind } from "@/lib/field-reports/schema/types";
 import {
@@ -76,6 +78,33 @@ export default function ReportFixedBlocksSection({
     });
   }
 
+  function handleAddCustomBlock() {
+    const nextSortOrder = blocks.reduce(
+      (max, block) => Math.max(max, block.sort_order ?? 0),
+      -1
+    );
+    applyUpdate({
+      fixed_text_blocks: [
+        ...blocks,
+        createEmptyCustomFixedTextBlock(nextSortOrder + 1),
+      ],
+    });
+  }
+
+  function handleRemoveCustomBlock(block: FixedTextBlock) {
+    const hasContent =
+      Boolean(block.title_he?.trim()) || Boolean(block.body_he.trim());
+    if (
+      hasContent
+      && !window.confirm("להסיר את סעיף הטקסט המותאם?")
+    ) {
+      return;
+    }
+    applyUpdate({
+      fixed_text_blocks: blocks.filter((entry) => entry.id !== block.id),
+    });
+  }
+
   return (
     <section className="space-y-4 rounded-xl border border-zinc-200 p-4 md:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -130,9 +159,21 @@ export default function ReportFixedBlocksSection({
                 />
                 <span>{blockLabel(block)}</span>
               </label>
+              {disabled || !isRemovableFixedTextBlock(block) ? null : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className={FR_TOUCH_BUTTON}
+                  onClick={() => handleRemoveCustomBlock(block)}
+                >
+                  הסר סעיף
+                </Button>
+              )}
             </div>
 
-            {block.title_he !== null && block.title_he !== undefined ? (
+            {block.kind === "custom"
+            || block.title_he !== null && block.title_he !== undefined ? (
               <label className="block space-y-1 text-sm">
                 <span className="text-zinc-600">כותרת (אופציונלי)</span>
                 <input
@@ -162,6 +203,17 @@ export default function ReportFixedBlocksSection({
           </li>
         ))}
       </ul>
+
+      {disabled ? null : (
+        <Button
+          type="button"
+          variant="secondary"
+          className={FR_TOUCH_BUTTON}
+          onClick={handleAddCustomBlock}
+        >
+          הוסף סעיף טקסט
+        </Button>
+      )}
 
       <ProjectUpdatesEditor
         items={fields.project_updates}

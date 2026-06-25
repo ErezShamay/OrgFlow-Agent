@@ -5,6 +5,32 @@
 import { defaultFixedTextBlocks } from "./block-defaults";
 import type { FixedTextBlock, FixedTextBlockKind } from "./types";
 
+/** יוצר סעיף טקסט מותאם ריק לדוח. */
+export function createEmptyCustomFixedTextBlock(
+  sortOrder: number
+): FixedTextBlock {
+  return {
+    id: `fixed-text-custom-${Date.now()}`,
+    kind: "custom",
+    title_he: "",
+    body_he: "",
+    enabled: true,
+    sort_order: sortOrder,
+  };
+}
+
+/** מזהה סוגי בלוק שאינם ניתנים למחיקה (רק כיבוי). */
+export const NON_REMOVABLE_FIXED_TEXT_KINDS = new Set<FixedTextBlockKind>([
+  "non_conformance_disclaimer",
+  "safety_disclaimer",
+  "winter_recommendations",
+  "agreement_notes",
+]);
+
+export function isRemovableFixedTextBlock(block: FixedTextBlock): boolean {
+  return block.kind === "custom";
+}
+
 /** כותרות ברירת מחדל לסוגי בלוק (לעריכה ב-UI). */
 export const FIXED_TEXT_BLOCK_KIND_LABELS: Record<FixedTextBlockKind, string> = {
   non_conformance_disclaimer: "הסתייגות אי-התאמה",
@@ -208,7 +234,7 @@ function normalizeFixedTextBlocksList(value: unknown): FixedTextBlock[] {
       continue;
     }
     const bodyHe = typeof raw.body_he === "string" ? raw.body_he.trim() : "";
-    if (!bodyHe) {
+    if (!bodyHe && kind !== "custom") {
       continue;
     }
 

@@ -44,6 +44,9 @@ export function groupSupervisionChecklistItems(
   for (const item of [...block.items].sort(
     (left, right) => left.sort_order - right.sort_order
   )) {
+    if (item.hidden) {
+      continue;
+    }
     let family = byFamily.get(item.top_family);
     if (!family) {
       family = {

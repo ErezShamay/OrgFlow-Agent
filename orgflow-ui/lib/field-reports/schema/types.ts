@@ -283,7 +283,7 @@ export type SupervisionCatalog = {
   issues: SupervisionCatalogIssue[];
 };
 
-/** פריט בצ'קליסט מפקח — מעוגן לקטלוג supervision. */
+/** פריט בצ'קליסט מפקח — מעוגן לקטלוג supervision או מותאם ידנית. */
 export type SupervisionChecklistItem = {
   id: string;
   catalog_issue_id: string;
@@ -298,6 +298,10 @@ export type SupervisionChecklistItem = {
   photo_ids: string[];
   linked_line_id?: string | null;
   sort_order: number;
+  /** פריט קטלוג שלא רלוונטי לביקור — מוסתר מהדוח (לא נמחק מהקטלוג). */
+  hidden?: boolean;
+  /** פריט שנוסף ידנית על ידי הלקוח — ללא קישור לקטלוג. */
+  is_custom?: boolean;
 };
 
 /** שדות משותפים לכל בלוק בגוף הדוח. */

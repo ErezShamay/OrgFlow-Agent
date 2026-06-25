@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import FieldReportsOfflineGuide from "@/components/field-reports/FieldReportsOfflineGuide";
 import ProjectPickerDialog from "@/components/field-reports/ProjectPickerDialog";
@@ -8,7 +9,7 @@ import Badge from "@/components/ui/Badge";
 import LoadingState from "@/components/ui/LoadingState";
 import { apiFetch } from "@/lib/api/client";
 import { FIELD_REPORTS_UPLOAD_ROUTE } from "@/lib/qc-navigation";
-import { fieldReportDetailPath } from "@/lib/field-reports/routes";
+import { fieldReportDetailPath, projectFieldReportNewPath } from "@/lib/field-reports/routes";
 import { isFieldReportVisibleInList } from "@/lib/field-reports/field-report-list";
 import {
   fieldReportListStatusLabel,
@@ -49,6 +50,8 @@ const STATUS_FILTERS = [
 ] as const;
 
 export default function FieldReportsPage() {
+  const searchParams = useSearchParams();
+  const projectFilter = searchParams.get("project")?.trim() ?? "";
   const { status, isEnabled, loading, error, reload } =
     useFieldReportModule();
   const offlinePrep = useFieldReportOfflinePrep({ autoPrepare: false });
@@ -119,6 +122,10 @@ export default function FieldReportsPage() {
   }
 
   const loadInProgressCount = useCallback(async function loadInProgressCount() {
+    if (projectFilter) {
+      return;
+    }
+
     try {
       const response = await apiFetch(
         "/field-reports/visits?status=IN_PROGRESS"
@@ -131,7 +138,7 @@ export default function FieldReportsPage() {
     } catch {
       setInProgressCount(0);
     }
-  }, []);
+  }, [projectFilter]);
 
   const loadReports = useCallback(async function loadReports(
     status: string = statusFilter
@@ -140,12 +147,16 @@ export default function FieldReportsPage() {
       setReportsLoading(true);
       setReportsError("");
 
-      const query =
-        status && status !== "PENDING_PUBLISH"
-          ? `?status=${encodeURIComponent(status)}`
-          : status === "PENDING_PUBLISH"
-            ? "?status=CLOSED"
-            : "";
+      const params = new URLSearchParams();
+      if (projectFilter) {
+        params.set("project_id", projectFilter);
+      }
+      if (status && status !== "PENDING_PUBLISH") {
+        params.set("status", status);
+      } else if (status === "PENDING_PUBLISH") {
+        params.set("status", "CLOSED");
+      }
+      const query = params.toString() ? `?${params.toString()}` : "";
       const response = await apiFetch(`/field-reports/visits${query}`);
 
       if (!response.ok) {
@@ -181,14 +192,14 @@ export default function FieldReportsPage() {
       setReportsLoading(false);
       setInitialReportsReady(true);
     }
-  }, [statusFilter]);
+  }, [statusFilter, projectFilter]);
 
   useEffect(() => {
     setInitialReportsReady(false);
     setReports([]);
     setInProgressCount(0);
     setReportsError("");
-  }, [organizationId]);
+  }, [organizationId, projectFilter]);
 
   useEffect(() => {
     if (!isEnabled) {
@@ -296,7 +307,9 @@ export default function FieldReportsPage() {
   );
 
   const inProgressHint =
-    inProgressCount > 0 && statusFilter !== "IN_PROGRESS" ? (
+    !projectFilter
+    && inProgressCount > 0
+    && statusFilter !== "IN_PROGRESS" ? (
       <p className="text-sm text-zinc-600 dark:text-zinc-300">
         {inProgressCount} דוחות בעבודה - ניתן לערוך דוח אחד בכל רגע במכשיר.
         <button
@@ -309,21 +322,41 @@ export default function FieldReportsPage() {
       </p>
     ) : null;
 
+  const pageTitle = projectFilter ? "דוחות שטח לפרויקט" : "הפקת דוחות";
+  const pageSubtitle = projectFilter ? "כל הדוחות לפרויקט" : "הדוחות שלי";
+
   return (
     <div className="of-container mx-auto max-w-3xl space-y-6 p-4 md:p-8">
+      {projectFilter ? (
+        <Link
+          href={`/projects/${encodeURIComponent(projectFilter)}`}
+          className="text-sm text-brand hover:underline"
+        >
+          ← חזרה לפרויקט
+        </Link>
+      ) : null}
       <header className="hidden flex-wrap items-center justify-between gap-4 lg:flex">
         <div className="space-y-1">
-          <h1 className="of-page-title text-2xl">הפקת דוחות</h1>
-          <p className="of-page-desc text-sm">הדוחות שלי</p>
+          <h1 className="of-page-title text-2xl">{pageTitle}</h1>
+          <p className="of-page-desc text-sm">{pageSubtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className={FR_PRIMARY_ACTION_BUTTON}
-            onClick={() => setProjectPickerOpen(true)}
-          >
-            הפקת דוח
-          </button>
+          {projectFilter ? (
+            <Link
+              href={projectFieldReportNewPath(projectFilter)}
+              className={FR_PRIMARY_ACTION_BUTTON}
+            >
+              הפקת דוח
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={FR_PRIMARY_ACTION_BUTTON}
+              onClick={() => setProjectPickerOpen(true)}
+            >
+              הפקת דוח
+            </button>
+          )}
           <Link
             href={FIELD_REPORTS_UPLOAD_ROUTE.href}
             className={FR_PRIMARY_ACTION_BUTTON}
@@ -344,8 +377,8 @@ export default function FieldReportsPage() {
       </header>
 
       <header className="space-y-1 lg:hidden">
-        <h1 className="of-page-title text-2xl">הפקת דוחות</h1>
-        <p className="of-page-desc text-sm">הדוחות שלי</p>
+        <h1 className="of-page-title text-2xl">{pageTitle}</h1>
+        <p className="of-page-desc text-sm">{pageSubtitle}</p>
       </header>
 
       <section
@@ -366,13 +399,22 @@ export default function FieldReportsPage() {
           פעולות
         </h2>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <button
-            type="button"
-            className={`${FR_PRIMARY_ACTION_BUTTON} w-full sm:w-auto`}
-            onClick={() => setProjectPickerOpen(true)}
-          >
-            הפקת דוח
-          </button>
+          {projectFilter ? (
+            <Link
+              href={projectFieldReportNewPath(projectFilter)}
+              className={`${FR_PRIMARY_ACTION_BUTTON} w-full sm:w-auto`}
+            >
+              הפקת דוח
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={`${FR_PRIMARY_ACTION_BUTTON} w-full sm:w-auto`}
+              onClick={() => setProjectPickerOpen(true)}
+            >
+              הפקת דוח
+            </button>
+          )}
           <Link
             href={FIELD_REPORTS_UPLOAD_ROUTE.href}
             className={`${FR_FILTER_BUTTON_INACTIVE} w-full sm:w-auto`}
@@ -485,17 +527,30 @@ export default function FieldReportsPage() {
         </div>
       ) : reports.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
-          <p className="text-sm text-zinc-600">אין דוחות עדיין.</p>
-          <p className="mt-2 text-sm text-zinc-500">
-            ליצירת דוח חדש לחץ על «הפקת דוח» ובחר פרויקט.
+          <p className="text-sm text-zinc-600">
+            {projectFilter ? "אין דוחות לפרויקט זה עדיין." : "אין דוחות עדיין."}
           </p>
-          <button
-            type="button"
-            className={`${FR_PRIMARY_ACTION_BUTTON} mt-4`}
-            onClick={() => setProjectPickerOpen(true)}
-          >
-            הפקת דוח
-          </button>
+          <p className="mt-2 text-sm text-zinc-500">
+            {projectFilter
+              ? "ליצירת דוח חדש לחץ על «הפקת דוח»."
+              : "ליצירת דוח חדש לחץ על «הפקת דוח» ובחר פרויקט."}
+          </p>
+          {projectFilter ? (
+            <Link
+              href={projectFieldReportNewPath(projectFilter)}
+              className={`${FR_PRIMARY_ACTION_BUTTON} mt-4 inline-flex`}
+            >
+              הפקת דוח
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={`${FR_PRIMARY_ACTION_BUTTON} mt-4`}
+              onClick={() => setProjectPickerOpen(true)}
+            >
+              הפקת דוח
+            </button>
+          )}
         </div>
       ) : (
         <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">

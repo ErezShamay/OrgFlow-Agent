@@ -2,21 +2,18 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
-import CatalogIssuePicker, {
-  type CatalogCategory,
-  type CatalogFamily,
-  type CatalogIssue,
+import type {
+  CatalogCategory,
+  CatalogFamily,
+  CatalogIssue,
 } from "@/components/field-reports/CatalogIssuePicker";
 import ReportBlocksManager from "@/components/field-reports/ReportBlocksManager";
+import ReportFindingsLinesPanel from "@/components/field-reports/ReportFindingsLinesPanel";
 import ReportFixedBlocksSection from "@/components/field-reports/ReportFixedBlocksSection";
 import SupervisionChecklistEditor from "@/components/field-reports/SupervisionChecklistEditor";
 import ReportProjectMetadataSection from "@/components/field-reports/ReportProjectMetadataSection";
 import ReportStakeholdersSection from "@/components/field-reports/ReportStakeholdersSection";
-import ReportLineEditor, {
-  type LineSaveOptions,
-} from "@/components/field-reports/ReportLineEditor";
-import QuickFindingPhotoButton from "@/components/field-reports/QuickFindingPhotoButton";
-import LineGroupSelector from "@/components/field-reports/LineGroupSelector";
+import { type LineSaveOptions } from "@/components/field-reports/ReportLineEditor";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
@@ -53,7 +50,6 @@ import {
 import {
   FR_TOUCH_BUTTON,
   FR_TOUCH_INPUT,
-  FR_TOUCH_NOTES,
   FR_TOUCH_TEXTAREA,
 } from "@/lib/field-reports/touch-input-class";
 import { useFieldReportDataSource } from "@/hooks/useFieldReportDataSource";
@@ -115,13 +111,6 @@ type ReportLine = {
 type VisitReport = VisitReportView & {
   lines: ReportLine[];
 };
-
-const LINE_STATUS_OPTIONS = [
-  { value: "", label: "-" },
-  { value: "IN_PROGRESS", label: "בתהליך" },
-  { value: "DONE", label: "בוצע" },
-  { value: "NEEDS_ACTION", label: "יש להשלים" },
-];
 
 type VisitReportEditorProps = {
   report: VisitReport;
@@ -1194,199 +1183,6 @@ export default function VisitReportEditor({
         ) : null}
       </section>
 
-      <section className="space-y-4" id="field-report-finding-lines">
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">
-            שורות ממצאים ({report.lines.length})
-          </h2>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              צילום וצירוף תמונות
-            </p>
-            <p className="text-sm text-zinc-500">
-              לכל שורת ממצא בנפרד (לא בטבלת ההתקדמות למטה).
-            </p>
-          </div>
-        {report.is_editable ? (
-          <div className="space-y-3">
-            <QuickFindingPhotoButton
-              reportId={report.server_report_id ?? clientReportUuid}
-              disabled={!report.is_editable}
-              busy={lineSaving}
-              onPhotoCaptured={addQuickFindingFromPhoto}
-            />
-            <div className="space-y-2">
-              <Button
-                variant="secondary"
-                size="lg"
-                className={`w-full sm:w-auto ${FR_TOUCH_BUTTON}`}
-                disabled={catalogLoading || lineSaving}
-                onClick={() => void loadCatalog()}
-              >
-                {catalogLoading ? "טוען מפרט..." : "בחר ממצא מהמפרט"}
-              </Button>
-              {catalogError ? (
-                <p className="text-sm text-red-600" role="alert">
-                  {catalogError}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-        </div>
-
-        {report.is_editable ? (
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
-            <p className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              קיבוץ לשורות חדשות
-            </p>
-            <LineGroupSelector
-              value={pendingLineGroup}
-              disabled={lineSaving}
-              onChange={setPendingLineGroup}
-            />
-          </div>
-        ) : null}
-
-        {catalogOpen ? (
-          <div ref={catalogPickerRef} id="catalog-issue-picker">
-            <CatalogIssuePicker
-              families={catalogFamilies}
-              categories={catalogCategories}
-              issues={catalogIssues}
-              disabled={lineSaving}
-              onClose={() => {
-                setCatalogOpen(false);
-                setCatalogError("");
-              }}
-              onConfirm={(issue) => void addCatalogLine(issue)}
-            />
-          </div>
-        ) : null}
-
-        {report.lines.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/80 px-4 py-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-            <p className="font-medium">אין שורות ממצאים - אין עדיין לאן לצרף תמונות</p>
-            <p className="mt-2 text-amber-900/90 dark:text-amber-200/90">
-              השתמש ב«צלם ממצא» למעלה (2 לחיצות), או הוסף שורה חופשית למטה /
-              «בחר ממצא מהמפרט».
-            </p>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {report.lines.map((line) => (
-              <ReportLineEditor
-                key={line.id}
-                reportId={report.server_report_id ?? clientReportUuid}
-                projectId={report.project_id}
-                organizationId={organizationId}
-                line={line}
-                editable={report.is_editable}
-                saving={lineSaving}
-                linking={linkingRowId === line.id}
-                autosave={useLocalReports}
-                onSave={saveLine}
-                onLinkRow={linkFindingRow}
-                onConvertToFreeText={convertLineToFreeText}
-                onDelete={deleteLine}
-                onPhotosChange={updateLinePhotosState}
-              />
-            ))}
-          </ul>
-        )}
-
-        {report.is_editable ? (
-          <form
-            onSubmit={(event) => void addFreeLine(event)}
-            className="space-y-3 rounded-xl border border-dashed border-zinc-300 p-4 md:space-y-4 md:p-5"
-          >
-            <h3 className="font-medium">שורה חופשית</h3>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="block space-y-1 text-sm">
-                <span>מיקום</span>
-                <input
-                  className={FR_TOUCH_INPUT}
-                  value={newLine.location}
-                  onChange={(event) =>
-                    setNewLine((current) => ({
-                      ...current,
-                      location: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span>מלאכה</span>
-                <input
-                  className={FR_TOUCH_INPUT}
-                  value={newLine.trade}
-                  onChange={(event) =>
-                    setNewLine((current) => ({
-                      ...current,
-                      trade: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span>סטטוס</span>
-                <select
-                  className={FR_TOUCH_INPUT}
-                  value={newLine.status}
-                  onChange={(event) =>
-                    setNewLine((current) => ({
-                      ...current,
-                      status: event.target.value,
-                    }))
-                  }
-                >
-                  {LINE_STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label className="block space-y-1 text-sm">
-              <span>תיאור *</span>
-              <textarea
-                className={FR_TOUCH_TEXTAREA}
-                value={newLine.description}
-                onChange={(event) =>
-                  setNewLine((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-            <label className="block space-y-1 text-sm">
-              <span>הערות / פעולת תיקון</span>
-              <textarea
-                className={FR_TOUCH_NOTES}
-                value={newLine.notes}
-                onChange={(event) =>
-                  setNewLine((current) => ({
-                    ...current,
-                    notes: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <Button
-              type="submit"
-              size="lg"
-              className={`w-full sm:w-auto ${FR_TOUCH_BUTTON}`}
-              disabled={lineSaving}
-            >
-              {lineSaving ? "שומר..." : "הוסף שורה חופשית"}
-            </Button>
-          </form>
-        ) : null}
-      </section>
-
       <ReportBlocksManager
         blocks={headerFields.blocks}
         visitType={report.visit_type}
@@ -1398,6 +1194,44 @@ export default function VisitReportEditor({
         linkingRowId={linkingRowId}
         onLinkFindingRow={linkFindingRow}
         hasExplicitBlocks={hasExplicitBlocks}
+        findingsLinesPanel={
+          <ReportFindingsLinesPanel
+            lines={report.lines}
+            editable={report.is_editable}
+            lineSaving={lineSaving}
+            linkingRowId={linkingRowId}
+            reportId={report.server_report_id ?? clientReportUuid}
+            projectId={report.project_id}
+            organizationId={organizationId}
+            catalogOpen={catalogOpen}
+            catalogFamilies={catalogFamilies}
+            catalogCategories={catalogCategories}
+            catalogIssues={catalogIssues}
+            catalogLoading={catalogLoading}
+            catalogError={catalogError}
+            catalogPickerRef={catalogPickerRef}
+            pendingLineGroup={pendingLineGroup}
+            newLine={newLine}
+            lineAutosave={useLocalReports}
+            onLoadCatalog={() => void loadCatalog()}
+            onCloseCatalog={() => {
+              setCatalogOpen(false);
+              setCatalogError("");
+            }}
+            onConfirmCatalog={(issue) => void addCatalogLine(issue)}
+            onPhotoCaptured={addQuickFindingFromPhoto}
+            onPendingLineGroupChange={setPendingLineGroup}
+            onNewLineChange={(patch) =>
+              setNewLine((current) => ({ ...current, ...patch }))
+            }
+            onAddFreeLine={addFreeLine}
+            onSaveLine={saveLine}
+            onLinkRow={linkFindingRow}
+            onConvertToFreeText={convertLineToFreeText}
+            onDeleteLine={deleteLine}
+            onPhotosChange={updateLinePhotosState}
+          />
+        }
         onChange={(blocks) =>
           setHeaderFields((current) =>
             patchHeaderFieldsBlocks(current, blocks, report.visit_type)

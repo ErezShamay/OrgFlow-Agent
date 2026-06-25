@@ -2301,6 +2301,7 @@ def update_field_visit_report(
         ),
         header_fields=request.header_fields,
         catalog_version=request.catalog_version,
+        actor_user_id=auth.actor_user_id,
     )
 
 

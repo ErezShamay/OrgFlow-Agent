@@ -89,12 +89,37 @@ export {
 export {
   buildFixedTextBlocksForNewReport,
   applyWinterSeasonToBlocks,
+  createEmptyCustomFixedTextBlock,
   FIXED_TEXT_BLOCK_KIND_LABELS,
+  isRemovableFixedTextBlock,
   isWinterSeasonDate,
   resolveFixedTextBlocksFromHeader,
   resolveIncludeFixedTextBlocks,
   syncLegacyFieldsFromFixedTextBlocks,
 } from "./fixed-text-inject";
+
+export {
+  addChecklistItem,
+  addCustomSupervisionItem,
+  confirmChecklistItemDelete,
+  createEmptyChecklistItem,
+  createEmptyCustomSupervisionItem,
+  CUSTOM_SUPERVISION_CATEGORY_ID,
+  CUSTOM_SUPERVISION_CATEGORY_NAME_HE,
+  CUSTOM_SUPERVISION_TOP_FAMILY,
+  hiddenSupervisionCatalogItems,
+  hideSupervisionCatalogItem,
+  isSupervisionCatalogItem,
+  isSupervisionCustomItem,
+  removeChecklistItem,
+  removeSupervisionCustomItem,
+  restoreSupervisionCatalogItem,
+  shouldConfirmFinishingChecklistItemDelete,
+  shouldConfirmSupervisionChecklistItemDelete,
+  updateChecklistItem,
+  updateSupervisionChecklistItem,
+  visibleSupervisionChecklistItems,
+} from "./checklist-item-mutations";
 
 export {
   DEFAULT_BLOCKS_BY_VISIT_TYPE,

@@ -14,6 +14,7 @@ import {
   checklistItemStatusLabelHe,
   groupSupervisionChecklistItems,
 } from "@/lib/field-reports/supervision-labels";
+import { visibleSupervisionChecklistItems } from "@/lib/field-reports/schema/checklist-item-mutations";
 import { constructionStageLabelHe } from "@/lib/field-reports/supervision-stage-labels";
 import { formatPdfVisitDateHe } from "./render-page-banner";
 import {
@@ -142,19 +143,25 @@ export function renderSupervisionChecklist(
   block: SupervisionChecklistBlock,
   options: RenderSupervisionChecklistOptions = {}
 ): Content[] {
-  if (!block.items.length) {
+  const visibleItems = visibleSupervisionChecklistItems(block.items);
+  if (!visibleItems.length) {
     return [];
   }
 
+  const visibleBlock: SupervisionChecklistBlock = {
+    ...block,
+    items: visibleItems,
+  };
+
   const photoLookup = buildChecklistPhotoLookup(options.checklistPhotos);
-  const groups = groupSupervisionChecklistItems(block, (topFamily) =>
+  const groups = groupSupervisionChecklistItems(visibleBlock, (topFamily) =>
     catalogFamilyLabelHe(topFamily)
   );
-  const summary = summarizeSupervisionChecklistItems(block.items);
-  const contextLine = buildSupervisionChecklistContextLine(block, options);
+  const summary = summarizeSupervisionChecklistItems(visibleItems);
+  const contextLine = buildSupervisionChecklistContextLine(visibleBlock, options);
 
   const content: Content[] = [
-    pdfText(block.title_he, {
+    pdfText(visibleBlock.title_he, {
       style: "sectionTitle",
       margin: [0, 12, 0, 4],
     }),

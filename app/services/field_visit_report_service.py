@@ -17,6 +17,9 @@ from app.lib.field_report_client_ids import (
     normalize_client_line_uuid,
     normalize_client_report_uuid,
 )
+from app.lib.field_report_structure_activity import (
+    record_report_structure_activity_best_effort,
+)
 from app.lib.project_date_validation import (
     validate_header_fields_project_dates,
 )
@@ -28,6 +31,9 @@ from app.repositories.field_visit_report_line_repository import (
 )
 from app.repositories.field_visit_report_repository import (
     FieldVisitReportRepository,
+)
+from app.repositories.workspace_activity_repository import (
+    WorkspaceActivityRepository,
 )
 from app.repositories.project_apartment_repository import (
     ProjectApartmentRepository,
@@ -131,6 +137,7 @@ class FieldVisitReportService:
             QualityIssueMaterializationService | None = None,
         qc_notification_service:
             QcNotificationService | None = None,
+        activity_recorder=None,
     ) -> None:
         self.report_repository = (
             report_repository or FieldVisitReportRepository()
@@ -168,6 +175,26 @@ class FieldVisitReportService:
             materialization_service or QualityIssueMaterializationService()
         )
         self.qc_notification_service = qc_notification_service
+        self.activity_recorder = (
+            activity_recorder or WorkspaceActivityRepository.create_activity
+        )
+
+    def _record_structure_activity_if_changed(
+        self,
+        *,
+        record: dict,
+        before_header_fields: dict | None,
+        after_header_fields: dict | None,
+        actor_id: str | None = None,
+    ) -> None:
+        record_report_structure_activity_best_effort(
+            activity_recorder=self.activity_recorder,
+            project_id=str(record.get("project_id") or "") or None,
+            report_id=str(record.get("id") or ""),
+            before_header_fields=before_header_fields,
+            after_header_fields=after_header_fields,
+            actor_id=actor_id,
+        )
 
     def is_storage_available(self) -> bool:
         return self.report_repository.is_storage_available()
@@ -993,6 +1020,7 @@ class FieldVisitReportService:
         visit_date: str | None = None,
         header_fields: dict | None = None,
         catalog_version: str | None = None,
+        actor_user_id: str | None = None,
     ) -> dict:
         record = self._get_org_report(
             organization_id=organization_id,
@@ -1001,13 +1029,15 @@ class FieldVisitReportService:
         self._ensure_editable(record)
 
         payload: dict = {}
+        before_header_fields = record.get("header_fields") or {}
+        merged_header_fields: dict | None = None
 
         if visit_date is not None:
             payload["visit_date"] = visit_date
 
         if header_fields is not None:
             merged_header_fields = {
-                **(record.get("header_fields") or {}),
+                **before_header_fields,
                 **header_fields,
             }
             try:
@@ -1033,6 +1063,14 @@ class FieldVisitReportService:
                 message="Field visit report not found",
                 resource_type="field_visit_report",
                 resource_id=report_id,
+            )
+
+        if merged_header_fields is not None:
+            self._record_structure_activity_if_changed(
+                record=updated,
+                before_header_fields=before_header_fields,
+                after_header_fields=merged_header_fields,
+                actor_id=actor_user_id,
             )
 
         return self.get_report(
@@ -1111,6 +1149,7 @@ class FieldVisitReportService:
                 status=status,
                 closed_at=closed_at,
                 lines=lines or [],
+                actor_profile_id=actor_profile_id,
             )
             created = False
         else:
@@ -2234,6 +2273,7 @@ class FieldVisitReportService:
         status: str | None,
         closed_at: str | None,
         lines: list[dict],
+        actor_profile_id: str | None = None,
     ) -> dict:
         report_id = str(existing["id"])
 
@@ -2270,10 +2310,12 @@ class FieldVisitReportService:
             "visit_type": visit_type,
             "visit_date": visit_date,
         }
+        before_header_fields = existing.get("header_fields") or {}
+        merged_header_fields: dict | None = None
 
         if header_fields is not None:
             merged_header_fields = {
-                **(existing.get("header_fields") or {}),
+                **before_header_fields,
                 **header_fields,
             }
             try:
@@ -2308,6 +2350,14 @@ class FieldVisitReportService:
                 message="Field visit report not found",
                 resource_type="field_visit_report",
                 resource_id=report_id,
+            )
+
+        if merged_header_fields is not None:
+            self._record_structure_activity_if_changed(
+                record=record,
+                before_header_fields=before_header_fields,
+                after_header_fields=merged_header_fields,
+                actor_id=actor_profile_id,
             )
 
         if lines:

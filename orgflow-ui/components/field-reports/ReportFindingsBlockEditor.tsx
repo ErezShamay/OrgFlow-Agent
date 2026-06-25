@@ -122,7 +122,7 @@ export default function ReportFindingsBlockEditor({
   onChange,
 }: ReportFindingsBlockEditorProps) {
   const columns = getColumnPreset(block.column_preset);
-  const readOnly = disabled || lineDerived;
+  const tableReadOnly = disabled || lineDerived;
   const tableRows = block.rows.length > 0 ? block.rows : [];
 
   function emitRows(rows: FindingRow[]) {
@@ -198,66 +198,28 @@ export default function ReportFindingsBlockEditor({
   }
 
   const visibleColumns = columns.filter((column) => column.id !== "photos");
-  const tableColumnCount = visibleColumns.length + (readOnly ? 0 : 1);
+  const tableColumnCount = visibleColumns.length + (tableReadOnly ? 0 : 1);
 
   if (lineDerived) {
     return (
-      <div className="space-y-2 text-sm text-zinc-600">
-        <p>
-          {tableRows.length > 0
-            ? `${tableRows.length} שורות מוצגות לפי «שורות ממצאים» למטה - עריכה שם נשמרת ב-API.`
-            : "אין שורות ממצאים עדיין - הוסף שורות בסעיף «שורות ממצאים» למטה."}
-        </p>
-        {tableRows.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border border-zinc-100">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 text-right">
-                  {visibleColumns.map((column) => (
-                    <th key={column.id} className="px-2 py-2 font-medium">
-                      {column.header_he}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {tableRows.map((row, index) => {
-                  const linkHandlers = buildRowLinkHandlers(row, index);
-                  return (
-                  <Fragment key={row.id}>
-                    <tr
-                      className="border-b border-zinc-100 align-top"
-                    >
-                      {visibleColumns.map((column) => {
-                        const field = FINDING_ROW_FIELDS[column.id];
-                        const value =
-                          field && field in row
-                            ? String(row[field as keyof FindingRow] ?? "")
-                            : "";
-                        return (
-                          <td key={column.id} className="px-2 py-2">
-                            {value || "-"}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                    <FindingRowMatchHintRow
-                      row={row}
-                      projectId={projectId}
-                      organizationId={organizationId}
-                      reportId={reportId}
-                      disabled={disabled}
-                      linking={linkingRowId === row.id}
-                      columnCount={visibleColumns.length}
-                      {...linkHandlers}
-                    />
-                  </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
+      <div className="space-y-3">
+        <label className="block space-y-1 text-sm">
+          <span className="font-medium">preset עמודות</span>
+          <select
+            className={FR_TOUCH_INPUT}
+            value={block.column_preset}
+            disabled={disabled}
+            onChange={(event) =>
+              setColumnPreset(event.target.value as ColumnPresetKey)
+            }
+          >
+            {COLUMN_PRESET_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     );
   }
@@ -272,7 +234,7 @@ export default function ReportFindingsBlockEditor({
         <select
           className={FR_TOUCH_INPUT}
           value={block.column_preset}
-          disabled={readOnly}
+          disabled={tableReadOnly}
           onChange={(event) =>
             setColumnPreset(event.target.value as ColumnPresetKey)
           }
@@ -294,7 +256,7 @@ export default function ReportFindingsBlockEditor({
                   {column.header_he}
                 </th>
               ))}
-              {readOnly ? null : <th className="w-16 px-2 py-2" />}
+              {tableReadOnly ? null : <th className="w-16 px-2 py-2" />}
             </tr>
           </thead>
           <tbody>
@@ -325,7 +287,7 @@ export default function ReportFindingsBlockEditor({
                             className={FR_TOUCH_TEXTAREA}
                             rows={2}
                             value={value}
-                            disabled={readOnly}
+                            disabled={tableReadOnly}
                             onChange={(event) =>
                               updateRow(index, field, event.target.value)
                             }
@@ -334,7 +296,7 @@ export default function ReportFindingsBlockEditor({
                           <input
                             className={FR_TOUCH_INPUT}
                             value={value}
-                            disabled={readOnly}
+                            disabled={tableReadOnly}
                             onChange={(event) =>
                               updateRow(index, field, event.target.value)
                             }
@@ -343,7 +305,7 @@ export default function ReportFindingsBlockEditor({
                       </td>
                     );
                   })}
-                  {readOnly ? null : (
+                  {tableReadOnly ? null : (
                     <td className="px-2 py-2">
                       <Button
                         type="button"
@@ -373,7 +335,7 @@ export default function ReportFindingsBlockEditor({
         </table>
       </div>
 
-      {readOnly ? null : (
+      {tableReadOnly ? null : (
         <Button
           type="button"
           variant="secondary"

@@ -7,7 +7,7 @@ import {
   serializeConstructionProgressRows,
   type ConstructionProgressRow,
 } from "../construction-progress";
-import { defaultFinishingChecklistItems } from "./checklist-presets";
+import { createEmptyChecklistItem } from "./checklist-item-mutations";
 import { normalizeReportBlocks } from "./normalize";
 import type {
   FindingRow,
@@ -245,7 +245,7 @@ export function createEmptyBlockForKind(
       return {
         ...base,
         kind: "checklist",
-        items: defaultFinishingChecklistItems(),
+        items: [createEmptyChecklistItem(0)],
       };
     case "supervision_checklist":
       return {
@@ -352,6 +352,8 @@ function serializeReportBlockForApi(block: ReportBlock): Record<string, unknown>
           photo_ids: item.photo_ids,
           linked_line_id: item.linked_line_id ?? null,
           sort_order: item.sort_order,
+          ...(item.hidden ? { hidden: true } : {}),
+          ...(item.is_custom ? { is_custom: true } : {}),
         })),
       };
     case "free_text":

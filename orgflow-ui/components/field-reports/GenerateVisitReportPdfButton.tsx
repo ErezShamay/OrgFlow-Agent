@@ -80,6 +80,14 @@ export default function GenerateVisitReportPdfButton({
     },
   };
 
+  const needsFinalizePipeline =
+    canFinalize
+    && isOnline
+    && Boolean(serverReportId?.trim())
+    && (reportStatus === "CLOSED" || reportStatus === "FINALIZE_FAILED");
+
+  const useCacheShortcut = !forceRegenerate && hasCachedPdf && !needsFinalizePipeline;
+
   useEffect(() => {
     let active = true;
 
@@ -109,7 +117,7 @@ export default function GenerateVisitReportPdfButton({
       ? "מעבד דוח..."
       : forceRegenerate
         ? "עדכן PDF"
-        : hasCachedPdf
+        : useCacheShortcut
           ? "הורד PDF"
           : "הפק PDF");
 
@@ -234,7 +242,7 @@ export default function GenerateVisitReportPdfButton({
     try {
       setLoading(true);
 
-      if (!forceRegenerate) {
+      if (useCacheShortcut) {
         const cached = await loadVisitReportPdfLocally(pdfStorageKey);
         if (cached?.blob) {
           const source = await downloadVisitReportPdf(pdfInput);
@@ -265,11 +273,9 @@ export default function GenerateVisitReportPdfButton({
         onClick={() => void handleGenerate()}
       >
         {loading
-          ? forceRegenerate
-            ? "מכין תצוגה מקדימה..."
-            : hasCachedPdf
-              ? "מוריד PDF..."
-              : "מכין תצוגה מקדימה..."
+          ? useCacheShortcut
+            ? "מוריד PDF..."
+            : "מכין תצוגה מקדימה..."
           : buttonLabel}
       </Button>
 

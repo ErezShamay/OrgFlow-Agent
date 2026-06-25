@@ -56,6 +56,7 @@ import {
 import type { OrganizationProfileSnapshot } from "@/lib/field-reports/pdf/types";
 import {
   fieldReportDetailPath,
+  projectFieldReportsListPath,
   resolveFieldReportRouteId,
 } from "@/lib/field-reports/routes";
 import { shouldShowVisitIssueDiff } from "@/lib/quality-issues/visit-issue-diff";
@@ -275,6 +276,15 @@ export default function FieldVisitReportPage() {
     }
   }
 
+  function navigateAfterFinishReport(finishedReport: VisitReport) {
+    const projectId = finishedReport.project_id?.trim();
+    router.push(
+      projectId
+        ? projectFieldReportsListPath(projectId)
+        : "/field-reports"
+    );
+  }
+
   async function confirmFinishReport() {
     if (!report?.is_editable) {
       return;
@@ -339,6 +349,7 @@ export default function FieldVisitReportPage() {
           }
         }
 
+        navigateAfterFinishReport(view as VisitReport);
         return;
       }
 
@@ -391,6 +402,8 @@ export default function FieldVisitReportPage() {
             : "הדוח נסגר אך הפקת PDF נכשלה - נסה שוב מהכפתור למטה."
         );
       }
+
+      navigateAfterFinishReport(closed);
     } catch (err: unknown) {
       if (err instanceof SupervisionCloseValidationError) {
         setClosePreview((current) => ({

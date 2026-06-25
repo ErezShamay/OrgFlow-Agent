@@ -56,7 +56,7 @@ describe("supervision dashboard D4 gate", () => {
     expect(dashboard).toContain("/issues");
     expect(dashboard).toContain("דוחות שטח");
     expect(dashboard).toContain("ProjectFieldReportLink");
-    expect(dashboard).toContain("/field-reports?project=");
+    expect(dashboard).toContain("projectFieldReportsListPath");
   });
 
   it("keeps contractor limited project view separate from dashboard", () => {

@@ -15,8 +15,16 @@ import {
   renderSupervisionChecklist,
   summarizeSupervisionChecklistItems,
 } from "@/lib/field-reports/pdf/supervision-checklist-pdf-section";
+import {
+  addCustomSupervisionItem,
+  hideSupervisionCatalogItem,
+  updateSupervisionChecklistItem,
+} from "@/lib/field-reports/schema/checklist-item-mutations";
 import { CHECKLIST_ITEM_STATUS_LABELS } from "@/lib/field-reports/supervision-labels";
-import type { SupervisionChecklistBlock } from "@/lib/field-reports/schema/types";
+import type {
+  SupervisionChecklistBlock,
+  SupervisionChecklistItem,
+} from "@/lib/field-reports/schema/types";
 
 const UI_ROOT = path.resolve(__dirname, "../../..");
 const FONT_PATH = path.join(
@@ -29,6 +37,26 @@ const MINIMAL_PNG_DATA_URL =
 
 function readSource(relativePath: string): string {
   return readFileSync(path.join(UI_ROOT, relativePath), "utf8");
+}
+
+function catalogSupervisionItem(
+  id: string,
+  issue_name_he: string,
+  sort_order: number
+): SupervisionChecklistItem {
+  return {
+    id,
+    catalog_issue_id: `CAT-${id}`,
+    issue_name_he,
+    category_id: "flooring",
+    category_name_he: "ריצוף",
+    top_family: "FINISHING_WORKS",
+    standard_ref: 'ת"י 4438',
+    status: "OK",
+    notes: null,
+    photo_ids: [],
+    sort_order,
+  };
 }
 
 function sampleSupervisionBlock(): SupervisionChecklistBlock {
@@ -260,4 +288,46 @@ describe("supervision checklist stage G gate (§16.G)", () => {
     const blob = await pdfMake.createPdf(doc).getBlob();
     expect(blob.size).toBeGreaterThan(2_000);
   }, 20_000);
+
+  it("PRD §10 scenario 2 — omits hidden catalog items and includes custom item", () => {
+    const catalogNames = [
+      "ריצוף שטוח",
+      "טיח אחיד",
+      "איוורור",
+      "צבע אחיד",
+      "איטום קירות",
+      "חשמל דירה",
+    ];
+    let items = catalogNames.map((name, index) =>
+      catalogSupervisionItem(`cat-${index}`, name, index)
+    );
+
+    for (const item of items.slice(0, 5)) {
+      items = hideSupervisionCatalogItem(items, item.id);
+    }
+
+    items = addCustomSupervisionItem(items);
+    const customItem = items[items.length - 1];
+    items = updateSupervisionChecklistItem(items, customItem.id, {
+      issue_name_he: "בדיקת מערכת מיזוג ייעודית",
+    });
+
+    const block: SupervisionChecklistBlock = {
+      ...sampleSupervisionBlock(),
+      items,
+    };
+
+    const texts = collectTexts(
+      renderSupervisionChecklist(block, {
+        projectName: "פרויקט",
+        visitDate: "2026-06-14",
+      })
+    );
+
+    for (const hiddenName of catalogNames.slice(0, 5)) {
+      expect(texts).not.toContain(hiddenName);
+    }
+    expect(texts).toContain("חשמל דירה");
+    expect(texts).toContain("בדיקת מערכת מיזוג ייעודית");
+  });
 });

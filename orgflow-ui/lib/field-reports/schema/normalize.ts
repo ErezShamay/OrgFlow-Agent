@@ -722,11 +722,16 @@ function normalizeSupervisionChecklistItems(
     }
 
     const raw = item as Record<string, unknown>;
+    const isCustom = raw.is_custom === true;
     const issueNameHe = stringField(raw.issue_name_he);
     const catalogIssueId = stringField(raw.catalog_issue_id);
     const standardRef = stringField(raw.standard_ref);
 
-    if (!issueNameHe || !catalogIssueId || !standardRef) {
+    if (!issueNameHe && !isCustom) {
+      continue;
+    }
+
+    if (!isCustom && (!catalogIssueId || !standardRef)) {
       continue;
     }
 
@@ -740,9 +745,15 @@ function normalizeSupervisionChecklistItems(
       id: stringField(raw.id, `checklist-item-${index}`),
       catalog_issue_id: catalogIssueId,
       issue_name_he: issueNameHe,
-      category_id: stringField(raw.category_id),
-      category_name_he: stringField(raw.category_name_he),
-      top_family: stringField(raw.top_family),
+      category_id: stringField(
+        raw.category_id,
+        isCustom ? "custom-items" : ""
+      ),
+      category_name_he: stringField(
+        raw.category_name_he,
+        isCustom ? "פריטים מותאמים" : ""
+      ),
+      top_family: stringField(raw.top_family, isCustom ? "CUSTOM" : ""),
       standard_ref: standardRef,
       severity: nullableString(raw.severity),
       status: normalizedStatus,
@@ -751,6 +762,8 @@ function normalizeSupervisionChecklistItems(
       linked_line_id: nullableString(raw.linked_line_id),
       sort_order:
         typeof raw.sort_order === "number" ? raw.sort_order : index,
+      ...(raw.hidden === true ? { hidden: true } : {}),
+      ...(isCustom ? { is_custom: true } : {}),
     });
   }
 

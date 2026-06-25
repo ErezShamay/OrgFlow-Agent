@@ -419,7 +419,8 @@ export default function ProjectSupervisionNewReportPage() {
       <form onSubmit={(event) => void handleSubmit(event)} className="space-y-6">
         <DocumentKindPicker value={documentKind} onChange={setDocumentKind} />
 
-        {documentKind === "WEEKLY_APARTMENT" ? (
+        {documentKind === "WEEKLY_APARTMENT"
+        && !(hasApartmentPrefill && apartmentSelection) ? (
           <ApartmentPicker
             projectId={projectId}
             value={apartmentSelection}

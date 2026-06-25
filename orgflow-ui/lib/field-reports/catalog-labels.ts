@@ -4,6 +4,7 @@ export const CATALOG_TOP_FAMILY_LABELS_HE: Record<string, string> = {
   FINISHING_WORKS: "גמר",
   MECHANICAL_ELECTRICAL_SYSTEMS: "מערכות",
   SYSTEM_WATERPROOFING_AND_INSULATION: "איטום",
+  CUSTOM: "פריטים מותאמים",
 };
 
 /** תוויות חומרה - ערכי המפרט באנגלית (`Critical`, `High`, …). */

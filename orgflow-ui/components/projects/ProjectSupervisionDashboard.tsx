@@ -15,6 +15,7 @@ import {
   SUPERVISION_OVERALL_STATUS_BADGE,
   SUPERVISION_OVERALL_STATUS_LABELS,
 } from "@/lib/projects/supervision-dashboard";
+import { projectFieldReportsListPath } from "@/lib/field-reports/routes";
 
 type ProjectSupervisionDashboardProps = {
   projectId: string;
@@ -86,7 +87,7 @@ export default function ProjectSupervisionDashboard({
               כל הליקויים
             </Link>
             <Link
-              href={`/field-reports?project=${encodeURIComponent(projectId)}`}
+              href={projectFieldReportsListPath(projectId)}
               className="font-medium text-brand hover:underline dark:text-brand-light"
             >
               דוחות שטח

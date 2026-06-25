@@ -341,7 +341,9 @@ export function segmentFindingsRowsByGroup(
 }
 
 export function renderChecklist(block: ChecklistBlock): Content[] {
-  const items = [...block.items].sort(
+  const items = [...block.items]
+    .filter((item) => item.label_he.trim())
+    .sort(
     (left, right) => (left.sort_order ?? 0) - (right.sort_order ?? 0)
   );
   if (items.length === 0) {

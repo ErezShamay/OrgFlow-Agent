@@ -10,6 +10,14 @@ export function projectFieldReportNewPath(projectId: string): string {
   return `/projects/${encodeURIComponent(projectId)}/field-reports/new`;
 }
 
+/** רשימת דוחות שטח מסוננת לפרויקט. */
+export function projectFieldReportsListPath(projectId: string): string {
+  const params = new URLSearchParams({
+    project: projectId,
+  });
+  return `/field-reports?${params.toString()}`;
+}
+
 /** נתיב לעורך דוח - ב-APK (static export) רק `/_/index.html` קיים; UUID ב-query. */
 export function fieldReportDetailPath(reportId: string): string {
   if (!reportId) {

@@ -20,6 +20,9 @@ describe("stage 3 gate (quick field visit: photo → row → close)", () => {
     const editor = readUiSource(
       "components/field-reports/VisitReportEditor.tsx"
     );
+    const findingsPanel = readUiSource(
+      "components/field-reports/ReportFindingsLinesPanel.tsx"
+    );
     const quickButton = readUiSource(
       "components/field-reports/QuickFindingPhotoButton.tsx"
     );
@@ -35,10 +38,11 @@ describe("stage 3 gate (quick field visit: photo → row → close)", () => {
     expect(payload.location).toBe("קומה 4");
     expect(payload.group_key).toBe("floor:4");
 
-    expect(editor).toContain("QuickFindingPhotoButton");
     expect(editor).toContain("addQuickFindingFromPhoto");
     expect(editor).toContain("buildQuickFindingLinePayload");
     expect(editor).toContain("נוספה שורת ממצא עם תמונה");
+    expect(editor).toContain("ReportFindingsLinesPanel");
+    expect(findingsPanel).toContain("QuickFindingPhotoButton");
     expect(quickButton).toContain("צלם ממצא");
   });
 
@@ -53,6 +57,8 @@ describe("stage 3 gate (quick field visit: photo → row → close)", () => {
 
     expect(page).toContain("FinishReportDialog");
     expect(page).toContain("confirmFinishReport");
+    expect(page).toContain("navigateAfterFinishReport");
+    expect(page).toContain("projectFieldReportsListPath");
     expect(page).toContain("VisitReportPrimaryActions");
     expect(page).toContain("/field-reports/visits/");
     expect(page).toContain("/close");
@@ -75,6 +81,7 @@ describe("stage 3 gate (quick field visit: photo → row → close)", () => {
 
     const sources = [
       readUiSource("components/field-reports/VisitReportEditor.tsx"),
+      readUiSource("components/field-reports/ReportFindingsLinesPanel.tsx"),
       readUiSource("app/(dashboard)/field-reports/[id]/page.tsx"),
       readFileSync(
         path.resolve(__dirname, "../../../../tests/test_qc_stage3_gate.py"),

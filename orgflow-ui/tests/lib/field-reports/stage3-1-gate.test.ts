@@ -16,14 +16,18 @@ describe("stage 3.1 gate (quick photo → finding row)", () => {
     const editor = readUiSource(
       "components/field-reports/VisitReportEditor.tsx"
     );
+    const findingsPanel = readUiSource(
+      "components/field-reports/ReportFindingsLinesPanel.tsx"
+    );
     const quickButton = readUiSource(
       "components/field-reports/QuickFindingPhotoButton.tsx"
     );
 
     expect(QUICK_FINDING_PHOTO_TAP_COUNT).toBe(2);
-    expect(editor).toContain("QuickFindingPhotoButton");
+    expect(editor).toContain("ReportFindingsLinesPanel");
     expect(editor).toContain("addQuickFindingFromPhoto");
     expect(editor).toContain("buildQuickFindingLinePayload");
+    expect(findingsPanel).toContain("QuickFindingPhotoButton");
     expect(quickButton).toContain("צלם ממצא");
     expect(quickButton).toContain("capture: \"environment\"");
   });

@@ -51,8 +51,8 @@ export default function VisitReportPdfPreviewDialog({
           </h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
             {isRegenerate
-              ? "בדקו שהעדכונים נראים נכון לפני שמירת ה-PDF במכשיר."
-              : "בדקו שהדוח נראה נכון לפני הפקה ושמירה במכשיר."}
+              ? "בדקו שהעדכונים נראים נכון לפני שמירת ה-PDF והמשך העיבוד."
+              : "בדקו שהדוח נראה נכון. לאחר אישור: שמירה במכשיר, שליחה לבעלי עניין ועיבוד הדוח במערכת."}
           </p>
         </div>
 
@@ -95,10 +95,10 @@ export default function VisitReportPdfPreviewDialog({
             onClick={onConfirm}
           >
             {confirming
-              ? "שומר..."
+              ? "מפיק ומעבד..."
               : isRegenerate
-                ? "שמור PDF מעודכן"
-                : "הפק ושמור PDF"}
+                ? "אשר ועדכן PDF"
+                : "אשר והפק PDF"}
           </Button>
         </div>
       </div>

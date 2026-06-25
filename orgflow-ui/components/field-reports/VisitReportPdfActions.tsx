@@ -192,7 +192,6 @@ export default function VisitReportPdfActions({
           <GenerateVisitReportPdfButton
             report={report}
             className={actionButtonClassName}
-            label={isFinalized ? "הורד PDF" : undefined}
             serverReportId={serverReportId}
             reportStatus={report.status}
             canFinalize={canFinalize}
@@ -235,9 +234,11 @@ export default function VisitReportPdfActions({
         ) : null}
         {!isFinalized ? (
           <span className="text-sm text-zinc-600">
-            {hasLocalPdf
-              ? "ניתן להוריד שוב את ה-PDF גם ללא רשת."
-              : "לפני הפקה ראשונה תוצג תצוגה מקדימה לאישור; לאחר אישור הדוח יעובד ויישלח במייל אוטומטית."}
+            {hasLocalPdf && canFinalize && isOnline
+              ? "הפק PDF מציג תצוגה מקדימה, שולח לבעלי עניין ומפעיל עיבוד AI במערכת."
+              : hasLocalPdf
+                ? "ניתן להוריד שוב את ה-PDF גם ללא רשת."
+                : "לפני הפקה תוצג תצוגה מקדימה לאישור; לאחר אישור הדוח יעובד, יישלח לבעלי עניין ויופעלו האוטומציות במערכת."}
           </span>
         ) : null}
       </div>

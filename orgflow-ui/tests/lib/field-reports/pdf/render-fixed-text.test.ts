@@ -86,4 +86,45 @@ describe("renderFixedTextBlocks in PDF", () => {
     expect(winterTitleCount).toBe(0);
     expect(texts).not.toContain("לא אמור להופיע");
   });
+
+  it("PRD §10 scenario 3 — renders custom section before signature", () => {
+    const customBody =
+      "הקבלן אחראי לתיקון כל ליקוי שיתגלה במסגרת הביקור.";
+    const definition = buildVisitReportDocDefinition({
+      report: {
+        id: "r-custom-liability",
+        visit_type: "STRUCTURE_SITE",
+        visit_type_label_he: "שלד",
+        visit_date: "2026-06-01",
+        project_name: "בדיקה",
+        header_fields: {
+          fixed_text_blocks: [
+            {
+              id: "custom-liability",
+              kind: "custom",
+              title_he: "הערת אחריות",
+              body_he: customBody,
+              enabled: true,
+              sort_order: 0,
+            },
+          ],
+          include_fixed_text_blocks: true,
+          blocks: [],
+        },
+        lines: [],
+      },
+      inspector: { full_name: "מפקח" },
+    });
+
+    const texts = collectTexts(definition.content);
+    const titleIndex = texts.findIndex((text) => text === "הערת אחריות");
+    const bodyIndex = texts.findIndex((text) => text === customBody);
+    const signatureIndex = texts.findIndex((text) => text === "חתימה");
+
+    expect(titleIndex).toBeGreaterThan(-1);
+    expect(bodyIndex).toBeGreaterThan(-1);
+    expect(signatureIndex).toBeGreaterThan(-1);
+    expect(titleIndex).toBeLessThan(signatureIndex);
+    expect(bodyIndex).toBeLessThan(signatureIndex);
+  });
 });
