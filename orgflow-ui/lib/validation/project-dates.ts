@@ -66,20 +66,26 @@ export function extractProjectDatesFromHeaderFields(
     return {};
   }
 
-  const metadata =
-    headerFields.project_metadata &&
-    typeof headerFields.project_metadata === "object"
-      ? (headerFields.project_metadata as Record<string, unknown>)
+  const fields: Record<string, unknown> = headerFields;
+  const rawMetadata = fields.project_metadata;
+  const metadata: Record<string, unknown> =
+    rawMetadata != null && typeof rawMetadata === "object"
+      ? (rawMetadata as Record<string, unknown>)
       : {};
 
-  function pick(key: keyof ProjectDateFields): string | null {
-    for (const source of [headerFields, metadata]) {
-      const value = source[key];
-      if (typeof value === "string" && value.trim()) {
-        return value.trim();
-      }
+  function readDate(
+    record: Record<string, unknown>,
+    key: keyof ProjectDateFields
+  ): string | null {
+    const value = record[key as string];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
     }
     return null;
+  }
+
+  function pick(key: keyof ProjectDateFields): string | null {
+    return readDate(fields, key) ?? readDate(metadata, key);
   }
 
   return {
