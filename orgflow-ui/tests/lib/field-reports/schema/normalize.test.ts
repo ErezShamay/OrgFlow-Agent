@@ -48,6 +48,26 @@ describe("normalizeStakeholders", () => {
       { id: "dev-1", role: "developer", name: "explicit name", label_he: null },
     ]);
   });
+
+  it("drops sentinel placeholder names from stakeholders", () => {
+    expect(
+      normalizeStakeholders({
+        stakeholders: [
+          {
+            id: "dev-1",
+            role: "developer",
+            name: "לא צוין",
+          },
+        ],
+      })
+    ).toEqual([]);
+
+    expect(
+      migrateLegacyStakeholdersFromHeader({
+        developer_name: "לא מצוין",
+      })
+    ).toEqual([]);
+  });
 });
 
 describe("normalizeReportBlocks", () => {

@@ -11,6 +11,11 @@ import {
   type ReportHeaderFields,
 } from "@/lib/field-reports/header-fields";
 import {
+  normalizeOptionalTextInput,
+  optionalTextForSave,
+  UNSPECIFIED_FIELD_LABEL_HE,
+} from "@/lib/validation/optional-field-display";
+import {
   FR_TOUCH_BUTTON,
   FR_TOUCH_TEXTAREA,
 } from "@/lib/field-reports/touch-input-class";
@@ -177,13 +182,14 @@ export default function ReportFixedBlocksSection({
           <span className="font-medium">תואר מפקח (בחתימה)</span>
           <input
             className="of-input w-full"
-            value={fields.inspector_title}
+            value={normalizeOptionalTextInput(fields.inspector_title)}
             disabled={disabled}
             placeholder="למשל: מפקח בכיר"
             onChange={(event) =>
               onChange({
                 ...fields,
-                inspector_title: event.target.value,
+                inspector_title:
+                  optionalTextForSave(event.target.value) ?? "",
               })
             }
           />
@@ -192,12 +198,14 @@ export default function ReportFixedBlocksSection({
           <span className="font-medium">מספר רישוי (בחתימה)</span>
           <input
             className="of-input w-full"
-            value={fields.inspector_license}
+            value={normalizeOptionalTextInput(fields.inspector_license)}
             disabled={disabled}
+            placeholder={UNSPECIFIED_FIELD_LABEL_HE}
             onChange={(event) =>
               onChange({
                 ...fields,
-                inspector_license: event.target.value,
+                inspector_license:
+                  optionalTextForSave(event.target.value) ?? "",
               })
             }
           />

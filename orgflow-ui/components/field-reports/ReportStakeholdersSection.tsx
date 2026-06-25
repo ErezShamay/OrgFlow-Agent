@@ -13,6 +13,11 @@ import {
   STAKEHOLDER_ROLE_OPTIONS,
   stakeholderRoleLabelHe,
 } from "@/lib/field-reports/stakeholder-role-labels";
+import {
+  normalizeOptionalTextInput,
+  optionalTextForSave,
+  UNSPECIFIED_FIELD_LABEL_HE,
+} from "@/lib/validation/optional-field-display";
 import type { Stakeholder, StakeholderRole, SupplierRow } from "@/lib/field-reports/schema/types";
 import { STAKEHOLDER_ROLES } from "@/lib/field-reports/schema/types";
 import {
@@ -258,12 +263,12 @@ export default function ReportStakeholdersSection({
               <input
                 type="text"
                 className={FR_TOUCH_INPUT}
-                value={stakeholder.name}
+                value={normalizeOptionalTextInput(stakeholder.name)}
                 disabled={disabled}
                 placeholder={stakeholderRoleLabelHe(stakeholder.role)}
                 onChange={(event) =>
                   updateStakeholder(stakeholder.id, {
-                    name: event.target.value,
+                    name: optionalTextForSave(event.target.value) ?? "",
                   })
                 }
               />
@@ -349,12 +354,13 @@ export default function ReportStakeholdersSection({
                       <input
                         type="text"
                         className={FR_TOUCH_INPUT}
-                        value={supplier.category_he}
+                        value={normalizeOptionalTextInput(supplier.category_he)}
                         disabled={disabled}
                         placeholder="למשל: אינסטלציה"
                         onChange={(event) =>
                           updateSupplier(supplier.id, {
-                            category_he: event.target.value,
+                            category_he:
+                              optionalTextForSave(event.target.value) ?? "",
                           })
                         }
                       />
@@ -365,11 +371,13 @@ export default function ReportStakeholdersSection({
                         <input
                           type="text"
                           className={FR_TOUCH_INPUT}
-                          value={supplier.vendor_name}
+                          value={normalizeOptionalTextInput(supplier.vendor_name)}
                           disabled={disabled}
+                          placeholder={UNSPECIFIED_FIELD_LABEL_HE}
                           onChange={(event) =>
                             updateSupplier(supplier.id, {
-                              vendor_name: event.target.value,
+                              vendor_name:
+                                optionalTextForSave(event.target.value) ?? "",
                             })
                           }
                         />

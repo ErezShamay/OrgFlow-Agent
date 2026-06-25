@@ -12,6 +12,12 @@ import type { ProjectScheme } from "@/lib/field-reports/schema/types";
 import { PROJECT_SCHEME_OPTIONS } from "@/lib/field-reports/project-scheme-labels";
 import { showToast } from "@/lib/ui/toast";
 import { validateOptionalProjectEmails } from "@/lib/validation/email";
+import {
+  displayOptionalText,
+  normalizeOptionalTextInput,
+  optionalTextForSave,
+  UNSPECIFIED_FIELD_LABEL_HE,
+} from "@/lib/validation/optional-field-display";
 import { validateProjectDates } from "@/lib/validation/project-dates";
 
 export type EditableProjectDetails = {
@@ -81,17 +87,17 @@ type FormState = {
 
 function toFormState(project: EditableProjectDetails): FormState {
   return {
-    project_name: project.project_name ?? "",
-    developer_name: project.developer_name?.trim() ?? "",
-    contractor_name: project.contractor_name?.trim() ?? "",
-    lawyer_name: project.lawyer_name?.trim() ?? "",
-    supervisor_name: project.supervisor_name ?? "",
-    supervisor_email: project.supervisor_email?.trim() ?? "",
-    developer_pm_name: project.developer_pm_name?.trim() ?? "",
-    accompanying_lawyer: project.accompanying_lawyer?.trim() ?? "",
-    architect_name: project.architect_name?.trim() ?? "",
-    site_manager_name: project.site_manager_name?.trim() ?? "",
-    city: project.city?.trim() ?? "",
+    project_name: normalizeOptionalTextInput(project.project_name),
+    developer_name: normalizeOptionalTextInput(project.developer_name),
+    contractor_name: normalizeOptionalTextInput(project.contractor_name),
+    lawyer_name: normalizeOptionalTextInput(project.lawyer_name),
+    supervisor_name: normalizeOptionalTextInput(project.supervisor_name),
+    supervisor_email: normalizeOptionalTextInput(project.supervisor_email),
+    developer_pm_name: normalizeOptionalTextInput(project.developer_pm_name),
+    accompanying_lawyer: normalizeOptionalTextInput(project.accompanying_lawyer),
+    architect_name: normalizeOptionalTextInput(project.architect_name),
+    site_manager_name: normalizeOptionalTextInput(project.site_manager_name),
+    city: normalizeOptionalTextInput(project.city),
     scheme:
       PROJECT_SCHEME_OPTIONS.some(
         (option) => option.value === project.scheme
@@ -110,25 +116,22 @@ function toFormState(project: EditableProjectDetails): FormState {
     structure_documentation_date: toDateInputValue(
       project.structure_documentation_date
     ),
-    developer_email: project.developer_email?.trim() ?? "",
-    developer_pm_email: project.developer_pm_email?.trim() ?? "",
-    site_manager_email: project.site_manager_email?.trim() ?? "",
-    contractor_email: project.contractor_email?.trim() ?? "",
-    lawyer_email: project.lawyer_email?.trim() ?? "",
-    accompanying_lawyer_email: project.accompanying_lawyer_email?.trim() ?? "",
-    architect_email: project.architect_email?.trim() ?? "",
+    developer_email: normalizeOptionalTextInput(project.developer_email),
+    developer_pm_email: normalizeOptionalTextInput(project.developer_pm_email),
+    site_manager_email: normalizeOptionalTextInput(project.site_manager_email),
+    contractor_email: normalizeOptionalTextInput(project.contractor_email),
+    lawyer_email: normalizeOptionalTextInput(project.lawyer_email),
+    accompanying_lawyer_email: normalizeOptionalTextInput(
+      project.accompanying_lawyer_email
+    ),
+    architect_email: normalizeOptionalTextInput(project.architect_email),
   };
-}
-
-function displayValue(value?: string | null) {
-  const trimmed = value?.trim();
-  return trimmed || "לא צוין";
 }
 
 function formatDisplayDate(value?: string | null) {
   const inputValue = toDateInputValue(value);
   if (!inputValue) {
-    return "לא צוין";
+    return UNSPECIFIED_FIELD_LABEL_HE;
   }
 
   try {
@@ -253,12 +256,12 @@ export default function ProjectDetailsEditor({
           contractor_name: form.contractor_name.trim(),
           lawyer_name: form.lawyer_name.trim(),
           supervisor_name: form.supervisor_name.trim(),
-          supervisor_email: form.supervisor_email.trim() || null,
-          developer_pm_name: form.developer_pm_name.trim() || null,
-          accompanying_lawyer: form.accompanying_lawyer.trim() || null,
-          architect_name: form.architect_name.trim() || null,
-          site_manager_name: form.site_manager_name.trim() || null,
-          city: form.city.trim() || null,
+          supervisor_email: optionalTextForSave(form.supervisor_email),
+          developer_pm_name: optionalTextForSave(form.developer_pm_name),
+          accompanying_lawyer: optionalTextForSave(form.accompanying_lawyer),
+          architect_name: optionalTextForSave(form.architect_name),
+          site_manager_name: optionalTextForSave(form.site_manager_name),
+          city: optionalTextForSave(form.city),
           scheme: form.scheme,
           housing_units_count,
           floors_count,
@@ -267,13 +270,15 @@ export default function ProjectDetailsEditor({
           project_grace_end_date: form.project_grace_end_date.trim() || null,
           structure_documentation_date:
             form.structure_documentation_date.trim() || null,
-          developer_email: form.developer_email.trim() || null,
-          developer_pm_email: form.developer_pm_email.trim() || null,
-          site_manager_email: form.site_manager_email.trim() || null,
-          contractor_email: form.contractor_email.trim() || null,
-          lawyer_email: form.lawyer_email.trim() || null,
-          accompanying_lawyer_email: form.accompanying_lawyer_email.trim() || null,
-          architect_email: form.architect_email.trim() || null,
+          developer_email: optionalTextForSave(form.developer_email),
+          developer_pm_email: optionalTextForSave(form.developer_pm_email),
+          site_manager_email: optionalTextForSave(form.site_manager_email),
+          contractor_email: optionalTextForSave(form.contractor_email),
+          lawyer_email: optionalTextForSave(form.lawyer_email),
+          accompanying_lawyer_email: optionalTextForSave(
+            form.accompanying_lawyer_email
+          ),
+          architect_email: optionalTextForSave(form.architect_email),
         }),
       });
 
@@ -326,20 +331,24 @@ export default function ProjectDetailsEditor({
           />
 
           <DetailsSection title="פרטים כלליים">
-            <InfoCard title="שם הפרויקט" value={displayValue(project.project_name)} />
+            <InfoCard
+              title="שם הפרויקט"
+              value={displayOptionalText(project.project_name)}
+            />
             <InfoCard
               title="סוג פרויקט"
               value={
-                projectSchemeDisplayLabel(project.scheme) ?? "לא צוין"
+                projectSchemeDisplayLabel(project.scheme)
+                ?? UNSPECIFIED_FIELD_LABEL_HE
               }
             />
-            <InfoCard title="עיר" value={displayValue(project.city)} />
+            <InfoCard title="עיר" value={displayOptionalText(project.city)} />
             <InfoCard
               title="מספר קומות"
               value={
                 project.floors_count != null
                   ? String(project.floors_count)
-                  : "לא צוין"
+                  : UNSPECIFIED_FIELD_LABEL_HE
               }
             />
             <InfoCard
@@ -347,7 +356,7 @@ export default function ProjectDetailsEditor({
               value={
                 project.housing_units_count != null
                   ? String(project.housing_units_count)
-                  : "לא צוין"
+                  : UNSPECIFIED_FIELD_LABEL_HE
               }
             />
             <InfoCard
@@ -369,19 +378,25 @@ export default function ProjectDetailsEditor({
           </DetailsSection>
 
           <DetailsSection title="יזם וקבלן">
-            <InfoCard title="שם היזם" value={displayValue(project.developer_name)} />
+            <InfoCard
+              title="שם היזם"
+              value={displayOptionalText(project.developer_name)}
+            />
             <InfoCard
               title="אימייל יזם"
               value={project.developer_email?.trim() || "-"}
             />
-            <InfoCard title="שם הקבלן" value={displayValue(project.contractor_name)} />
+            <InfoCard
+              title="שם הקבלן"
+              value={displayOptionalText(project.contractor_name)}
+            />
             <InfoCard
               title="אימייל קבלן"
               value={project.contractor_email?.trim() || "-"}
             />
             <InfoCard
               title="מנהל פרויקט מטעם יזם"
-              value={displayValue(project.developer_pm_name)}
+              value={displayOptionalText(project.developer_pm_name)}
             />
             <InfoCard
               title="אימייל מנהל פרויקט (יזם)"
@@ -390,14 +405,17 @@ export default function ProjectDetailsEditor({
           </DetailsSection>
 
           <DetailsSection title="ייעוץ משפטי">
-            <InfoCard title="עו״ד מלווה" value={displayValue(project.lawyer_name)} />
+            <InfoCard
+              title="עו״ד מלווה"
+              value={displayOptionalText(project.lawyer_name)}
+            />
             <InfoCard
               title="אימייל עו״ד מלווה"
               value={project.lawyer_email?.trim() || "-"}
             />
             <InfoCard
               title="עו״ד מלווה (נוסף)"
-              value={displayValue(project.accompanying_lawyer)}
+              value={displayOptionalText(project.accompanying_lawyer)}
             />
             <InfoCard
               title="אימייל עו״ד מלווה (נוסף)"
@@ -406,19 +424,25 @@ export default function ProjectDetailsEditor({
           </DetailsSection>
 
           <DetailsSection title="פיקוח וניהול">
-            <InfoCard title="מפקח מלווה" value={displayValue(project.supervisor_name)} />
+            <InfoCard
+              title="מפקח מלווה"
+              value={displayOptionalText(project.supervisor_name)}
+            />
             <InfoCard
               title="אימייל מפקח מלווה"
               value={project.supervisor_email?.trim() || "-"}
             />
-            <InfoCard title="אדריכל" value={displayValue(project.architect_name)} />
+            <InfoCard
+              title="אדריכל"
+              value={displayOptionalText(project.architect_name)}
+            />
             <InfoCard
               title="אימייל אדריכל"
               value={project.architect_email?.trim() || "-"}
             />
             <InfoCard
               title="מנהל עבודה"
-              value={displayValue(project.site_manager_name)}
+              value={displayOptionalText(project.site_manager_name)}
             />
             <InfoCard
               title="אימייל מנהל עבודה"
@@ -753,6 +777,7 @@ type FieldProps = {
   type?: string;
   min?: number;
   className?: string;
+  placeholder?: string;
 };
 
 function Field({
@@ -763,6 +788,9 @@ function Field({
   type = "text",
   min,
   className = "",
+  placeholder = !required && type !== "date" && type !== "number"
+    ? UNSPECIFIED_FIELD_LABEL_HE
+    : undefined,
 }: FieldProps) {
   return (
     <label className={`block space-y-3 ${className}`}>
@@ -781,6 +809,7 @@ function Field({
         required={required}
         type={type}
         min={min}
+        placeholder={placeholder}
       />
     </label>
   );

@@ -34,6 +34,8 @@ import type {
   SupplierRow,
 } from "./schema/types";
 
+import { normalizeOptionalTextInput } from "@/lib/validation/optional-field-display";
+
 export type {
   FixedTextBlock,
   ProjectMetadata,
@@ -510,12 +512,13 @@ function omitEmptyMetadata(
 
 function stringField(value: unknown, fallback = ""): string {
   if (typeof value === "string") {
-    return value;
+    const normalized = normalizeOptionalTextInput(value);
+    return normalized || fallback;
   }
   if (value === null || value === undefined) {
     return fallback;
   }
-  return String(value);
+  return normalizeOptionalTextInput(String(value));
 }
 
 function stringListField(value: unknown, fallback: string[]): string[] {

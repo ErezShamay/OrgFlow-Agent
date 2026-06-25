@@ -15,6 +15,7 @@ import {
 } from "@/lib/projects/create-project-form";
 import type { ProjectCreateSubmitData } from "@/lib/projects/create-project-submit";
 import { showToast } from "@/lib/ui/toast";
+import { UNSPECIFIED_FIELD_LABEL_HE } from "@/lib/validation/optional-field-display";
 
 type ProjectCreateFormProps = {
   initialProjectName?: string;
@@ -323,6 +324,7 @@ type FieldProps = {
   type?: string;
   min?: number;
   className?: string;
+  placeholder?: string;
 };
 
 function Field({
@@ -333,6 +335,9 @@ function Field({
   type = "text",
   min,
   className = "",
+  placeholder = !required && type !== "date" && type !== "number" && type !== "email"
+    ? UNSPECIFIED_FIELD_LABEL_HE
+    : undefined,
 }: FieldProps) {
   return (
     <label className={`block space-y-2 ${className}`}>
@@ -351,6 +356,7 @@ function Field({
         required={required}
         type={type}
         min={min}
+        placeholder={placeholder}
       />
     </label>
   );

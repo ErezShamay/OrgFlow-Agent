@@ -73,6 +73,11 @@ import { syncSupervisionDefectDraftsForReport } from "@/lib/field-reports/checkl
 import { isSupervisionChecklistReport } from "@/lib/field-reports/supervision-checklist-builder";
 import { resolveInspectMode } from "@/lib/field-reports/quick-inspect";
 import {
+  UNSPECIFIED_FIELD_LABEL_HE,
+  normalizeOptionalTextInput,
+  optionalTextForSave,
+} from "@/lib/validation/optional-field-display";
+import {
   extractProjectDatesFromHeaderFields,
   validateProjectDates,
 } from "@/lib/validation/project-dates";
@@ -1431,9 +1436,12 @@ function HeaderField({
       <span className="font-medium">{label}</span>
       <input
         className={FR_TOUCH_INPUT}
-        value={value}
+        value={normalizeOptionalTextInput(value)}
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
+        placeholder={UNSPECIFIED_FIELD_LABEL_HE}
+        onChange={(event) =>
+          onChange(optionalTextForSave(event.target.value) ?? "")
+        }
       />
     </label>
   );

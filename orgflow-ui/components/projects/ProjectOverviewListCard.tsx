@@ -10,6 +10,7 @@ import {
   SUPERVISION_OVERALL_STATUS_LABELS,
   type SupervisionOverallStatus,
 } from "@/lib/projects/supervision-dashboard-types";
+import { displayOptionalText } from "@/lib/validation/optional-field-display";
 
 export type ProjectOverviewListItem = {
   id: string;
@@ -22,11 +23,6 @@ export type ProjectOverviewListItem = {
   status: string;
   created_at: string;
 };
-
-function displayStakeholder(value?: string | null) {
-  const trimmed = value?.trim();
-  return trimmed || "לא צוין";
-}
 
 function getStatusLabel(status: string) {
   switch (status) {
@@ -80,17 +76,17 @@ export default function ProjectOverviewListCard({
         <div className="mt-6 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-700">
           <div>
             <h3 className="mb-2 font-semibold">יזם</h3>
-            <p>{displayStakeholder(project.developer_name)}</p>
+            <p>{displayOptionalText(project.developer_name)}</p>
           </div>
 
           <div>
             <h3 className="mb-2 font-semibold">קבלן</h3>
-            <p>{displayStakeholder(project.contractor_name)}</p>
+            <p>{displayOptionalText(project.contractor_name)}</p>
           </div>
 
           <div>
             <h3 className="mb-2 font-semibold">עו״ד מלווה</h3>
-            <p>{displayStakeholder(project.lawyer_name)}</p>
+            <p>{displayOptionalText(project.lawyer_name)}</p>
           </div>
 
           <div>

@@ -5,6 +5,9 @@ import {
   projectSchemeLabelHe,
 } from "@/lib/field-reports/project-scheme-labels";
 import type { ProjectMetadata, ProjectScheme } from "@/lib/field-reports/schema/types";
+import {
+  UNSPECIFIED_FIELD_LABEL_HE,
+} from "@/lib/validation/optional-field-display";
 import { validateProjectDates } from "@/lib/validation/project-dates";
 import {
   FR_TOUCH_INPUT,
@@ -116,6 +119,7 @@ export default function ReportProjectMetadataSection({
                 : String(metadata.housing_units_count)
             }
             disabled={disabled}
+            placeholder={UNSPECIFIED_FIELD_LABEL_HE}
             onChange={(event) => {
               const raw = event.target.value.trim();
               if (!raw) {

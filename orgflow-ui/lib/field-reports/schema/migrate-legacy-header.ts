@@ -1,4 +1,5 @@
 import type { ProjectMetadata, Stakeholder, StakeholderRole } from "./types";
+import { normalizeOptionalTextInput } from "@/lib/validation/optional-field-display";
 
 /** מיפוי שדות legacy ב-header_fields לתפקיד stakeholder. */
 const LEGACY_STAKEHOLDER_FIELDS: ReadonlyArray<{
@@ -123,10 +124,10 @@ function assignOptionalString(
 
 function stringField(value: unknown): string {
   if (typeof value === "string") {
-    return value.trim();
+    return normalizeOptionalTextInput(value);
   }
   if (value === null || value === undefined) {
     return "";
   }
-  return String(value).trim();
+  return normalizeOptionalTextInput(String(value));
 }

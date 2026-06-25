@@ -44,6 +44,7 @@ import {
   STAKEHOLDER_ROLES,
   VISIT_SCOPES,
 } from "./types";
+import { normalizeOptionalTextInput } from "@/lib/validation/optional-field-display";
 
 /** קלט גולמי לדוח ביקור - תואם תגובת API קיימת. */
 export type RawVisitReportInput = {
@@ -874,12 +875,13 @@ function assignOptionalString(
 
 function stringField(value: unknown, fallback = ""): string {
   if (typeof value === "string") {
-    return value.trim();
+    const normalized = normalizeOptionalTextInput(value);
+    return normalized || fallback;
   }
   if (value === null || value === undefined) {
     return fallback;
   }
-  return String(value).trim();
+  return normalizeOptionalTextInput(String(value));
 }
 
 function nullableString(value: unknown): string | null {
