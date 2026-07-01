@@ -18,6 +18,7 @@ import {
   LEGACY_HOME_NAVBAR_LINKS,
   PRIMARY_NAV_HIDDEN_ROUTES,
   REVIEWS_GLOBAL_LEGACY_ROUTE,
+  isPublicRoute,
   resolvePostLoginRoute,
   SETTINGS_ROUTE,
   UPLOAD_LEGACY_ROUTE,
@@ -115,6 +116,13 @@ describe("navigation (supervision pivot — stage A)", () => {
     ]);
     expect(isAdminOnlySystemRoute("/automation/runs")).toBe(true);
     expect(isAdminOnlySystemRoute("/portfolio")).toBe(false);
+  });
+
+  it("treats legal document pages as public routes", () => {
+    expect(isPublicRoute("/legal/terms")).toBe(true);
+    expect(isPublicRoute("/legal/privacy")).toBe(true);
+    expect(isPublicRoute("/legal/ai-transparency")).toBe(true);
+    expect(isPublicRoute("/projects")).toBe(false);
   });
 
   it("routes users after login by role", () => {

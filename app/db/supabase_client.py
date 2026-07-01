@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
+import os
+import ssl
 import threading
 import time
 from collections.abc import Callable
@@ -42,13 +44,28 @@ def _is_transient_error(exc: Exception) -> bool:
     return "resource temporarily unavailable" in message
 
 
+def _build_ssl_context() -> ssl.SSLContext:
+    """Use the OS trust store (corporate roots on Windows, Keychain on macOS)."""
+    for env_var in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE"):
+        path = os.environ.get(env_var)
+        if path and os.path.isfile(path):
+            context = ssl.create_default_context(cafile=path)
+            return context
+    return ssl.create_default_context()
+
+
 def _build_httpx_client() -> httpx.Client:
     timeout = httpx.Timeout(settings.DB_OPERATION_TIMEOUT_SECONDS)
     limits = httpx.Limits(
         max_connections=20,
         max_keepalive_connections=10,
     )
-    return httpx.Client(timeout=timeout, limits=limits)
+    return httpx.Client(
+        timeout=timeout,
+        limits=limits,
+        verify=_build_ssl_context(),
+        trust_env=False,
+    )
 
 
 class ResilientRequestBuilder:

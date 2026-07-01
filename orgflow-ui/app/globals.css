@@ -611,6 +611,10 @@ body {
   background: var(--of-color-surface-muted);
 }
 
+.of-auth-page--with-footer {
+  justify-content: space-between;
+}
+
 .dark .of-auth-page {
   background: var(--of-color-surface-muted);
 }

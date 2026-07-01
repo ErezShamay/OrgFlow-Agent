@@ -243,6 +243,10 @@ def _env(name: str, default: str | None = None) -> str | None:
 
 def load_settings() -> Settings:
     try:
+        from app.lib.ssl_env import sanitize_ssl_env
+
+        sanitize_ssl_env()
+
         environment = (_env("ENVIRONMENT", "local") or "local").strip().lower()
 
         # Base .env + environment-specific overrides.

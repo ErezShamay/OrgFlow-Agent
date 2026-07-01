@@ -12,6 +12,7 @@ import {
   useRouter,
 } from "next/navigation";
 
+import LoginLegalNotice from "@/components/auth/LoginLegalNotice";
 import BrandLogo from "@/components/ui/BrandLogo";
 import Button from "@/components/ui/Button";
 import {
@@ -176,7 +177,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="of-auth-page">
+    <main className="of-auth-page of-auth-page--with-footer">
       <div
         className="
           pointer-events-none
@@ -190,7 +191,19 @@ export default function LoginPage() {
         <div className="of-landing-orb of-landing-orb-2 absolute" />
       </div>
 
-      <div className="of-auth-card of-animate-fade-up mx-auto w-full max-w-md">
+      <div
+        className="
+          relative
+          z-10
+          flex
+          w-full
+          max-w-md
+          flex-1
+          flex-col
+          justify-center
+        "
+      >
+      <div className="of-auth-card of-animate-fade-up mx-auto w-full">
         <div className="mb-8 flex justify-center">
           <BrandLogo size="lg" href="/" />
         </div>
@@ -316,6 +329,9 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+      </div>
+
+      <LoginLegalNotice />
     </main>
   );
 }

@@ -183,6 +183,7 @@ export function isPublicRoute(pathname: string) {
   return (
     pathname === "/"
     || pathname.startsWith("/auth")
+    || pathname.startsWith("/legal")
   );
 }
 

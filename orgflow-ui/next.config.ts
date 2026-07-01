@@ -36,6 +36,9 @@ const sharedImages: NonNullable<NextConfig["images"]> = {
 };
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   ...(capacitorStaticExport
     ? {
         output: "export",
