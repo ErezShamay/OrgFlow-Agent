@@ -180,6 +180,18 @@ class Settings(BaseModel):
             raise ValueError("DB_OPERATION_TIMEOUT_SECONDS must be > 0")
         if not self.AUTH_JWT_SECRET.strip():
             raise ValueError("AUTH_JWT_SECRET must be non-empty")
+        if self.ENVIRONMENT in ("staging", "production"):
+            if self.AUTH_JWT_SECRET == "dev-secret-change-me-at-least-32-chars":
+                raise ValueError(
+                    "AUTH_JWT_SECRET must be overridden with a real secret in "
+                    "staging/production - the default dev value is publicly "
+                    "known (it's committed in this file)"
+                )
+            if len(self.AUTH_JWT_SECRET) < 32:
+                raise ValueError(
+                    "AUTH_JWT_SECRET must be at least 32 characters in "
+                    "staging/production"
+                )
         if not self.AUTH_JWT_ALGORITHM.strip():
             raise ValueError("AUTH_JWT_ALGORITHM must be non-empty")
         if self.AUTH_SESSION_TIMEOUT_MINUTES <= 0:
