@@ -25,3 +25,7 @@ sample_reports/
 .env.*
 !.env.example
 *.pyo
+
+# ad-hoc debug output (e.g. PDF-text-extraction scratch dumps) - these have
+# leaked real building/tenant data into the repo before (.tmp_pdf_extract.txt)
+.tmp_*
