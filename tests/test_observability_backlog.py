@@ -17,6 +17,7 @@ from app.services.prometheus_integration_service import PrometheusIntegrationSer
 from app.services.runtime_diagnostics_service import RuntimeDiagnosticsService
 from app.services.sentry_integration_service import SentryIntegrationService
 from app.services.sla_metrics_service import SlaMetricsService
+import app.dependencies as deps
 
 
 def build_dashboard():
@@ -245,7 +246,7 @@ def _auth_headers():
 def test_observability_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "observability_dashboard_service",
         dashboard,
     )

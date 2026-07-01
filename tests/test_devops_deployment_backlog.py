@@ -27,6 +27,7 @@ from app.services.reverse_proxy_caching_service import ReverseProxyCachingServic
 from app.services.staging_environment_service import StagingEnvironmentService
 from app.services.uptime_monitoring_service import UptimeMonitoringService
 from app.services.worker_scaling_service import WorkerScalingService
+import app.dependencies as deps
 
 
 def build_dashboard():
@@ -220,7 +221,7 @@ def _auth_headers():
 def test_devops_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "devops_deployment_dashboard_service",
         dashboard,
     )

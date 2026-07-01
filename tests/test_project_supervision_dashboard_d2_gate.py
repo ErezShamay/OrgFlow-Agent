@@ -19,6 +19,7 @@ from tests.test_project_zero_setup_gate import (
     InMemoryProjectApartmentRepository,
     InMemoryProjectRepository,
 )
+import app.dependencies as deps
 
 
 ORG_ID = "org-d2"
@@ -93,7 +94,7 @@ def dashboard_client() -> TestClient:
         }
     ]
 
-    main_module.project_supervision_dashboard_service = (
+    deps.project_supervision_dashboard_service = (
         ProjectSupervisionDashboardService(
             project_repository=project_repo,
             report_repository=FakeReportRepository(),

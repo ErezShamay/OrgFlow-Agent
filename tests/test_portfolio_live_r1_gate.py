@@ -26,8 +26,26 @@ from tests.quality_issues_test_support import (
 )
 from tests.test_field_visit_reports import _headers
 from tests.test_supervisor_project_scope import FakeProfileRepository
+import app.dependencies as deps
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _read_app_source() -> str:
+    """Concatenates app/main.py with every app/routers/*.py and
+    app/dependencies.py. Since the 2026-07 architecture-modularization
+    refactor, main.py is a thin entrypoint (imports + middleware +
+    include_router() calls) - route bodies and singleton wiring live in
+    app/routers/*.py and app/dependencies.py. Gate tests that assert a
+    given route path/snippet is "wired into the app" need to search the
+    whole assembled surface, not main.py alone."""
+    parts = [(REPO_ROOT / "app" / "main.py").read_text(encoding="utf-8")]
+    parts.append((REPO_ROOT / "app" / "dependencies.py").read_text(encoding="utf-8"))
+    for router_file in sorted((REPO_ROOT / "app" / "routers").glob("*.py")):
+        if router_file.name == "__init__.py":
+            continue
+        parts.append(router_file.read_text(encoding="utf-8"))
+    return "\n".join(parts)
 ORG_ID = "org-r1"
 PROJECT_ID = "proj-r1"
 
@@ -67,9 +85,9 @@ def live_stack(
         report_repository=FakeFieldVisitReportRepository(),
         profile_repository=FakeProfileRepository(profiles={}),
     )
-    monkeypatch.setattr(main_module, "quality_issue_service", service)
+    monkeypatch.setattr(deps, "quality_issue_service", service)
     monkeypatch.setattr(
-        main_module,
+        deps,
         "portfolio_live_service",
         PortfolioLiveService(quality_issue_service=service),
     )
@@ -118,7 +136,7 @@ def _seed_open_issues(issues: InMemoryQualityIssueRepository) -> None:
 
 
 def test_main_registers_r1_routes() -> None:
-    main_source = (REPO_ROOT / "app/main.py").read_text(encoding="utf-8")
+    main_source = _read_app_source()
     service_source = (
         REPO_ROOT / "app/services/portfolio_live_service.py"
     ).read_text(encoding="utf-8")

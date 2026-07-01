@@ -27,6 +27,23 @@ from tests.test_field_visit_reports import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+def _read_app_source() -> str:
+    """Concatenates app/main.py with every app/routers/*.py and
+    app/dependencies.py. Since the 2026-07 architecture-modularization
+    refactor, main.py is a thin entrypoint (imports + middleware +
+    include_router() calls) - route bodies and singleton wiring live in
+    app/routers/*.py and app/dependencies.py. Gate tests that assert a
+    given route path/snippet is "wired into the app" need to search the
+    whole assembled surface, not main.py alone."""
+    parts = [(REPO_ROOT / "app" / "main.py").read_text(encoding="utf-8")]
+    parts.append((REPO_ROOT / "app" / "dependencies.py").read_text(encoding="utf-8"))
+    for router_file in sorted((REPO_ROOT / "app" / "routers").glob("*.py")):
+        if router_file.name == "__init__.py":
+            continue
+        parts.append(router_file.read_text(encoding="utf-8"))
+    return "\n".join(parts)
+
+
 class RecordingDraftNotificationTool(NotificationTool):
     def __init__(self) -> None:
         self.sent: list[dict] = []
@@ -145,7 +162,7 @@ def test_l3_service_and_api_wired() -> None:
     tool = (REPO_ROOT / "app" / "tools" / "notification_tool.py").read_text(
         encoding="utf-8"
     )
-    main = (REPO_ROOT / "app" / "main.py").read_text(encoding="utf-8")
+    main = _read_app_source()
 
     assert "notify_contractor_on_draft_issue" in service
     assert "build_draft_contractor_issue_messages" in tool

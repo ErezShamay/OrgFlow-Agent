@@ -83,7 +83,7 @@ def test_post_critical_stale_alerts_triggers_notification_tool(monkeypatch) -> N
         critical_alert_service=alert_service,
     )
     monkeypatch.setattr(
-        "app.main.qc_notification_service",
+        "app.dependencies.qc_notification_service",
         qc_service,
     )
 
@@ -111,7 +111,7 @@ def test_contractor_cannot_trigger_critical_stale_alerts(monkeypatch) -> None:
         critical_alert_service=alert_service,
     )
     monkeypatch.setattr(
-        "app.main.qc_notification_service",
+        "app.dependencies.qc_notification_service",
         qc_service,
     )
 

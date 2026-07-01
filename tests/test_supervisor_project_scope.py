@@ -8,6 +8,7 @@ from app.services.supervisor_project_scope import (
     project_supervised_by,
     should_scope_projects_to_supervisor,
 )
+import app.dependencies as deps
 
 
 class FakeProfileRepository:
@@ -99,9 +100,9 @@ def test_filter_supervised_projects_returns_only_matching_projects() -> None:
 
 
 def test_supervisor_projects_list_is_scoped_by_email(monkeypatch) -> None:
-    monkeypatch.setattr(main_module, "project_service", FakeProjectService())
+    monkeypatch.setattr(deps, "project_service", FakeProjectService())
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "profile_repository",
         FakeProfileRepository(
             {
@@ -131,7 +132,7 @@ def test_supervisor_projects_list_is_scoped_by_email(monkeypatch) -> None:
 
 
 def test_admin_projects_list_is_not_scoped_to_supervisor_email(monkeypatch) -> None:
-    monkeypatch.setattr(main_module, "project_service", FakeProjectService())
+    monkeypatch.setattr(deps, "project_service", FakeProjectService())
     client = TestClient(app)
 
     response = client.get(
@@ -150,7 +151,7 @@ def test_admin_projects_list_is_not_scoped_to_supervisor_email(monkeypatch) -> N
 
 def test_supervisor_cannot_open_unassigned_project_workspace(monkeypatch) -> None:
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "profile_repository",
         FakeProfileRepository(
             {
@@ -163,7 +164,7 @@ def test_supervisor_cannot_open_unassigned_project_workspace(monkeypatch) -> Non
         ),
     )
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "project_repository",
         type(
             "Repo",

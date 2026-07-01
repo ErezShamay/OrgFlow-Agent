@@ -79,7 +79,7 @@ def test_post_open_report_reminders_triggers_notification_tool(
         open_report_service=alert_service,
     )
     monkeypatch.setattr(
-        "app.main.qc_notification_service",
+        "app.dependencies.qc_notification_service",
         qc_service,
     )
 
@@ -107,7 +107,7 @@ def test_contractor_cannot_trigger_open_report_reminders(monkeypatch) -> None:
         open_report_service=alert_service,
     )
     monkeypatch.setattr(
-        "app.main.qc_notification_service",
+        "app.dependencies.qc_notification_service",
         qc_service,
     )
 

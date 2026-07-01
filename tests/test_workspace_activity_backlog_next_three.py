@@ -4,6 +4,8 @@ import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.main import app
 from app.services.workspace_activity_service import WorkspaceActivityService
+import app.dependencies as deps
+import app.services.connection_managers as conn_mgrs
 
 
 class FakeProjectRepository:
@@ -28,12 +30,12 @@ def _auth_headers():
 
 
 def _client(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "workspace_activity_service", WorkspaceActivityService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "workspace_activity_service", WorkspaceActivityService())
     monkeypatch.setattr(
-        main_module,
+        conn_mgrs,
         "workspace_connection_manager",
-        main_module.WorkspaceConnectionManager(),
+        conn_mgrs.WorkspaceConnectionManager(),
     )
     return TestClient(app)
 

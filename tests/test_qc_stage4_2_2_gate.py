@@ -43,7 +43,7 @@ def test_list_organization_issues_filters_contractor_statuses(
         project_repository=FakeProjectRepository(),
     )
     monkeypatch.setattr(
-        "app.main.quality_issue_service",
+        "app.dependencies.quality_issue_service",
         service,
     )
     client = TestClient(app)
@@ -112,7 +112,7 @@ def test_list_organization_issues_allows_supervisor_all_statuses(
         project_repository=FakeProjectRepository(),
     )
     monkeypatch.setattr(
-        "app.main.quality_issue_service",
+        "app.dependencies.quality_issue_service",
         service,
     )
     client = TestClient(app)

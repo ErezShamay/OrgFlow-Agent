@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.main import app
+import app.dependencies as deps
 
 
 class FakeProjectService:
@@ -62,7 +63,7 @@ def _auth_headers(org_id: str):
 
 
 def test_projects_list_is_scoped_to_token_organization(monkeypatch):
-    monkeypatch.setattr(main_module, "project_service", FakeProjectService())
+    monkeypatch.setattr(deps, "project_service", FakeProjectService())
     client = TestClient(app)
 
     response = client.get(
@@ -77,7 +78,7 @@ def test_projects_list_is_scoped_to_token_organization(monkeypatch):
 
 
 def test_projects_list_requires_authentication(monkeypatch):
-    monkeypatch.setattr(main_module, "project_service", FakeProjectService())
+    monkeypatch.setattr(deps, "project_service", FakeProjectService())
     client = TestClient(app)
 
     response = client.get("/projects")
@@ -117,7 +118,7 @@ class FakeEditableProjectService(FakeProjectService):
 
 def _patch_tenant_scope(monkeypatch, repository: FakeProjectRepository):
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "project_repository",
         repository,
     )
@@ -127,7 +128,7 @@ def test_edit_project_is_scoped_to_token_organization(monkeypatch):
     repository = FakeProjectRepository()
     _patch_tenant_scope(monkeypatch, repository)
     monkeypatch.setattr(
-        main_module,
+        deps,
         "project_service",
         FakeEditableProjectService(),
     )
@@ -147,7 +148,7 @@ def test_edit_project_rejects_other_organization(monkeypatch):
     repository = FakeProjectRepository()
     _patch_tenant_scope(monkeypatch, repository)
     monkeypatch.setattr(
-        main_module,
+        deps,
         "project_service",
         FakeEditableProjectService(),
     )

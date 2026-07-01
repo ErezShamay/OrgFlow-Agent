@@ -166,7 +166,7 @@ def test_admin_export_field_reports_returns_zip(
 ):
     export_service = _build_export_service(tmp_path)
     monkeypatch.setattr(
-        "app.main.field_visit_report_export_service",
+        "app.dependencies.field_visit_report_export_service",
         export_service,
     )
 
@@ -217,7 +217,7 @@ def test_admin_export_field_reports_returns_404_when_empty(
         ),
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_export_service",
+        "app.dependencies.field_visit_report_export_service",
         export_service,
     )
 

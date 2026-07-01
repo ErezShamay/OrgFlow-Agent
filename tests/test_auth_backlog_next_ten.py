@@ -9,6 +9,7 @@ import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.config import config_manager
 from app.main import app
+import app.dependencies as deps
 
 
 def _build_access_token(
@@ -162,7 +163,7 @@ def test_auth_exchange_issues_access_token(monkeypatch):
         ):
             return preferred_organization_id or "org-1"
 
-    monkeypatch.setattr(main_module, "profile_service", FakeProfileService())
+    monkeypatch.setattr(deps, "profile_service", FakeProfileService())
     client = TestClient(app)
 
     response = client.post(

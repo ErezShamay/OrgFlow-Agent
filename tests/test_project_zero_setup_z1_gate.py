@@ -9,6 +9,7 @@ from app.exceptions.exceptions import ValidationError
 from app.main import app
 from app.services.project_service import ProjectService
 from tests.fixtures.project_create_payload import valid_create_project_payload
+import app.dependencies as deps
 
 
 class RecordingProjectService:
@@ -58,7 +59,7 @@ def test_parse_project_scheme_rejects_missing_or_invalid() -> None:
 
 
 def test_create_project_requires_scheme(monkeypatch) -> None:
-    monkeypatch.setattr(main_module, "project_service", RecordingProjectService())
+    monkeypatch.setattr(deps, "project_service", RecordingProjectService())
     client = TestClient(app)
 
     payload = _valid_create_payload()
@@ -74,7 +75,7 @@ def test_create_project_requires_scheme(monkeypatch) -> None:
 
 
 def test_create_project_rejects_invalid_scheme(monkeypatch) -> None:
-    monkeypatch.setattr(main_module, "project_service", RecordingProjectService())
+    monkeypatch.setattr(deps, "project_service", RecordingProjectService())
     client = TestClient(app)
 
     payload = _valid_create_payload()
@@ -90,7 +91,7 @@ def test_create_project_rejects_invalid_scheme(monkeypatch) -> None:
 
 
 def test_create_project_rejects_invalid_project_dates(monkeypatch) -> None:
-    monkeypatch.setattr(main_module, "project_service", RecordingProjectService())
+    monkeypatch.setattr(deps, "project_service", RecordingProjectService())
     client = TestClient(app)
 
     payload = _valid_create_payload()
@@ -107,7 +108,7 @@ def test_create_project_rejects_invalid_project_dates(monkeypatch) -> None:
 
 
 def test_create_project_rejects_grace_before_end(monkeypatch) -> None:
-    monkeypatch.setattr(main_module, "project_service", RecordingProjectService())
+    monkeypatch.setattr(deps, "project_service", RecordingProjectService())
     client = TestClient(app)
 
     payload = _valid_create_payload()
@@ -124,7 +125,7 @@ def test_create_project_rejects_grace_before_end(monkeypatch) -> None:
 
 def test_create_project_with_valid_scheme_passes_to_service(monkeypatch) -> None:
     service = RecordingProjectService()
-    monkeypatch.setattr(main_module, "project_service", service)
+    monkeypatch.setattr(deps, "project_service", service)
     client = TestClient(app)
 
     payload = _valid_create_payload()
@@ -168,9 +169,9 @@ def test_edit_project_rejects_invalid_scheme(monkeypatch) -> None:
         def get_organization_scoped_project(self, *_args, **_kwargs):
             return {"id": "p1"}
 
-    monkeypatch.setattr(main_module, "tenant_scope_service", FakeTenantScope())
+    monkeypatch.setattr(deps, "tenant_scope_service", FakeTenantScope())
     monkeypatch.setattr(
-        main_module.project_service,
+        deps.project_service,
         "edit_project",
         lambda *_args, **_kwargs: {"id": "p1"},
     )

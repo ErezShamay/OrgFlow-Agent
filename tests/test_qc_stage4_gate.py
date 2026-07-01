@@ -84,7 +84,7 @@ def stage4_gate_setup(
         photo_service=QualityIssuePhotoService(photos_root=tmp_path),
         report_repository=reports,
     )
-    monkeypatch.setattr("app.main.quality_issue_service", service)
+    monkeypatch.setattr("app.dependencies.quality_issue_service", service)
     return TestClient(app), service, issues, reports, lines
 
 

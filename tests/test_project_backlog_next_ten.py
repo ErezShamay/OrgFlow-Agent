@@ -4,6 +4,7 @@ import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.main import app
 from tests.fixtures.project_create_payload import valid_create_project_payload
+import app.dependencies as deps
 
 
 class FakeProjectService:
@@ -203,14 +204,14 @@ class FakeProjectService:
 
 def _client_with_fake_service(monkeypatch) -> TestClient:
     fake_service = FakeProjectService()
-    monkeypatch.setattr(main_module, "project_service", fake_service)
+    monkeypatch.setattr(deps, "project_service", fake_service)
 
     class FakeProjectRepository:
         def get_project_by_id(self, project_id: str):
             return fake_service.projects.get(project_id)
 
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "project_repository",
         FakeProjectRepository(),
     )
@@ -270,7 +271,7 @@ def test_delete_project_flow(monkeypatch):
             }
 
     monkeypatch.setattr(
-        main_module,
+        deps,
         "project_deletion_service",
         FakeProjectDeletionService(),
     )

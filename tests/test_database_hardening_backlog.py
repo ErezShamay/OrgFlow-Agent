@@ -24,6 +24,7 @@ from app.services.query_optimization_service import QueryOptimizationService
 from app.services.rls_policy_service import RlsPolicyService
 from app.services.soft_delete_service import SoftDeleteService
 from app.services.tenant_data_isolation_service import TenantDataIsolationService
+import app.dependencies as deps
 
 
 def build_dashboard():
@@ -274,7 +275,7 @@ def test_database_hardening_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     dashboard.apply_migrations()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "database_hardening_dashboard_service",
         dashboard,
     )

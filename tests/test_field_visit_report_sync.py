@@ -106,15 +106,15 @@ def _setup_sync_client(
     )
 
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         module_service,
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
     monkeypatch.setattr(
-        "app.main.project_repository",
+        "app.dependencies.project_repository",
         FakeProjectRepository(),
     )
     app.state.field_report_module_service = module_service

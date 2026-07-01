@@ -23,6 +23,7 @@ from app.repositories.project_template_repository import (
 )
 from app.schemas.project_template import ProjectTemplate
 from app.services.project_template_service import ProjectTemplateService
+import app.dependencies as deps
 
 
 class InMemoryProjectTemplateRepository:
@@ -201,7 +202,7 @@ def test_resolve_project_template_api(monkeypatch) -> None:
             [seed_template_for_scheme("TAMA38_STRENGTHENING") or {}]
         )
     )
-    monkeypatch.setattr(main_module, "project_template_service", service)
+    monkeypatch.setattr(deps, "project_template_service", service)
     client = TestClient(app)
 
     response = client.get(

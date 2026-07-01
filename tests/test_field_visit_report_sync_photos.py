@@ -211,15 +211,15 @@ def test_post_sync_line_photo_endpoint(monkeypatch, tmp_path):
         report_processing_service=FakeReportProcessingService(),
     )
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         module_service,
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
     monkeypatch.setattr(
-        "app.main.project_repository",
+        "app.dependencies.project_repository",
         FakeProjectRepository(),
     )
     app.state.field_report_module_service = module_service
@@ -297,15 +297,15 @@ def test_post_sync_line_photo_idempotency_key_mismatch_http(monkeypatch, tmp_pat
         report_processing_service=FakeReportProcessingService(),
     )
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         module_service,
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
     monkeypatch.setattr(
-        "app.main.project_repository",
+        "app.dependencies.project_repository",
         FakeProjectRepository(),
     )
     app.state.field_report_module_service = module_service

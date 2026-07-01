@@ -156,7 +156,7 @@ def test_field_report_home_requires_enabled_module(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         service,
     )
 
@@ -204,7 +204,7 @@ def test_admin_module_list_and_toggle(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         service,
     )
 
@@ -238,7 +238,7 @@ def test_non_platform_role_cannot_toggle_module(monkeypatch):
         visit_report_repository=FakeVisitReportRepository(),
     )
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         service,
     )
     app.state.field_report_module_service = service
@@ -308,7 +308,7 @@ def test_admin_can_update_organization_report_profile(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.main.field_report_organization_profile_service",
+        "app.dependencies.field_report_organization_profile_service",
         profile_service,
     )
 
@@ -354,7 +354,7 @@ def test_admin_can_get_organization_report_profile(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.main.field_report_organization_profile_service",
+        "app.dependencies.field_report_organization_profile_service",
         profile_service,
     )
 

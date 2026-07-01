@@ -60,7 +60,7 @@ def qc_setup(monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, QualityIssueS
         event_repository=InMemoryQualityIssueEventRepository(),
         project_repository=FakeProjectRepository(),
     )
-    monkeypatch.setattr("app.main.quality_issue_service", service)
+    monkeypatch.setattr("app.dependencies.quality_issue_service", service)
     return TestClient(app), service
 
 

@@ -147,7 +147,7 @@ def test_post_run_qc_notification_alerts_uses_notification_tool(
             notification_tool=notification_tool,
         ),
     )
-    monkeypatch.setattr("app.main.qc_notification_service", qc_service)
+    monkeypatch.setattr("app.dependencies.qc_notification_service", qc_service)
 
     client = TestClient(app)
     response = client.post(

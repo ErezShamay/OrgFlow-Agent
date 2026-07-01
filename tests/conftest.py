@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import app.dependencies as deps
 
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("ORG_FLOW_LLM_MODE", "mock")
@@ -37,12 +38,12 @@ def patch_supervisor_profile_lookup_for_tests(monkeypatch):
     import app.main as main_module
 
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "profile_repository",
         profile_repository,
     )
     monkeypatch.setattr(
-        main_module.quality_issue_service,
+        deps.quality_issue_service,
         "profile_repository",
         profile_repository,
     )

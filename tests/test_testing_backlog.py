@@ -18,6 +18,7 @@ from app.services.regression_testing_service import RegressionTestingService
 from app.services.security_testing_service import SecurityTestingService
 from app.services.testing_dashboard_service import TestingDashboardService
 from app.services.unit_tests_service import UnitTestsService
+import app.dependencies as deps
 
 
 def build_dashboard():
@@ -226,7 +227,7 @@ def _auth_headers():
 def test_testing_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "testing_dashboard_service",
         dashboard,
     )

@@ -19,6 +19,7 @@ from tests.test_project_zero_setup_gate import (
     InMemoryProjectApartmentRepository,
     InMemoryProjectRepository,
 )
+import app.dependencies as deps
 
 
 ORG_ID = "org-e2e"
@@ -103,7 +104,7 @@ def e2e_client() -> TestClient:
         issue_repository=E2EIssueRepository(),
         apartment_repository=apartment_repo,
     )
-    main_module.project_supervision_dashboard_service = service
+    deps.project_supervision_dashboard_service = service
     return TestClient(app)
 
 

@@ -16,6 +16,7 @@ from app.services.project_spatial_bootstrap_service import (
     build_stable_apartment_number,
 )
 from app.services.project_template_service import ProjectTemplateService
+import app.dependencies as deps
 
 
 class InMemoryProjectApartmentRepository:
@@ -228,8 +229,8 @@ def test_bootstrap_spatial_api_is_idempotent(monkeypatch) -> None:
         def get_organization_scoped_project(self, project_id, *_args, **_kwargs):
             return projects.projects.get(project_id)
 
-    monkeypatch.setattr(main_module, "tenant_scope_service", FakeTenantScope())
-    monkeypatch.setattr(main_module, "project_spatial_bootstrap_service", service)
+    monkeypatch.setattr(deps, "tenant_scope_service", FakeTenantScope())
+    monkeypatch.setattr(deps, "project_spatial_bootstrap_service", service)
     client = TestClient(app)
 
     first = client.post(

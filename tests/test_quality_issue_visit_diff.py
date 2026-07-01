@@ -41,7 +41,7 @@ def qc_setup(monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, QualityIssueS
         project_repository=FakeProjectRepository(),
         report_repository=FakeFieldVisitReportRepository(),
     )
-    monkeypatch.setattr("app.main.quality_issue_service", service)
+    monkeypatch.setattr("app.dependencies.quality_issue_service", service)
     return TestClient(app), service
 
 

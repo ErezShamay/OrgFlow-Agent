@@ -86,7 +86,7 @@ def test_tenant_manager_module_status_defaults_disabled(monkeypatch) -> None:
         organization_repository=FakeOrganizationRepository(),
     )
     monkeypatch.setattr(
-        "app.main.tenant_manager_module_service",
+        "app.dependencies.tenant_manager_module_service",
         service,
     )
     app.state.tenant_manager_module_service = service
@@ -110,7 +110,7 @@ def test_platform_admin_can_enable_tenant_manager_module(monkeypatch) -> None:
         organization_repository=FakeOrganizationRepository(),
     )
     monkeypatch.setattr(
-        "app.main.tenant_manager_module_service",
+        "app.dependencies.tenant_manager_module_service",
         service,
     )
     app.state.tenant_manager_module_service = service

@@ -11,6 +11,7 @@ from app.services.ai_review_service import (
 from app.services.tenant_scope_service import (
     TenantScopeService,
 )
+import app.dependencies as deps
 
 
 def _auth_headers():
@@ -172,7 +173,7 @@ def test_pending_reviews_endpoint_scopes_to_authenticated_org(monkeypatch):
             assert organization_id == "org-1"
             return [{"id": "r-1", "review_status": "PENDING"}]
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -202,7 +203,7 @@ def test_ai_review_dashboard_endpoint_returns_payload(monkeypatch):
                 "recent_limit_used": recent_limit,
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -226,7 +227,7 @@ def test_assign_reviewer_endpoint_returns_assignment(monkeypatch):
                 "assigned_reviewer": reviewer_id,
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -246,7 +247,7 @@ def test_assign_reviewer_endpoint_returns_404(monkeypatch):
         def assign_reviewer(self, interpretation_id: str, reviewer_id: str):
             return None
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -302,7 +303,7 @@ def test_ai_review_sla_endpoint_returns_payload(monkeypatch):
                 "breached_review_ids": ["ai-1"],
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -351,7 +352,7 @@ def test_ai_review_confidence_endpoint_returns_payload(monkeypatch):
                 "factors": {"model_name": "gpt-5.5"},
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -370,7 +371,7 @@ def test_ai_review_confidence_endpoint_returns_404(monkeypatch):
         def get_review_confidence(self, interpretation_id: str):
             return None
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -397,7 +398,7 @@ def test_human_override_endpoint_returns_payload(monkeypatch):
                 "override_reason": override_reason,
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -425,7 +426,7 @@ def test_human_override_endpoint_returns_404(monkeypatch):
         ):
             return None
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -523,7 +524,7 @@ def test_review_analytics_endpoint_returns_payload(monkeypatch):
                 "completed_review_cycles": 4,
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -573,7 +574,7 @@ def test_review_explainability_endpoint_returns_payload(monkeypatch):
                 "explanation_version": "v1",
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -592,7 +593,7 @@ def test_review_explainability_endpoint_returns_404(monkeypatch):
         def get_review_explainability(self, interpretation_id: str):
             return None
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -650,7 +651,7 @@ def test_review_audit_logs_endpoint_returns_payload(monkeypatch):
                 "events": [{"event_type": "REVIEW_APPROVED"}],
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -669,7 +670,7 @@ def test_review_audit_logs_endpoint_returns_404(monkeypatch):
         def get_review_audit_logs(self, interpretation_id: str):
             return None
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.get(
@@ -769,7 +770,7 @@ def test_review_escalation_endpoint_returns_payload(monkeypatch):
                 "created_action": {"id": "act-1"},
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -789,7 +790,7 @@ def test_review_escalation_endpoint_returns_404(monkeypatch):
         def run_review_escalation_logic(self, interpretation_id: str, force: bool = False):
             return None
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -817,7 +818,7 @@ def test_recommendation_review_endpoint_returns_payload(monkeypatch):
                 "recommendation_review_notes": review_notes,
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -847,7 +848,7 @@ def test_recommendation_review_endpoint_rejects_invalid_decision(monkeypatch):
         ):
             raise ValueError("decision must be APPROVED or REJECTED")
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -885,7 +886,7 @@ def test_review_comments_endpoints(monkeypatch):
                 ],
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     create_response = client.post(
@@ -912,7 +913,7 @@ def test_review_comments_endpoints_return_404(monkeypatch):
         def list_review_comments(self, interpretation_id: str):
             return None
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     create_response = client.post(
@@ -954,7 +955,7 @@ def test_review_notifications_endpoints(monkeypatch):
                 ],
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     send_response = client.post(
@@ -992,7 +993,7 @@ def test_manual_approval_workflow_endpoint(monkeypatch):
                 "status": "PENDING",
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(
@@ -1025,8 +1026,8 @@ def test_approve_review_endpoint_returns_payload(monkeypatch):
         def create_notification(self, **kwargs):
             return kwargs
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
-    monkeypatch.setattr(main_module, "notification_service", FakeNotificationService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "notification_service", FakeNotificationService())
     client = TestClient(app)
 
     response = client.post(
@@ -1048,7 +1049,7 @@ def test_reject_review_endpoint_returns_payload(monkeypatch):
                 "review_status": "REJECTED",
             }
 
-    monkeypatch.setattr(main_module, "ai_review_service", FakeReviewService())
+    monkeypatch.setattr(deps, "ai_review_service", FakeReviewService())
     client = TestClient(app)
 
     response = client.post(

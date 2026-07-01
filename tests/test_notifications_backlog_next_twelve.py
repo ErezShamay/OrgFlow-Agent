@@ -4,6 +4,8 @@ import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.main import app
 from app.services.notification_service import NotificationService
+import app.dependencies as deps
+import app.services.connection_managers as conn_mgrs
 
 
 def _auth_headers():
@@ -17,11 +19,11 @@ def _auth_headers():
 
 
 def _client(monkeypatch):
-    monkeypatch.setattr(main_module, "notification_service", NotificationService())
+    monkeypatch.setattr(deps, "notification_service", NotificationService())
     monkeypatch.setattr(
-        main_module,
+        conn_mgrs,
         "notification_connection_manager",
-        main_module.NotificationConnectionManager(),
+        conn_mgrs.NotificationConnectionManager(),
     )
     return TestClient(app)
 

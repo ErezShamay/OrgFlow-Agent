@@ -31,6 +31,7 @@ from app.services.portfolio_trend_analysis_service import (
 )
 from app.services.predictive_alerts_service import PredictiveAlertsService
 from app.services.predictive_risk_service import PredictiveRiskService
+import app.dependencies as deps
 
 
 def sample_portfolio_summary():
@@ -315,12 +316,12 @@ def _auth_headers():
 def test_portfolio_intelligence_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "portfolio_intelligence_dashboard_service",
         dashboard,
     )
     monkeypatch.setattr(
-        main_module,
+        deps,
         "portfolio_insights_service",
         dashboard.portfolio_insights_service,
     )

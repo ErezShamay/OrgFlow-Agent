@@ -9,6 +9,7 @@ from app.services.operational_action_service import (
 from app.services.tenant_scope_service import (
     TenantScopeService,
 )
+import app.dependencies as deps
 
 
 def _auth_headers():
@@ -121,7 +122,7 @@ def test_open_actions_endpoint_scopes_to_authenticated_org(monkeypatch):
             return [{"id": "a-1", "status": "OPEN"}]
 
     monkeypatch.setattr(
-        main_module,
+        deps,
         "operational_action_service",
         FakeOperationalActionService(),
     )
@@ -146,7 +147,7 @@ def test_escalations_endpoint_scopes_to_authenticated_org(monkeypatch):
             return [{"id": "e-1", "action_type": "ESCALATION"}]
 
     monkeypatch.setattr(
-        main_module,
+        deps,
         "operational_action_service",
         FakeOperationalActionService(),
     )

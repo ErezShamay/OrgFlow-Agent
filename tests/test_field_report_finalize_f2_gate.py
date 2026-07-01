@@ -205,15 +205,15 @@ def _setup_client(
     )
 
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         module_service,
     )
     monkeypatch.setattr(
-        "app.main.field_report_finalize_service",
+        "app.dependencies.field_report_finalize_service",
         finalize_service,
     )
     monkeypatch.setattr(
-        "app.main.project_repository",
+        "app.dependencies.project_repository",
         FakeProjectRepository(),
     )
 

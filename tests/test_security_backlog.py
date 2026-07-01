@@ -25,6 +25,7 @@ from app.services.security_penetration_testing_service import (
 from app.services.sql_injection_review_service import SqlInjectionReviewService
 from app.services.supply_chain_security_service import SupplyChainSecurityService
 from app.services.tenant_security_isolation_service import TenantSecurityIsolationService
+import app.dependencies as deps
 
 
 def build_dashboard():
@@ -271,7 +272,7 @@ def _auth_headers():
 def test_security_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "security_dashboard_service",
         dashboard,
     )

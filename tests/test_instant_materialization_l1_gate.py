@@ -28,6 +28,23 @@ from tests.test_field_visit_reports import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+def _read_app_source() -> str:
+    """Concatenates app/main.py with every app/routers/*.py and
+    app/dependencies.py. Since the 2026-07 architecture-modularization
+    refactor, main.py is a thin entrypoint (imports + middleware +
+    include_router() calls) - route bodies and singleton wiring live in
+    app/routers/*.py and app/dependencies.py. Gate tests that assert a
+    given route path/snippet is "wired into the app" need to search the
+    whole assembled surface, not main.py alone."""
+    parts = [(REPO_ROOT / "app" / "main.py").read_text(encoding="utf-8")]
+    parts.append((REPO_ROOT / "app" / "dependencies.py").read_text(encoding="utf-8"))
+    for router_file in sorted((REPO_ROOT / "app" / "routers").glob("*.py")):
+        if router_file.name == "__init__.py":
+            continue
+        parts.append(router_file.read_text(encoding="utf-8"))
+    return "\n".join(parts)
+
+
 def test_l1_schema_and_api_wired() -> None:
     schema = (REPO_ROOT / "app" / "schemas" / "quality_issue.py").read_text(
         encoding="utf-8"
@@ -35,7 +52,7 @@ def test_l1_schema_and_api_wired() -> None:
     service = (
         REPO_ROOT / "app" / "services" / "quality_issue_materialization_service.py"
     ).read_text(encoding="utf-8")
-    main = (REPO_ROOT / "app" / "main.py").read_text(encoding="utf-8")
+    main = _read_app_source()
     draft_ts = (
         REPO_ROOT / "orgflow-ui" / "lib" / "field-reports" / "checklist-defect-draft.ts"
     ).read_text(encoding="utf-8")

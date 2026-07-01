@@ -33,7 +33,7 @@ def qc_photo_setup(
         photo_repository=photo_repo,
         photo_service=QualityIssuePhotoService(photos_root=tmp_path),
     )
-    monkeypatch.setattr("app.main.quality_issue_service", service)
+    monkeypatch.setattr("app.dependencies.quality_issue_service", service)
     return TestClient(app), service, photo_repo
 
 

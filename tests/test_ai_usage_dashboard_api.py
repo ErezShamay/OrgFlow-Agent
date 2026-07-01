@@ -61,7 +61,7 @@ class FakeAIUsageDashboardService(AIUsageDashboardService):
 
 def test_platform_admin_can_read_ai_usage_dashboard(monkeypatch) -> None:
     monkeypatch.setattr(
-        "app.main.ai_usage_dashboard_service",
+        "app.dependencies.ai_usage_dashboard_service",
         FakeAIUsageDashboardService(),
     )
 
@@ -79,7 +79,7 @@ def test_platform_admin_can_read_ai_usage_dashboard(monkeypatch) -> None:
 
 def test_org_admin_cannot_read_ai_usage_dashboard(monkeypatch) -> None:
     monkeypatch.setattr(
-        "app.main.ai_usage_dashboard_service",
+        "app.dependencies.ai_usage_dashboard_service",
         FakeAIUsageDashboardService(),
     )
 

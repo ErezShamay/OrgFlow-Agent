@@ -28,6 +28,7 @@ from app.services.subscription_plans_service import SubscriptionPlansService
 from app.services.support_tooling_service import SupportToolingService
 from app.services.usage_quotas_service import UsageQuotasService
 from app.services.usage_tracking_service import UsageTrackingService
+import app.dependencies as deps
 
 
 def build_dashboard():
@@ -420,7 +421,7 @@ def _auth_headers():
 def test_product_readiness_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "product_readiness_dashboard_service",
         dashboard,
     )

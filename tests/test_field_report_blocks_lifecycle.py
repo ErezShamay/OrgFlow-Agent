@@ -57,7 +57,7 @@ def _client_with_photos(monkeypatch, tmp_path: Path):
         photo_service=FieldVisitReportPhotoService(photos_root=tmp_path),
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
     return _setup_client(monkeypatch)

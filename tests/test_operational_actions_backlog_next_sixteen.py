@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.main import app
+import app.dependencies as deps
 
 
 class FakeProjectRepository:
@@ -178,8 +179,8 @@ def _auth_headers():
 
 
 def _client(monkeypatch) -> TestClient:
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "operational_action_service", FakeOperationalActionService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "operational_action_service", FakeOperationalActionService())
     return TestClient(app)
 
 

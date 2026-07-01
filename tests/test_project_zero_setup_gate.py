@@ -15,6 +15,7 @@ from app.services.project_spatial_bootstrap_service import (
     build_apartment_bootstrap_rows,
 )
 from app.services.project_template_service import ProjectTemplateService
+import app.dependencies as deps
 
 
 class InMemoryProjectApartmentRepository:
@@ -298,14 +299,14 @@ def test_project_offline_prep_api(monkeypatch: pytest.MonkeyPatch) -> None:
         def get_organization_scoped_project(self, pid, *_args, **_kwargs):
             return project_repository.projects.get(pid)
 
-    monkeypatch.setattr(main_module, "tenant_scope_service", FakeTenantScope())
+    monkeypatch.setattr(deps, "tenant_scope_service", FakeTenantScope())
     monkeypatch.setattr(
-        main_module,
+        deps,
         "field_visit_report_service",
         field_visit_report_service,
     )
     monkeypatch.setattr(
-        main_module,
+        deps,
         "field_report_module_service",
         module_service,
     )

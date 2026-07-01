@@ -211,11 +211,11 @@ def _setup_client(
     )
 
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         module_service,
     )
     monkeypatch.setattr(
-        "app.main.field_report_finalize_service",
+        "app.dependencies.field_report_finalize_service",
         finalize_service,
     )
     from app.services.field_visit_report_service import (
@@ -227,11 +227,11 @@ def _setup_client(
         organization_profile_service=organization_profile_service,
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
     monkeypatch.setattr(
-        "app.main.project_repository",
+        "app.dependencies.project_repository",
         FakeProjectRepository(),
     )
 

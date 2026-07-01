@@ -91,7 +91,7 @@ def qc_setup(monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, QualityIssueS
         }),
     )
     monkeypatch.setattr(
-        "app.main.quality_issue_service",
+        "app.dependencies.quality_issue_service",
         service,
     )
     return TestClient(app), service

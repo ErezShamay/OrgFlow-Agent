@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 import app.main as main_module
 from app.auth.jwt_service import JWTService
 from app.main import app
+import app.dependencies as deps
 
 
 class FakeProjectRepository:
@@ -335,14 +336,14 @@ def _auth_headers():
 
 def _patch_report_dependencies(monkeypatch, report_processing_service):
     project_repository = FakeProjectRepository()
-    monkeypatch.setattr(main_module, "project_repository", project_repository)
+    monkeypatch.setattr(deps, "project_repository", project_repository)
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "project_repository",
         project_repository,
     )
     monkeypatch.setattr(
-        main_module,
+        deps,
         "report_processing_service",
         report_processing_service,
     )
@@ -350,14 +351,14 @@ def _patch_report_dependencies(monkeypatch, report_processing_service):
 
 def test_list_project_uploaded_reports(monkeypatch):
     project_repository = FakeProjectRepository()
-    monkeypatch.setattr(main_module, "project_repository", project_repository)
+    monkeypatch.setattr(deps, "project_repository", project_repository)
     monkeypatch.setattr(
-        main_module.tenant_scope_service,
+        deps.tenant_scope_service,
         "project_repository",
         project_repository,
     )
     monkeypatch.setattr(
-        main_module.report_processing_service,
+        deps.report_processing_service,
         "report_repository",
         FakeWeeklyReportRepository(),
     )
@@ -545,8 +546,8 @@ def test_reports_bulk_upload_progress_missing_job(monkeypatch):
 
 
 def test_report_timeline(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.get("/projects/p1/reports/timeline", headers=_auth_headers())
@@ -558,8 +559,8 @@ def test_report_timeline(monkeypatch):
 
 
 def test_report_timeline_project_not_found(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.get("/projects/missing/reports/timeline", headers=_auth_headers())
@@ -568,8 +569,8 @@ def test_report_timeline_project_not_found(monkeypatch):
 
 
 def test_report_ai_insights(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.get("/projects/p1/reports/ai-insights", headers=_auth_headers())
@@ -581,8 +582,8 @@ def test_report_ai_insights(monkeypatch):
 
 
 def test_report_ai_insights_project_not_found(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.get("/projects/missing/reports/ai-insights", headers=_auth_headers())
@@ -591,8 +592,8 @@ def test_report_ai_insights_project_not_found(monkeypatch):
 
 
 def test_report_attachments_management(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     create_response = client.post(
@@ -613,8 +614,8 @@ def test_report_attachments_management(monkeypatch):
 
 
 def test_report_attachment_delete_missing_returns_404(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.delete("/projects/p1/reports/r1/attachments/missing", headers=_auth_headers())
@@ -623,8 +624,8 @@ def test_report_attachment_delete_missing_returns_404(monkeypatch):
 
 
 def test_report_attachment_validation_returns_422(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.post(
@@ -637,8 +638,8 @@ def test_report_attachment_validation_returns_422(monkeypatch):
 
 
 def test_report_tagging_flow(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     update_response = client.patch(
@@ -663,8 +664,8 @@ def test_report_tagging_flow(monkeypatch):
 
 
 def test_report_indexing_endpoints(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     list_response = client.get("/projects/p1/reports/index", headers=_auth_headers())
@@ -677,11 +678,11 @@ def test_report_indexing_endpoints(monkeypatch):
 
 
 def test_report_search_engine_endpoint(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
     service = FakeReportProcessingService()
     service._tags["r1"] = ["delay", "safety"]
     service._index["r1"]["tags"] = ["delay", "safety"]
-    monkeypatch.setattr(main_module, "report_processing_service", service)
+    monkeypatch.setattr(deps, "report_processing_service", service)
     client = TestClient(app)
 
     response = client.get(
@@ -697,8 +698,8 @@ def test_report_search_engine_endpoint(monkeypatch):
 
 
 def test_report_index_entry_missing_returns_404(monkeypatch):
-    monkeypatch.setattr(main_module, "project_repository", FakeProjectRepository())
-    monkeypatch.setattr(main_module, "report_processing_service", FakeReportProcessingService())
+    monkeypatch.setattr(deps, "project_repository", FakeProjectRepository())
+    monkeypatch.setattr(deps, "report_processing_service", FakeReportProcessingService())
     client = TestClient(app)
 
     response = client.get("/projects/p1/reports/missing/index", headers=_auth_headers())

@@ -25,6 +25,7 @@ from app.services.service_degradation_service import ServiceDegradationService
 from app.services.service_health_scoring_service import (
     ServiceHealthScoringService,
 )
+import app.dependencies as deps
 
 
 class FakeCircuitBreakerRepository:
@@ -271,14 +272,14 @@ def test_circuit_breaker_api_endpoints(monkeypatch):
         threshold_service=thresholds,
     )
 
-    monkeypatch.setattr(main_module, "circuit_breaker_service", service)
+    monkeypatch.setattr(deps, "circuit_breaker_service", service)
     monkeypatch.setattr(
-        main_module,
+        deps,
         "circuit_breaker_threshold_service",
         thresholds,
     )
     monkeypatch.setattr(
-        main_module,
+        deps,
         "circuit_breaker_reopen_service",
         CircuitBreakerReopenService(
             circuit_breaker_service=service,
@@ -286,7 +287,7 @@ def test_circuit_breaker_api_endpoints(monkeypatch):
         ),
     )
     monkeypatch.setattr(
-        main_module,
+        deps,
         "circuit_breaker_dashboard_service",
         dashboard,
     )

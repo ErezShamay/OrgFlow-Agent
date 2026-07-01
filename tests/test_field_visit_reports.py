@@ -433,23 +433,23 @@ def _setup_client(
     })
 
     monkeypatch.setattr(
-        "app.main.field_report_module_service",
+        "app.dependencies.field_report_module_service",
         module_service,
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
     monkeypatch.setattr(
-        "app.main.project_repository",
+        "app.dependencies.project_repository",
         fake_project_repository,
     )
     monkeypatch.setattr(
-        "app.main.tenant_scope_service.project_repository",
+        "app.dependencies.tenant_scope_service.project_repository",
         fake_project_repository,
     )
     monkeypatch.setattr(
-        "app.main.tenant_scope_service.profile_repository",
+        "app.dependencies.tenant_scope_service.profile_repository",
         fake_profile_repository,
     )
 
@@ -773,7 +773,7 @@ def test_upload_and_delete_line_photo(monkeypatch, tmp_path):
         ),
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
 
@@ -847,7 +847,7 @@ def test_add_multiple_line_photos(monkeypatch, tmp_path):
         ),
     )
     monkeypatch.setattr(
-        "app.main.field_visit_report_service",
+        "app.dependencies.field_visit_report_service",
         visit_service,
     )
 

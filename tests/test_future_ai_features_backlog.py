@@ -22,6 +22,7 @@ from app.services.autonomous_recovery_agents_service import AutonomousRecoveryAg
 from app.services.future_ai_features_dashboard_service import (
     FutureAiFeaturesDashboardService,
 )
+import app.dependencies as deps
 
 
 def build_dashboard():
@@ -245,7 +246,7 @@ def _auth_headers():
 def test_future_ai_features_api_endpoints(monkeypatch):
     dashboard = build_dashboard()
     monkeypatch.setattr(
-        main_module,
+        deps,
         "future_ai_features_dashboard_service",
         dashboard,
     )

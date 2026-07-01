@@ -87,8 +87,8 @@ def stage1_gate_setup(
         report_repository=reports,
     )
 
-    monkeypatch.setattr("app.main.quality_issue_service", qc_service)
-    monkeypatch.setattr("app.main.field_visit_report_service", visit_service)
+    monkeypatch.setattr("app.dependencies.quality_issue_service", qc_service)
+    monkeypatch.setattr("app.dependencies.field_visit_report_service", visit_service)
 
     return TestClient(app), visit_service, issues, reports
 

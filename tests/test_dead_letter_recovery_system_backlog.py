@@ -21,6 +21,7 @@ from app.services.recovery_orchestration_service import (
 from app.services.recovery_replay_tracking_service import (
     RecoveryReplayTrackingService,
 )
+import app.dependencies as deps
 
 
 class FakeDeadLetterRepository:
@@ -349,12 +350,12 @@ def test_dead_letter_recovery_api_endpoints(monkeypatch):
     )
 
     monkeypatch.setattr(
-        main_module,
+        deps,
         "dead_letter_recovery_service",
         service,
     )
     monkeypatch.setattr(
-        main_module,
+        deps,
         "recovery_dashboard_service",
         dashboard_service,
     )

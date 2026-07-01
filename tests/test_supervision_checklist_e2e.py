@@ -220,9 +220,9 @@ def supervision_checklist_setup(
         project_repository=FakeProjectRepository(),
     )
 
-    monkeypatch.setattr("app.main.field_visit_report_service", visit_service)
-    monkeypatch.setattr("app.main.resident_portal_service", portal_service)
-    monkeypatch.setattr("app.main.project_repository", FakeProjectRepository())
+    monkeypatch.setattr("app.dependencies.field_visit_report_service", visit_service)
+    monkeypatch.setattr("app.dependencies.resident_portal_service", portal_service)
+    monkeypatch.setattr("app.dependencies.project_repository", FakeProjectRepository())
 
     client = _setup_client(
         monkeypatch,

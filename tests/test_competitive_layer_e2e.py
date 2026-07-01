@@ -48,6 +48,7 @@ from tests.test_field_visit_reports import (
     FakeVisitReportRepository,
     _headers,
 )
+import app.dependencies as deps
 
 ORG_ID = "org-cl6"
 PROJECT_ID = "proj-cl6"
@@ -300,28 +301,28 @@ def competitive_layer_setup(
         organization_repository=FakeOrganizationRepository(),
     )
 
-    monkeypatch.setattr("app.main.field_visit_report_service", visit_service)
-    monkeypatch.setattr("app.main.field_report_finalize_service", finalize_service)
-    monkeypatch.setattr("app.main.quality_issue_service", quality_issue_service)
-    monkeypatch.setattr("app.main.resident_portal_service", portal_service)
-    monkeypatch.setattr("app.main.project_repository", project_repository)
+    monkeypatch.setattr("app.dependencies.field_visit_report_service", visit_service)
+    monkeypatch.setattr("app.dependencies.field_report_finalize_service", finalize_service)
+    monkeypatch.setattr("app.dependencies.quality_issue_service", quality_issue_service)
+    monkeypatch.setattr("app.dependencies.resident_portal_service", portal_service)
+    monkeypatch.setattr("app.dependencies.project_repository", project_repository)
 
     client = _setup_finalize_client(
         monkeypatch,
         finalize_service=finalize_service,
     )
 
-    monkeypatch.setattr("app.main.field_report_module_service", module_service)
-    monkeypatch.setattr("app.main.field_visit_report_service", visit_service)
-    monkeypatch.setattr("app.main.quality_issue_service", quality_issue_service)
-    monkeypatch.setattr("app.main.resident_portal_service", portal_service)
-    monkeypatch.setattr("app.main.project_repository", project_repository)
+    monkeypatch.setattr("app.dependencies.field_report_module_service", module_service)
+    monkeypatch.setattr("app.dependencies.field_visit_report_service", visit_service)
+    monkeypatch.setattr("app.dependencies.quality_issue_service", quality_issue_service)
+    monkeypatch.setattr("app.dependencies.resident_portal_service", portal_service)
+    monkeypatch.setattr("app.dependencies.project_repository", project_repository)
 
     class FakeTenantScope:
         def get_organization_scoped_project(self, pid, *_args, **_kwargs):
             return project_repository.projects.get(pid)
 
-    monkeypatch.setattr(main_module, "tenant_scope_service", FakeTenantScope())
+    monkeypatch.setattr(deps, "tenant_scope_service", FakeTenantScope())
     from app.main import app
 
     app.state.field_report_module_service = module_service
