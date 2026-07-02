@@ -15,6 +15,7 @@ export function detectBrowserSupport(): BrowserFeatureSupport {
       hasWindow && "ResizeObserver" in window,
     webp:
       hasWindow &&
+      typeof document !== "undefined" &&
       document
         .createElement("canvas")
         .toDataURL("image/webp")

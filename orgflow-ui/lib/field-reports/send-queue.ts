@@ -11,6 +11,7 @@ import { resolveReportQueueIdentity } from "@/lib/field-reports/send-queue-resol
 
 import {
   ELAYOAI_FIELD_REPORTS_SEND_QUEUE_MIGRATED_PREFIX,
+  ELAYOAI_FIELD_REPORTS_SEND_QUEUE_PREFIX,
   LEGACY_ORGFLOW_FIELD_REPORTS_SEND_QUEUE_MIGRATED_PREFIX,
   LEGACY_ORGFLOW_FIELD_REPORTS_SEND_QUEUE_PREFIX,
 } from "@/lib/elayoai/keys";
@@ -46,6 +47,10 @@ type LegacyPendingSendRequest = {
   syncPhase?: PendingSendSyncPhase;
   lastError?: string;
 };
+
+function elayoStorageKey(organizationId: string) {
+  return `${ELAYOAI_FIELD_REPORTS_SEND_QUEUE_PREFIX}:${organizationId}`;
+}
 
 function legacyStorageKey(organizationId: string) {
   return `${LEGACY_STORAGE_PREFIX}:${organizationId}`;
@@ -136,6 +141,7 @@ async function migrateLegacySendQueueFromLocalStorage(
   }
 
   localStorage.removeItem(legacyStorageKey(organizationId));
+  localStorage.removeItem(elayoStorageKey(organizationId));
   localStorage.setItem(migrationMarkerKey(organizationId), "1");
 }
 

@@ -16,33 +16,15 @@ import {
   loadPendingSendRequests,
 } from "@/lib/field-reports/send-queue";
 import { saveLocalReport } from "@/lib/field-reports/repositories/reports-repository";
+import { stubBrowserStorage } from "../../helpers/browser-storage-mock";
 
 const ORG_ID = "org-logout-block";
 const USER_ID = "user-logout-1";
 const CLIENT_UUID = "a1111111-1111-4111-8111-111111111111";
 
-function createLocalStorageMock() {
-  const store = new Map<string, string>();
-
-  return {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      store.set(key, value);
-    },
-    removeItem: (key: string) => {
-      store.delete(key);
-    },
-    clear: () => {
-      store.clear();
-    },
-  };
-}
-
 describe("field-report-logout-block (FR-018)", () => {
   beforeEach(async () => {
-    const localStorageMock = createLocalStorageMock();
-    vi.stubGlobal("localStorage", localStorageMock);
-    vi.stubGlobal("window", { localStorage: localStorageMock });
+    stubBrowserStorage();
     await deleteFieldReportDatabase();
     await saveLocalReport({
       client_report_uuid: CLIENT_UUID,

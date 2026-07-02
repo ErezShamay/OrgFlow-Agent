@@ -10,24 +10,8 @@ import {
   enqueuePendingSendRequest,
   loadPendingSendRequests,
 } from "@/lib/field-reports/send-queue";
+import { stubBrowserStorage } from "../helpers/browser-storage-mock";
 import { matchFinalizeApi } from "../helpers/mock-finalize-api";
-
-function createLocalStorageMock() {
-  const store = new Map<string, string>();
-
-  return {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      store.set(key, value);
-    },
-    removeItem: (key: string) => {
-      store.delete(key);
-    },
-    clear: () => {
-      store.clear();
-    },
-  };
-}
 
 vi.mock("@/lib/api/client", () => ({
   apiFetch: vi.fn(),
@@ -57,8 +41,7 @@ vi.mock("@/lib/field-reports/pdf/visit-report-pdf-store", () => ({
 
 describe("process-send-queue", () => {
   beforeEach(async () => {
-    vi.stubGlobal("localStorage", createLocalStorageMock());
-    vi.stubGlobal("window", { localStorage: createLocalStorageMock() });
+    stubBrowserStorage();
     await deleteFieldReportDatabase();
   });
 

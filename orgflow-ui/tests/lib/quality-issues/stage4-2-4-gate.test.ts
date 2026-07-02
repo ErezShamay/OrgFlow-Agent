@@ -27,16 +27,18 @@ describe("stage 4.2.4 gate (contractor no field reports / catalog)", () => {
 
   it("wires contractor route guard and limited project overview", () => {
     const layout = readSource("app/(dashboard)/layout.tsx");
-    const sidebar = readSource("app/components/sidebar.tsx");
+    const sidebar = readSource("components/layout/SidebarNavContent.tsx");
     const projectPage = readSource("app/(dashboard)/projects/[id]/page.tsx");
     const guard = readSource("components/auth/ContractorRouteGuard.tsx");
+    const dashboard = readSource("components/projects/ProjectSupervisionDashboard.tsx");
+    const settingsPage = readSource("app/(dashboard)/projects/[id]/settings/page.tsx");
 
     expect(layout).toContain("ContractorRouteGuard");
     expect(guard).toContain("contractorDeniedRouteRedirect");
     expect(sidebar).toContain("getQCPrimaryNavLinks");
     expect(sidebar).toContain("isContractorRole");
     expect(projectPage).toContain("contractorLimitedView");
-    expect(projectPage).toContain("ProjectFieldReportLink");
-    expect(projectPage).toContain("ProjectDocumentsArchive");
+    expect(dashboard).toContain("ProjectFieldReportLink");
+    expect(settingsPage).toContain("ProjectDocumentsArchive");
   });
 });

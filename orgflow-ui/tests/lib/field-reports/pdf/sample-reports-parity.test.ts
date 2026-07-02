@@ -2,11 +2,12 @@
  * Parity מול sample_reports - משימה 3.7.
  * לא משווה bytes; מאמת מחרוזות מפתח מחולצות מ-PDF לקוח מול generator.
  */
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+import { execPythonArgs } from "../../../helpers/python-command";
 
 import { createPdfPrinter } from "@/lib/field-reports/pdf/font-loader";
 import { getColumnPresetHeaders } from "@/lib/field-reports/schema/column-presets";
@@ -123,8 +124,7 @@ describe("sample_reports PDF parity (task 3.7)", () => {
     }
 
     const repoRoot = resolve(process.cwd(), "..");
-    const extracted = execFileSync(
-      "python3",
+    const extracted = execPythonArgs(
       [
         "-c",
         [

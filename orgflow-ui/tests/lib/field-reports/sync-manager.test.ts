@@ -21,6 +21,7 @@ import {
 } from "@/lib/field-reports/send-queue";
 import { buildVisitReportSyncBody } from "@/lib/field-reports/sync/build-sync-body";
 import { matchFinalizeApi } from "../../helpers/mock-finalize-api";
+import { stubBrowserStorage } from "../../helpers/browser-storage-mock";
 import {
   listFieldReportSyncErrorLog,
   resetFieldReportSyncErrorMonitorForTests,
@@ -90,8 +91,7 @@ async function seedClosedLocalReport() {
 
 describe("SyncManager (FR-025)", () => {
   beforeEach(async () => {
-    vi.stubGlobal("localStorage", createLocalStorageMock());
-    vi.stubGlobal("window", { localStorage: createLocalStorageMock() });
+    stubBrowserStorage();
     resetFieldReportSyncErrorMonitorForTests();
     await deleteFieldReportDatabase();
   });

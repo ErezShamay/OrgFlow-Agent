@@ -10,6 +10,10 @@ const JAVA_HOME_CANDIDATES = [
   "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
   "/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
   "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
+  "C:\\Program Files\\Android\\Android Studio\\jbr",
+  "C:\\Program Files\\Java\\jdk-21",
+  "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.7.6-hotspot",
+  "C:\\Program Files\\Microsoft\\jdk-21.0.7.6-hotspot",
 ];
 
 function javaExecutable(javaHome) {
@@ -80,7 +84,7 @@ export function resolveAndroidBuildEnv(baseEnv = process.env) {
     notes.push(`JAVA_HOME=${javaHome}`);
   } else {
     notes.push(
-      "JAVA_HOME: not found - brew install openjdk@21 (macOS) or set JAVA_HOME"
+      "JAVA_HOME: not found - install JDK 21 (Android Studio JBR) or set JAVA_HOME"
     );
   }
 

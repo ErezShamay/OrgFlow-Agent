@@ -19,7 +19,7 @@ describe("stage 5.1 gate (supervision primary navigation)", () => {
   });
 
   it("sidebar uses supervision primary nav for all personas", () => {
-    const sidebar = readSource("app/components/sidebar.tsx");
+    const sidebar = readSource("components/layout/SidebarNavContent.tsx");
 
     expect(sidebar).toContain("getQCPrimaryNavLinks");
     expect(sidebar).toContain("isQCPrimaryNavActive");

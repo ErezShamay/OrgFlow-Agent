@@ -2,11 +2,12 @@
  * Gate — שלב A (field-supervision-checklist-spec §16.A).
  * סכימה + קטלוג v1.4 עם scope / allowed_stages + types + builder.
  */
-import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
+
+import { execPythonScript } from "../../helpers/python-command";
 
 const UI_ROOT = path.resolve(__dirname, "../../..");
 const REPO_ROOT = path.resolve(UI_ROOT, "..");
@@ -17,8 +18,8 @@ function readSource(root: string, relativePath: string): string {
 
 describe("supervision checklist stage A gate (§16.A)", () => {
   it("catalog v1.4 — every issue has scope, standard_ref, allowed_stages", () => {
-    const output = execSync(
-      `python3 -c "
+    const output = execPythonScript(
+      `
 from app.config.field_report_catalog_supervision_seed import (
     SUPERVISION_CATALOG_ISSUES,
     SUPERVISION_CATALOG_VERSION,
@@ -30,7 +31,7 @@ for issue in SUPERVISION_CATALOG_ISSUES:
     assert issue.get('scope') in ('APARTMENT', 'PUBLIC_AREA', 'BOTH'), issue['issue_id']
     assert issue.get('allowed_stages'), issue['issue_id']
 print('ok', len(SUPERVISION_CATALOG_ISSUES))
-"`,
+`,
       { cwd: REPO_ROOT, encoding: "utf8" }
     );
 

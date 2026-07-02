@@ -2,10 +2,11 @@
  * Gate — שלב B (field-supervision-checklist-spec §16.B).
  * סיווג תוכן קטלוג: scope / public_area_id + buildSupervisionChecklist לא ריק.
  */
-import { execSync } from "node:child_process";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
+
+import { execPythonScript } from "../../helpers/python-command";
 
 import { buildSupervisionChecklist } from "@/lib/field-reports/supervision-checklist-builder";
 import type {
@@ -20,8 +21,8 @@ const REPO_ROOT = path.resolve(UI_ROOT, "..");
 const PUBLIC_AREA_IDS = PUBLIC_AREA_DEFINITIONS.map((area) => area.id);
 
 function loadSupervisionCatalogFromSeed(): SupervisionCatalog {
-  const output = execSync(
-    `python3 -c "
+  const output = execPythonScript(
+    `
 import json
 from app.config.field_report_catalog_supervision_seed import (
     SUPERVISION_CATALOG_ISSUES,
@@ -42,7 +43,7 @@ for issue in SUPERVISION_CATALOG_ISSUES:
         'allowed_stages': list(issue['allowed_stages']),
     })
 print(json.dumps({'catalog_version': SUPERVISION_CATALOG_VERSION, 'issues': issues}))
-"`,
+`,
     { cwd: REPO_ROOT, encoding: "utf8" }
   );
 

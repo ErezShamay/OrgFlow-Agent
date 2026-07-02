@@ -19,26 +19,11 @@ import {
 import { LEGACY_ORGFLOW_FIELD_REPORTS_SEND_QUEUE_PREFIX } from "@/lib/elayoai/keys";
 import { saveLocalReport } from "@/lib/field-reports/repositories/reports-repository";
 
+import { stubBrowserStorage } from "../../helpers/browser-storage-mock";
+
 const ORG_ID = "org-send-queue-sync";
 const CLIENT_UUID = "a1111111-1111-4111-8111-111111111111";
 const SERVER_ID = "server-report-42";
-
-function createLocalStorageMock() {
-  const store = new Map<string, string>();
-
-  return {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      store.set(key, value);
-    },
-    removeItem: (key: string) => {
-      store.delete(key);
-    },
-    clear: () => {
-      store.clear();
-    },
-  };
-}
 
 function seedLegacySendQueue(
   organizationId: string,
@@ -65,9 +50,7 @@ function seedLegacySendQueue(
 
 describe("send-queue IndexedDB bridge (FR-024)", () => {
   beforeEach(async () => {
-    const localStorageMock = createLocalStorageMock();
-    vi.stubGlobal("localStorage", localStorageMock);
-    vi.stubGlobal("window", { localStorage: localStorageMock });
+    stubBrowserStorage();
     await deleteFieldReportDatabase();
   });
 

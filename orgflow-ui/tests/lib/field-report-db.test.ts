@@ -36,31 +36,14 @@ const REPORT_UUID = "a1111111-1111-4111-8111-111111111111";
 const LINE_ONE = "b2222222-2222-4222-8222-222222222222";
 const LINE_TWO = "c3333333-3333-4333-8333-333333333333";
 
-function createLocalStorageMock() {
-  const store = new Map<string, string>();
-
-  return {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      store.set(key, value);
-    },
-    removeItem: (key: string) => {
-      store.delete(key);
-    },
-    clear: () => {
-      store.clear();
-    },
-  };
-}
-
-/** סוגר חיבור - הקריאה הבאה ל-repository פותחת מחדש (כמו רענון אפליקציה). */
+import { stubBrowserStorage } from "../helpers/browser-storage-mock";
 async function simulateAppRestart() {
   await closeFieldReportDatabase();
 }
 
 describe("field-report IndexedDB round-trip (FR-008)", () => {
   beforeEach(async () => {
-    vi.stubGlobal("localStorage", createLocalStorageMock());
+    stubBrowserStorage();
     resetLinePhotoMigrationMarkerForTests();
     await deleteFieldReportDatabase();
   });

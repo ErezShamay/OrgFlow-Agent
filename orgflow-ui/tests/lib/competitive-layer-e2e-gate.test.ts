@@ -25,14 +25,14 @@ function readBackendSource(relativePath: string): string {
 
 describe("competitive layer e2e gate L6", () => {
   it("Z1–Z3 — scheme required + spatial bootstrap on project create", () => {
-    const projectsPage = readUiSource("app/(dashboard)/projects/page.tsx");
+    const projectCreateForm = readUiSource("components/projects/ProjectCreateForm.tsx");
     const projectService = readBackendSource("app/services/project_service.py");
     const bootstrap = readBackendSource(
       "app/services/project_spatial_bootstrap_service.py"
     );
 
-    expect(projectsPage).toContain("scheme");
-    expect(projectsPage).toContain("ProjectSchemeSelect");
+    expect(projectCreateForm).toContain("scheme");
+    expect(projectCreateForm).toContain("ProjectSchemeSelect");
     expect(existsSync(path.join(UI_ROOT, "components/projects/ProjectSchemeSelect.tsx"))).toBe(
       true
     );

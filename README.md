@@ -18,14 +18,36 @@ One Stop Shop לניהול פרויקט בנייה — FastAPI + Next.js.
 
 ## Run locally
 
+Requires **Python 3.12** (matches CI). On Windows, install via `winget install Python.Python.3.12`.
+
+### macOS / Linux
+
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -c constraints.txt
 uvicorn app.main:app --reload
 ```
 
+### Windows (PowerShell)
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -c constraints.txt
+uvicorn app.main:app --reload
+```
+
+If `py` is unavailable, use the full path:
+`$env:LOCALAPPDATA\Programs\Python\Python312\python.exe`
+
 ## Frontend development
+
+```bash
+cd orgflow-ui
+npm ci
+npm run dev
+```
 
 In `orgflow-ui/.env.local` you can control the auth behavior for local development:
 

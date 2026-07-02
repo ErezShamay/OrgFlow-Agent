@@ -33,6 +33,7 @@ import {
 import { buildVisitReportSyncBody } from "@/lib/field-reports/sync/build-sync-body";
 import type { SyncManagerProgressEvent } from "@/lib/field-reports/sync/sync-manager";
 import { matchFinalizeApi } from "../../helpers/mock-finalize-api";
+import { stubBrowserStorage } from "../../helpers/browser-storage-mock";
 
 const ORG_ID = "org-phase-c-gate";
 const USER_ID = "user-phase-c-gate";
@@ -204,8 +205,7 @@ async function mockSuccessfulSyncPipeline(clientReportUuid: string) {
  */
 describe("phase C gate acceptance (FR-028)", () => {
   beforeEach(async () => {
-    vi.stubGlobal("localStorage", createLocalStorageMock());
-    vi.stubGlobal("window", { localStorage: createLocalStorageMock() });
+    stubBrowserStorage();
     resetLinePhotoMigrationMarkerForTests();
     await deleteFieldReportDatabase();
   });

@@ -41,7 +41,7 @@ describe("stage 5.4 gate (reviews hidden in supervision v1)", () => {
   });
 
   it("hides project reviews from nav in supervision v1", () => {
-    const sidebar = readSource("app/components/sidebar.tsx");
+    const sidebar = readSource("components/layout/SidebarNavContent.tsx");
     expect(sidebar).toContain("getQCProjectPrimaryNavLinks");
     expect(sidebar).not.toContain('label: "ביקורות AI"');
   });

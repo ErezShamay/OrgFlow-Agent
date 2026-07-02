@@ -73,7 +73,7 @@ describe("stage 5.5 gate (automation admin-only)", () => {
   });
 
   it("wires admin-filtered system nav in sidebar", () => {
-    const sidebar = readSource("app/components/sidebar.tsx");
+    const sidebar = readSource("components/layout/SidebarNavContent.tsx");
     const systemNav = readSource("components/layout/SystemNavDropdown.tsx");
 
     expect(sidebar).toContain("getSystemNavLinks(isAdminUser");
