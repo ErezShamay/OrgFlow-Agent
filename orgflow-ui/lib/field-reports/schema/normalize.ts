@@ -31,6 +31,7 @@ import type {
   SupervisionChecklistBlock,
   SupervisionChecklistItem,
   SupervisionReportMeta,
+  SupervisionVisitedApartment,
   SupplierRow,
   VisitReportDocument,
   VisitScope,
@@ -567,9 +568,41 @@ export function normalizeSupervisionMeta(
     apartment_number: nullableString(source.apartment_number),
     owner_name: nullableString(source.owner_name),
     ad_hoc_apartment: source.ad_hoc_apartment === true,
+    visited_apartments: normalizeVisitedApartments(source.visited_apartments),
     public_area_id: normalizePublicAreaId(source.public_area_id),
     public_area_label_he: nullableString(source.public_area_label_he),
   };
+}
+
+function normalizeVisitedApartments(
+  raw: unknown
+): SupervisionVisitedApartment[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const apartments = raw
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+
+      const record = entry as Record<string, unknown>;
+      const apartmentNumber = nullableString(record.apartment_number);
+      if (!apartmentNumber) {
+        return null;
+      }
+
+      return {
+        apartment_id: nullableString(record.apartment_id),
+        apartment_number: apartmentNumber,
+        owner_name: nullableString(record.owner_name),
+        ad_hoc_apartment: record.ad_hoc_apartment === true,
+      };
+    })
+    .filter((entry): entry is SupervisionVisitedApartment => entry !== null);
+
+  return apartments.length ? apartments : undefined;
 }
 
 function normalizeFreeTextBlock(

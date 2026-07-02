@@ -16,10 +16,22 @@ import type {
   UpsertLineInput,
 } from "@/lib/field-reports/repositories/reports-repository";
 import { isSupervisionChecklistReport } from "@/lib/field-reports/supervision-checklist-builder";
+import { formatVisitedApartmentsSummaryHe } from "@/lib/field-reports/visited-apartments-summary";
 
 const CHECKLIST_CANCELLED_NOTE = "[מבוטל — עודכן בצ'קליסט]";
 
 export function supervisionVisitLocation(meta: SupervisionReportMeta): string {
+  if (meta.visit_scope === "MULTI_APARTMENT") {
+    const summary = formatVisitedApartmentsSummaryHe(
+      meta.visited_apartments ?? []
+    );
+    return summary || "מספר דירות";
+  }
+
+  if (meta.visit_scope === "WHOLE_BUILDING") {
+    return "כלל הבניין";
+  }
+
   if (meta.visit_scope === "APARTMENT") {
     const number = meta.apartment_number?.trim();
     return number ? `דירה ${number}` : "דירה";
@@ -29,12 +41,43 @@ export function supervisionVisitLocation(meta: SupervisionReportMeta): string {
 }
 
 export function supervisionVisitGroupKey(meta: SupervisionReportMeta): string {
+  if (meta.visit_scope === "WHOLE_BUILDING") {
+    return "building:whole";
+  }
+
+  if (meta.visit_scope === "MULTI_APARTMENT") {
+    const number = meta.apartment_number?.trim();
+    if (number) {
+      return `apartment:${number}`;
+    }
+    return "apartment:multi";
+  }
+
   if (meta.visit_scope === "APARTMENT") {
     const number = meta.apartment_number?.trim() || "unknown";
     return `apartment:${number}`;
   }
 
   return `area:${meta.public_area_id ?? "unknown"}`;
+}
+
+/** מטא לבלוק צ'קליסט — דירה בודדת בתוך דוח מרובה דירות. */
+export function supervisionMetaForChecklistBlock(
+  reportMeta: SupervisionReportMeta,
+  block: SupervisionChecklistBlock
+): SupervisionReportMeta {
+  if (block.apartment_number?.trim()) {
+    return {
+      ...reportMeta,
+      visit_scope: "APARTMENT",
+      apartment_id: block.apartment_id ?? null,
+      apartment_number: block.apartment_number,
+      owner_name: null,
+      ad_hoc_apartment: block.ad_hoc_apartment ?? false,
+    };
+  }
+
+  return reportMeta;
 }
 
 /** מיפוי DEFECT + תמונה → שורת ממצא (§9.1). */
@@ -112,23 +155,66 @@ export function applySupervisionDefectLinesToReport(
     return record;
   }
 
-  const block = normalizedHeader.blocks.find(
+  const checklistBlocks = normalizedHeader.blocks.filter(
     (entry): entry is SupervisionChecklistBlock =>
       entry.kind === "supervision_checklist"
   );
 
-  if (!block) {
+  if (!checklistBlocks.length) {
     return record;
   }
 
-  const meta = normalizeSupervisionMeta(record.header_fields);
-  if (!meta) {
+  const reportMeta = normalizeSupervisionMeta(record.header_fields);
+  if (!reportMeta) {
     return record;
   }
 
   let lines = [...record.lines];
+  const updatedBlocks = normalizedHeader.blocks.map((entry) => {
+    if (entry.kind !== "supervision_checklist") {
+      return entry;
+    }
+
+    const blockMeta = supervisionMetaForChecklistBlock(reportMeta, entry);
+    const { updatedBlock, lines: nextLines } = applyDefectLinesForChecklistBlock(
+      entry,
+      blockMeta,
+      lines
+    );
+    lines = nextLines;
+    return updatedBlock;
+  });
+
+  const patchedHeader = patchHeaderFieldsBlocks(
+    normalizedHeader,
+    updatedBlocks,
+    record.visit_type
+  );
+
+  const header_fields = serializeHeaderFieldsForApi(patchedHeader);
+  const supervisionMeta = record.header_fields?.supervision_meta;
+  if (supervisionMeta && typeof supervisionMeta === "object") {
+    header_fields.supervision_meta = supervisionMeta;
+  }
+
+  return {
+    ...record,
+    lines,
+    header_fields,
+  };
+}
+
+function applyDefectLinesForChecklistBlock(
+  block: SupervisionChecklistBlock,
+  meta: SupervisionReportMeta,
+  lines: LocalVisitReportLine[]
+): {
+  updatedBlock: SupervisionChecklistBlock;
+  lines: LocalVisitReportLine[];
+} {
+  let nextLines = [...lines];
   const updatedItems = block.items.map((item) => {
-    const existingLine = findLineByLinkedId(lines, item.linked_line_id);
+    const existingLine = findLineByLinkedId(nextLines, item.linked_line_id);
 
     if (item.status === "DEFECT") {
       const payload = buildDefectFindingLine({
@@ -139,7 +225,7 @@ export function applySupervisionDefectLinesToReport(
       });
 
       if (existingLine) {
-        lines = lines.map((line) =>
+        nextLines = nextLines.map((line) =>
           line.client_line_uuid === existingLine.client_line_uuid
             ? {
                 ...line,
@@ -157,7 +243,7 @@ export function applySupervisionDefectLinesToReport(
         id: clientLineUuid,
         client_line_uuid: clientLineUuid,
         server_line_id: null,
-        sort_order: lines.length + 1,
+        sort_order: nextLines.length + 1,
         location: payload.location ?? null,
         trade: payload.trade ?? null,
         status: payload.status ?? null,
@@ -175,7 +261,7 @@ export function applySupervisionDefectLinesToReport(
         photo_ids: payload.photo_ids,
       };
 
-      lines.push(newLine);
+      nextLines.push(newLine);
 
       return {
         ...item,
@@ -184,7 +270,7 @@ export function applySupervisionDefectLinesToReport(
     }
 
     if (existingLine) {
-      lines = lines.map((line) =>
+      nextLines = nextLines.map((line) =>
         line.client_line_uuid === existingLine.client_line_uuid
           ? cancelLinkedFindingLine(line)
           : line
@@ -199,28 +285,11 @@ export function applySupervisionDefectLinesToReport(
     return item;
   });
 
-  const updatedBlock: SupervisionChecklistBlock = {
-    ...block,
-    items: updatedItems,
-  };
-
-  const patchedHeader = patchHeaderFieldsBlocks(
-    normalizedHeader,
-    normalizedHeader.blocks.map((entry) =>
-      entry.id === updatedBlock.id ? updatedBlock : entry
-    ),
-    record.visit_type
-  );
-
-  const header_fields = serializeHeaderFieldsForApi(patchedHeader);
-  const supervisionMeta = record.header_fields?.supervision_meta;
-  if (supervisionMeta && typeof supervisionMeta === "object") {
-    header_fields.supervision_meta = supervisionMeta;
-  }
-
   return {
-    ...record,
-    lines,
-    header_fields,
+    updatedBlock: {
+      ...block,
+      items: updatedItems,
+    },
+    lines: nextLines,
   };
 }

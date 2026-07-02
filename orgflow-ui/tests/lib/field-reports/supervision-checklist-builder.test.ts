@@ -93,6 +93,20 @@ describe("filterSupervisionCatalogIssues", () => {
     ]);
   });
 
+  it("includes apartment and public area items for whole building scope", () => {
+    const filtered = filterSupervisionCatalogIssues({
+      catalog: sampleCatalog,
+      constructionStage: "FINISHING",
+      visitScope: "WHOLE_BUILDING",
+    });
+
+    expect(filtered.map((issue) => issue.issue_id).sort()).toEqual([
+      "SUP-FIN-004",
+      "SUP-FIN-007",
+      "SUP-MEP-006",
+    ]);
+  });
+
   it("filters public area by public_area_id", () => {
     const lobbyOnly = filterSupervisionCatalogIssues({
       catalog: sampleCatalog,

@@ -14,7 +14,12 @@ FieldReportDocumentType = Literal[
     "handover_protocol",
 ]
 
-VisitScopeWeekly = Literal["APARTMENT", "PUBLIC_AREA"]
+VisitScopeWeekly = Literal[
+    "APARTMENT",
+    "PUBLIC_AREA",
+    "WHOLE_BUILDING",
+    "MULTI_APARTMENT",
+]
 VisitScopeHandover = Literal["HANDOVER"]
 
 FIELD_REPORT_DOCUMENT_TYPES: tuple[FieldReportDocumentType, ...] = (
@@ -22,7 +27,12 @@ FIELD_REPORT_DOCUMENT_TYPES: tuple[FieldReportDocumentType, ...] = (
     "handover_protocol",
 )
 
-VISIT_SCOPES_WEEKLY: tuple[VisitScopeWeekly, ...] = ("APARTMENT", "PUBLIC_AREA")
+VISIT_SCOPES_WEEKLY: tuple[VisitScopeWeekly, ...] = (
+    "APARTMENT",
+    "PUBLIC_AREA",
+    "WHOLE_BUILDING",
+    "MULTI_APARTMENT",
+)
 VISIT_SCOPE_HANDOVER: VisitScopeHandover = "HANDOVER"
 
 # Wizard placeholder — enable when handover checklist content is approved (§20).

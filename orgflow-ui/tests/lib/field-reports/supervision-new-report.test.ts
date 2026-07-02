@@ -88,4 +88,40 @@ describe("createSupervisionLocalReport", () => {
       blocks?.some((block) => block.kind === "supervision_checklist")
     ).toBe(true);
   });
+
+  it("creates summary and per-apartment checklists for multi-apartment visit", async () => {
+    const report = await createSupervisionLocalReport({
+      organizationId: "org-1",
+      projectId: "proj-1",
+      projectName: "פרויקט בדיקה",
+      visitDate: "2026-06-14",
+      catalog: sampleCatalog,
+      constructionStage: "FINISHING",
+      visitScope: "MULTI_APARTMENT",
+      visitedApartments: [
+        { apartment_id: "apt-1", apartment_number: "3" },
+        { apartment_id: "apt-2", apartment_number: "5" },
+      ],
+    });
+
+    expect(report.header_fields?.supervision_meta).toMatchObject({
+      visit_scope: "MULTI_APARTMENT",
+      visited_apartments: [
+        { apartment_id: "apt-1", apartment_number: "3" },
+        { apartment_id: "apt-2", apartment_number: "5" },
+      ],
+    });
+
+    const blocks = report.header_fields?.blocks as Array<{
+      kind?: string;
+      title_he?: string;
+      body_he?: string;
+    }>;
+    expect(blocks?.find((block) => block.kind === "free_text")?.body_he).toContain(
+      "2 דירות"
+    );
+    expect(
+      blocks?.filter((block) => block.kind === "supervision_checklist")
+    ).toHaveLength(2);
+  });
 });

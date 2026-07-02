@@ -19,6 +19,11 @@ import {
   fieldReportDataSourceModeLabelHe,
 } from "@/lib/field-reports/data-source";
 import {
+  readModularTemplateDraft,
+  type ModularTemplateDraft,
+} from "@/lib/field-reports/modular-template-draft";
+import {
+  CLIENT_ONLY_PROJECT_ID,
   createLocalVisitReport,
   fetchProjectPrefill,
   parseNewReportFormFromApi,
@@ -33,11 +38,19 @@ import {
 } from "@/lib/field-reports/offline-store";
 import { fieldReportDetailPath } from "@/lib/field-reports/routes";
 import { isExpired } from "@/lib/field-reports/repositories/catalog-repository";
+import { findTemplateLibraryItem } from "@/lib/field-reports/template-library";
 
 export default function NewFieldVisitReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedProjectId = searchParams.get("project");
+  const preselectedProjectId = searchParams.get("project")?.trim() ?? "";
+  const templateId = searchParams.get("template")?.trim() ?? "";
+  const visitTypeFromQuery = searchParams.get("visit_type")?.trim() ?? "";
+  const sourceFromQuery = searchParams.get("source")?.trim() ?? "";
+  const modularTemplateKey = searchParams.get("modular_template_key")?.trim() ?? "";
+  const clientNameFromQuery = searchParams.get("client_name")?.trim() ?? "";
+  const clientAddressFromQuery = searchParams.get("client_address")?.trim() ?? "";
+  const wizardMode = Boolean(templateId);
   const { profile } = useAuth();
   const {
     status: moduleStatus,
@@ -67,6 +80,18 @@ export default function NewFieldVisitReportPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [modularTemplateDraft, setModularTemplateDraft] =
+    useState<ModularTemplateDraft | null>(null);
+
+  const templateItem = templateId ? findTemplateLibraryItem(templateId) : null;
+
+  useEffect(() => {
+    if (!wizardMode || !modularTemplateKey) {
+      setModularTemplateDraft(null);
+      return;
+    }
+    setModularTemplateDraft(readModularTemplateDraft(modularTemplateKey));
+  }, [wizardMode, modularTemplateKey]);
 
   const applyFormDefaults = useCallback(
     (
@@ -75,6 +100,28 @@ export default function NewFieldVisitReportPage() {
     ) => {
       setProjects(projectList);
       setVisitTypes(typeList);
+
+      if (wizardMode) {
+        if (sourceFromQuery === "client") {
+          setProjectId(CLIENT_ONLY_PROJECT_ID);
+        } else if (
+          preselectedProjectId
+          && projectList.some((project) => project.id === preselectedProjectId)
+        ) {
+          setProjectId(preselectedProjectId);
+        }
+
+        const resolvedVisitType =
+          modularTemplateDraft?.visitType
+          || visitTypeFromQuery
+          || templateItem?.visitType
+          || typeList[0]?.code
+          || "";
+        if (resolvedVisitType) {
+          setVisitType(resolvedVisitType);
+        }
+        return;
+      }
 
       const defaultProjectId =
         preselectedProjectId
@@ -93,7 +140,14 @@ export default function NewFieldVisitReportPage() {
         setVisitType(firstType);
       }
     },
-    [preselectedProjectId]
+    [
+      preselectedProjectId,
+      wizardMode,
+      sourceFromQuery,
+      visitTypeFromQuery,
+      templateItem?.visitType,
+      modularTemplateDraft?.visitType,
+    ]
   );
 
   const loadFormData = useCallback(async () => {
@@ -166,7 +220,7 @@ export default function NewFieldVisitReportPage() {
       return;
     }
 
-    if (preselectedProjectId) {
+    if (preselectedProjectId && !wizardMode) {
       router.replace(
         `/projects/${encodeURIComponent(preselectedProjectId)}/field-reports/new`
       );
@@ -182,14 +236,35 @@ export default function NewFieldVisitReportPage() {
     organizationId,
     loadFormData,
     preselectedProjectId,
+    wizardMode,
     router,
   ]);
+
+  useEffect(() => {
+    if (!wizardMode || !modularTemplateDraft) {
+      return;
+    }
+    if (modularTemplateDraft.visitType) {
+      setVisitType(modularTemplateDraft.visitType);
+    }
+  }, [wizardMode, modularTemplateDraft]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
-    if (!organizationId || !projectId || !visitType || !visitDate) {
+    if (!organizationId || !visitType || !visitDate) {
       setError("יש למלא את כל השדות");
+      return;
+    }
+
+    const isClientOnly = sourceFromQuery === "client";
+    if (!isClientOnly && !projectId) {
+      setError("יש לבחור פרויקט");
+      return;
+    }
+
+    if (isClientOnly && (!clientNameFromQuery || !clientAddressFromQuery)) {
+      setError("חסרים פרטי לקוח");
       return;
     }
 
@@ -199,6 +274,11 @@ export default function NewFieldVisitReportPage() {
     const selectedVisitType = visitTypes.find(
       (type) => type.code === visitType
     );
+    const templateLabel =
+      modularTemplateDraft?.templateLabel
+      || templateItem?.label_he
+      || selectedVisitType?.label_he
+      || null;
 
     try {
       setSubmitting(true);
@@ -206,29 +286,32 @@ export default function NewFieldVisitReportPage() {
       setNotice("");
 
       let projectPrefill = selectedProject?.prefill ?? null;
-      if (!projectPrefill && canCallVisitReportApi) {
+      if (!projectPrefill && canCallVisitReportApi && !isClientOnly && projectId) {
         projectPrefill = await fetchProjectPrefill(projectId);
       }
 
       const localReport = await createLocalVisitReport({
         organizationId,
         userId: profile?.id ?? null,
-        projectId,
-        projectName: selectedProject?.project_name ?? null,
+        projectId: isClientOnly ? CLIENT_ONLY_PROJECT_ID : projectId,
+        projectName: isClientOnly
+          ? clientNameFromQuery
+          : selectedProject?.project_name ?? null,
         visitType,
-        visitTypeLabelHe: selectedVisitType?.label_he ?? null,
+        visitTypeLabelHe: templateLabel,
         visitDate,
         catalogVersion,
         organizationProfileSnapshot,
-        projectPrefill,
+        projectPrefill: isClientOnly ? null : projectPrefill,
+        clientName: isClientOnly ? clientNameFromQuery : null,
+        clientAddress: isClientOnly ? clientAddressFromQuery : null,
+        modularTemplateDraft,
       });
 
-      if (canCallVisitReportApi) {
+      if (canCallVisitReportApi && !isClientOnly) {
         const syncResult = await syncNewVisitReportToServer(localReport);
         if (!syncResult.ok) {
-          setNotice(
-            `הדוח נשמר במכשיר. ${syncResult.message}`
-          );
+          setNotice(`הדוח נשמר במכשיר. ${syncResult.message}`);
         }
       }
 
@@ -247,6 +330,10 @@ export default function NewFieldVisitReportPage() {
     router.push("/field-reports");
   }
 
+  const selectedProjectName =
+    projects.find((project) => project.id === projectId)?.project_name
+    ?? (sourceFromQuery === "client" ? clientNameFromQuery : "");
+
   if (moduleLoading || (isEnabled && loading)) {
     return (
       <div className="of-container mx-auto max-w-xl p-8 text-sm text-zinc-500">
@@ -258,12 +345,23 @@ export default function NewFieldVisitReportPage() {
   if (!isEnabled) {
     return (
       <div className="of-container mx-auto max-w-xl space-y-4 p-8">
-        <h1 className="of-page-title text-2xl">דוח ביקור חדש</h1>
+        <h1 className="of-page-title text-2xl">יצירת דוח</h1>
         <p className="text-sm text-zinc-600">
-          מודול הפקת דוחות אינו מופעל עבור הארגון.
+          מודול יצירת דוחות אינו מופעל עבור הארגון.
         </p>
         <Link href="/field-reports" className="text-sm text-brand hover:underline">
           חזרה
+        </Link>
+      </div>
+    );
+  }
+
+  if (wizardMode && !templateItem) {
+    return (
+      <div className="of-container mx-auto max-w-xl space-y-4 p-8">
+        <p className="text-sm text-red-600">תבנית לא נמצאה.</p>
+        <Link href="/field-reports" className="text-sm text-brand hover:underline">
+          חזרה ליצירת דוחות
         </Link>
       </div>
     );
@@ -276,11 +374,13 @@ export default function NewFieldVisitReportPage() {
           href="/field-reports"
           className="text-sm text-brand hover:underline"
         >
-          ← הדוחות שלי
+          ← יצירת דוחות
         </Link>
-        <h1 className="of-page-title text-2xl">דוח ביקור חדש</h1>
+        <h1 className="of-page-title text-2xl">יצירת דוח</h1>
         <p className="of-page-desc text-sm">
-          דוח שבועי אחד לפרויקט - אם קיים דוח בעבודה, יש להמשיך אותו.
+          {wizardMode
+            ? "אשר את פרטי הדוח והתבנית שנבחרו וצור את הדוח."
+            : "דוח שבועי אחד לפרויקט - אם קיים דוח בעבודה, יש להמשיך אותו."}
         </p>
         <p className="text-xs text-zinc-500">
           {fieldReportDataSourceModeLabelHe(dataSourceMode)}
@@ -288,38 +388,69 @@ export default function NewFieldVisitReportPage() {
         </p>
       </header>
 
-      <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium">פרויקט</span>
-          <select
-            className="of-input w-full"
-            value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
-            required
-          >
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.project_name}
-              </option>
-            ))}
-          </select>
-        </label>
+      {wizardMode ? (
+        <section className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-700 dark:bg-zinc-800/40">
+          <p className="font-medium">תצוגה מקדימה</p>
+          <p>
+            מקור: {sourceFromQuery === "client" ? "ללא פרויקט" : "עם פרויקט"}
+          </p>
+          {sourceFromQuery === "client" ? (
+            <>
+              <p>לקוח: {clientNameFromQuery}</p>
+              <p>כתובת: {clientAddressFromQuery}</p>
+            </>
+          ) : (
+            <p>פרויקט: {selectedProjectName || "-"}</p>
+          )}
+          <p>תבנית: {templateItem?.label_he}</p>
+          {modularTemplateDraft ? (
+            <ul className="list-disc space-y-1 pr-5 text-zinc-600 dark:text-zinc-300">
+              {modularTemplateDraft.blocks
+                .filter((block) => block.enabled)
+                .map((block) => (
+                  <li key={block.id}>{block.title_he}</li>
+                ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
 
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium">סוג ביקור</span>
-          <select
-            className="of-input w-full"
-            value={visitType}
-            onChange={(event) => setVisitType(event.target.value)}
-            required
-          >
-            {visitTypes.map((type) => (
-              <option key={type.code} value={type.code}>
-                {type.label_he}
-              </option>
-            ))}
-          </select>
-        </label>
+      <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+        {!wizardMode ? (
+          <>
+            <label className="block space-y-1 text-sm">
+              <span className="font-medium">פרויקט</span>
+              <select
+                className="of-input w-full"
+                value={projectId}
+                onChange={(event) => setProjectId(event.target.value)}
+                required
+              >
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.project_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block space-y-1 text-sm">
+              <span className="font-medium">סוג ביקור</span>
+              <select
+                className="of-input w-full"
+                value={visitType}
+                onChange={(event) => setVisitType(event.target.value)}
+                required
+              >
+                {visitTypes.map((type) => (
+                  <option key={type.code} value={type.code}>
+                    {type.label_he}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        ) : null}
 
         <label className="block space-y-1 text-sm">
           <span className="font-medium">תאריך ביקור</span>
@@ -332,10 +463,7 @@ export default function NewFieldVisitReportPage() {
           />
         </label>
 
-        {error ? (
-          <p className="text-sm text-red-600">{error}</p>
-        ) : null}
-
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
         {notice ? (
           <p className="text-sm text-amber-700 dark:text-amber-300">{notice}</p>
         ) : null}

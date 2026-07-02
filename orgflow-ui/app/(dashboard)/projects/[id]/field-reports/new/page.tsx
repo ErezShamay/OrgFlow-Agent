@@ -7,6 +7,7 @@ import { FormEvent, startTransition, useCallback, useEffect, useMemo, useState }
 import ApartmentPicker, {
   type ApartmentSelection,
 } from "@/components/field-reports/supervision/ApartmentPicker";
+import MultiApartmentPicker from "@/components/field-reports/supervision/MultiApartmentPicker";
 import CancelReportCreationDialog from "@/components/field-reports/CancelReportCreationDialog";
 import ConstructionStagePicker from "@/components/field-reports/supervision/ConstructionStagePicker";
 import DocumentKindPicker from "@/components/field-reports/supervision/DocumentKindPicker";
@@ -40,6 +41,7 @@ import type {
   ConstructionStage,
   PublicAreaId,
   SupervisionCatalog,
+  SupervisionVisitedApartment,
 } from "@/lib/field-reports/schema/types";
 import {
   createSupervisionLocalReport,
@@ -103,6 +105,9 @@ export default function ProjectSupervisionNewReportPage() {
     : null;
   const [apartmentSelection, setApartmentSelection] =
     useState<ApartmentSelection | null>(null);
+  const [visitedApartments, setVisitedApartments] = useState<
+    SupervisionVisitedApartment[]
+  >([]);
   const [publicAreaId, setPublicAreaId] = useState<PublicAreaId | null>(null);
   const [visitDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(true);
@@ -200,6 +205,9 @@ export default function ProjectSupervisionNewReportPage() {
         setApartmentSelection(null);
       }
     }
+    if (documentKind !== "WEEKLY_MULTI_APARTMENT") {
+      setVisitedApartments([]);
+    }
     if (documentKind !== "WEEKLY_PUBLIC_AREA") {
       setPublicAreaId(null);
     }
@@ -276,7 +284,13 @@ export default function ProjectSupervisionNewReportPage() {
     && Boolean(visitScope)
     && (visitScope === "APARTMENT"
       ? Boolean(apartmentSelection?.apartmentNumber.trim())
-      : Boolean(publicAreaId));
+      : visitScope === "MULTI_APARTMENT"
+        ? visitedApartments.length >= 2
+        : visitScope === "WHOLE_BUILDING"
+          ? true
+          : visitScope === "PUBLIC_AREA"
+            ? Boolean(publicAreaId)
+            : false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -333,6 +347,8 @@ export default function ProjectSupervisionNewReportPage() {
           visitScope === "APARTMENT"
             ? apartmentSelection?.adHocApartment ?? false
             : false,
+        visitedApartments:
+          visitScope === "MULTI_APARTMENT" ? visitedApartments : undefined,
         publicAreaId: visitScope === "PUBLIC_AREA" ? publicAreaId ?? undefined : undefined,
         catalogVersion,
         organizationProfileSnapshot,
@@ -425,6 +441,16 @@ export default function ProjectSupervisionNewReportPage() {
             projectId={projectId}
             value={apartmentSelection}
             onChange={setApartmentSelection}
+            canLoadFromApi={canCallVisitReportApi}
+            offlineApartments={offlineApartments}
+          />
+        ) : null}
+
+        {documentKind === "WEEKLY_MULTI_APARTMENT" ? (
+          <MultiApartmentPicker
+            projectId={projectId}
+            value={visitedApartments}
+            onChange={setVisitedApartments}
             canLoadFromApi={canCallVisitReportApi}
             offlineApartments={offlineApartments}
           />

@@ -16,14 +16,20 @@ import {
 import type {
   ConstructionStage,
   FieldReportDocumentType,
+  FreeTextBlock,
   PublicAreaId,
   SupervisionCatalog,
+  SupervisionChecklistBlock,
   SupervisionReportMeta,
+  SupervisionVisitedApartment,
   VisitScope,
 } from "@/lib/field-reports/schema/types";
 import { PUBLIC_AREA_DEFINITIONS } from "@/lib/field-reports/schema/types";
 import { defaultInspectModeForDocumentType } from "@/lib/field-reports/quick-inspect";
 import { buildSupervisionChecklist } from "@/lib/field-reports/supervision-checklist-builder";
+import {
+  formatVisitedApartmentsSummaryHe,
+} from "@/lib/field-reports/visited-apartments-summary";
 import {
   saveLocalReport,
   type LocalVisitReportRecord,
@@ -107,6 +113,7 @@ export type CreateSupervisionLocalReportParams = {
   apartmentNumber?: string | null;
   ownerName?: string | null;
   adHocApartment?: boolean;
+  visitedApartments?: SupervisionVisitedApartment[];
   publicAreaId?: PublicAreaId;
   catalogVersion?: string | null;
   organizationProfileSnapshot?: unknown;
@@ -131,9 +138,72 @@ function buildSupervisionMeta(
     apartment_number: params.apartmentNumber ?? null,
     owner_name: params.ownerName ?? null,
     ad_hoc_apartment: params.adHocApartment ?? false,
+    visited_apartments:
+      params.visitedApartments?.length ? params.visitedApartments : undefined,
     public_area_id: params.publicAreaId ?? null,
     public_area_label_he: publicArea?.label_he ?? null,
   };
+}
+
+function buildVisitedApartmentsSummaryBlock(
+  visitedApartments: SupervisionVisitedApartment[]
+): FreeTextBlock {
+  const summary = formatVisitedApartmentsSummaryHe(visitedApartments);
+
+  return {
+    id: "visited-apartments-summary",
+    kind: "free_text",
+    title_he: "סיכום ביקור",
+    body_he: `ביקור אחד — ${summary}`,
+    sort_order: 0,
+  };
+}
+
+function buildSupervisionChecklistBlocks(
+  params: CreateSupervisionLocalReportParams
+): SupervisionChecklistBlock[] {
+  if (
+    params.visitScope === "MULTI_APARTMENT"
+    && params.visitedApartments?.length
+  ) {
+    return params.visitedApartments.map((apartment, index) => {
+      const block = buildSupervisionChecklist({
+        catalog: params.catalog,
+        constructionStage: params.constructionStage,
+        visitScope: "APARTMENT",
+        apartmentId: apartment.apartment_id ?? null,
+        apartmentNumber: apartment.apartment_number,
+        adHocApartment: apartment.ad_hoc_apartment ?? false,
+        blockId: `checklist-apt-${apartment.apartment_number}`,
+        sortOrder: index + 1,
+      });
+
+      if (!block.items.length) {
+        throw new Error(
+          `לא נמצאו פריטי צ'קליסט לדירה ${apartment.apartment_number}`
+        );
+      }
+
+      return block;
+    });
+  }
+
+  const checklistBlock = buildSupervisionChecklist({
+    catalog: params.catalog,
+    constructionStage: params.constructionStage,
+    visitScope: params.visitScope,
+    publicAreaId: params.publicAreaId,
+    apartmentId: params.apartmentId,
+    apartmentNumber: params.apartmentNumber,
+    adHocApartment: params.adHocApartment,
+    sortOrder: params.visitScope === "MULTI_APARTMENT" ? 1 : 0,
+  });
+
+  if (!checklistBlock.items.length) {
+    return [];
+  }
+
+  return [checklistBlock];
 }
 
 /** יוצר דוח מקומי עם בלוק supervision_checklist (§11.4, §13.3). */
@@ -145,19 +215,16 @@ export async function createSupervisionLocalReport(
   );
   const supervisionMeta = buildSupervisionMeta(params);
 
-  const checklistBlock = buildSupervisionChecklist({
-    catalog: params.catalog,
-    constructionStage: params.constructionStage,
-    visitScope: params.visitScope,
-    publicAreaId: params.publicAreaId,
-    apartmentId: params.apartmentId,
-    apartmentNumber: params.apartmentNumber,
-    adHocApartment: params.adHocApartment,
-  });
-
-  if (!checklistBlock.items.length) {
+  const checklistBlocks = buildSupervisionChecklistBlocks(params);
+  if (!checklistBlocks.length) {
     throw new Error("לא נמצאו פריטי צ'קליסט לבחירה");
   }
+
+  const summaryBlock =
+    params.visitScope === "MULTI_APARTMENT"
+    && params.visitedApartments?.length
+      ? buildVisitedApartmentsSummaryBlock(params.visitedApartments)
+      : null;
 
   let normalized = normalizeHeaderFields({}, visitType, {
     visitDate: params.visitDate,
@@ -172,7 +239,7 @@ export async function createSupervisionLocalReport(
 
   normalized = patchHeaderFieldsBlocks(
     normalized,
-    [checklistBlock],
+    summaryBlock ? [summaryBlock, ...checklistBlocks] : checklistBlocks,
     visitType
   );
 

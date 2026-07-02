@@ -11,6 +11,8 @@ export const CONSTRUCTION_STAGE_LABELS: Record<ConstructionStage, string> = {
 
 export const VISIT_SCOPE_LABELS: Record<VisitScope, string> = {
   APARTMENT: "דירה",
+  MULTI_APARTMENT: "מספר דירות",
+  WHOLE_BUILDING: "כלל הבניין",
   PUBLIC_AREA: "שטחים ציבוריים",
   HANDOVER: "פרוטוקול מסירה",
 };

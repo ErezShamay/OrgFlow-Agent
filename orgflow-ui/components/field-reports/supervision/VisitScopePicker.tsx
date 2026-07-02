@@ -7,6 +7,8 @@ import { visitScopeLabelHe } from "@/lib/field-reports/supervision-stage-labels"
 
 const SCOPE_DESCRIPTIONS: Partial<Record<VisitScope, string>> = {
   APARTMENT: "ביקור בדירה אחת",
+  MULTI_APARTMENT: "ביקור אחד הכולל מספר דירות — דוח אחד עם סיכום",
+  WHOLE_BUILDING: "דוח לכלל הבניין — דירות ושטחים משותפים",
   PUBLIC_AREA: "ביקור באזור ציבורי אחד (לובי, חניון...)",
 };
 

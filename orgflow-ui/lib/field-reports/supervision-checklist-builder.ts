@@ -53,8 +53,12 @@ export function matchesSupervisionCatalogIssue(params: {
     return false;
   }
 
-  if (visitScope === "APARTMENT") {
+  if (visitScope === "APARTMENT" || visitScope === "MULTI_APARTMENT") {
     return issue.scope === "APARTMENT" || issue.scope === "BOTH";
+  }
+
+  if (visitScope === "WHOLE_BUILDING") {
+    return true;
   }
 
   if (issue.scope !== "PUBLIC_AREA" && issue.scope !== "BOTH") {
@@ -105,9 +109,13 @@ export function defaultSupervisionChecklistTitleHe(params: {
   apartmentNumber?: string | null;
   publicAreaId?: PublicAreaId;
 }): string {
-  if (params.visitScope === "APARTMENT") {
+  if (params.visitScope === "APARTMENT" || params.visitScope === "MULTI_APARTMENT") {
     const number = params.apartmentNumber?.trim();
     return number ? `ביקור דירה ${number}` : "ביקור דירה";
+  }
+
+  if (params.visitScope === "WHOLE_BUILDING") {
+    return "ביקור כלל הבניין";
   }
 
   const area = PUBLIC_AREA_DEFINITIONS.find(

@@ -1,7 +1,11 @@
 import {
   normalizeHeaderFields,
+  patchHeaderFieldsBlocks,
   serializeHeaderFieldsForApi,
+  type ReportHeaderFields,
 } from "@/lib/field-reports/header-fields";
+import type { ModularTemplateDraft } from "@/lib/field-reports/modular-template-draft";
+import { createEmptyBlockForKind } from "@/lib/field-reports/schema/blocks-storage";
 import {
   applyProjectPrefillToHeaderFields,
   projectPrefillSourceFromRecord,
@@ -53,6 +57,8 @@ export function parseNewReportFormFromCatalog(
   return { projects, visitTypes };
 }
 
+export const CLIENT_ONLY_PROJECT_ID = "__client_only__";
+
 export type CreateLocalVisitReportParams = {
   organizationId: string;
   userId?: string | null;
@@ -64,7 +70,48 @@ export type CreateLocalVisitReportParams = {
   catalogVersion?: string | null;
   organizationProfileSnapshot?: unknown;
   projectPrefill?: ProjectPrefillSource | null;
+  clientName?: string | null;
+  clientAddress?: string | null;
+  clientDetails?: string | null;
+  modularTemplateDraft?: ModularTemplateDraft | null;
 };
+
+function applyClientPrefillToHeaderFields(
+  fields: ReportHeaderFields,
+  visitType: string,
+  clientName: string,
+  clientAddress: string,
+  clientDetails?: string | null
+): ReportHeaderFields {
+  const next: ReportHeaderFields = {
+    ...fields,
+    site_address: clientAddress,
+    project_metadata: {
+      ...fields.project_metadata,
+      site_address: clientAddress,
+      addressee_label_he: clientName,
+    },
+  };
+
+  if (clientDetails?.trim()) {
+    const detailsBlock = createEmptyBlockForKind("free_text", visitType, {
+      id: "client-details",
+      title_he: "פרטים נוספים",
+    });
+    if (detailsBlock.kind === "free_text") {
+      next.blocks = [
+        ...next.blocks,
+        {
+          ...detailsBlock,
+          body_he: clientDetails.trim(),
+          sort_order: next.blocks.length,
+        },
+      ];
+    }
+  }
+
+  return next;
+}
 
 /** יוצר דוח מקומי עם UUID - מקור אמת בשטח (FR-011). */
 export async function createLocalVisitReport(
@@ -79,6 +126,36 @@ export async function createLocalVisitReport(
       normalized,
       params.projectPrefill
     );
+  }
+
+  if (params.clientName?.trim() && params.clientAddress?.trim()) {
+    normalized = applyClientPrefillToHeaderFields(
+      normalized,
+      params.visitType,
+      params.clientName.trim(),
+      params.clientAddress.trim(),
+      params.clientDetails
+    );
+  }
+
+  if (params.modularTemplateDraft) {
+    const enabledBlocks = params.modularTemplateDraft.blocks.filter(
+      (block) => block.enabled
+    );
+    const visitType = params.modularTemplateDraft.visitType || params.visitType;
+    const nextBlocks = enabledBlocks.map((block, index) => {
+      const created = createEmptyBlockForKind(block.kind, visitType, {
+        id: `template-${block.id}`,
+        title_he: block.title_he.trim() || undefined,
+      });
+      return { ...created, sort_order: index };
+    });
+    normalized = patchHeaderFieldsBlocks(normalized, nextBlocks, visitType);
+    normalized = {
+      ...normalized,
+      include_fixed_text_blocks:
+        params.modularTemplateDraft.includeFixedTextBlocks,
+    };
   }
 
   const headerFields = serializeHeaderFieldsForApi(normalized);

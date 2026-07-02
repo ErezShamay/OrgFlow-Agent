@@ -185,8 +185,14 @@ export const CONSTRUCTION_STAGES = [
 
 export type ConstructionStage = (typeof CONSTRUCTION_STAGES)[number];
 
-/** היקף ביקור — דירה, שטחים ציבוריים, או מסירה (עתידי). */
-export const VISIT_SCOPES = ["APARTMENT", "PUBLIC_AREA", "HANDOVER"] as const;
+/** היקף ביקור — דירה, מספר דירות, כלל הבניין, שטחים ציבוריים, או מסירה (עתידי). */
+export const VISIT_SCOPES = [
+  "APARTMENT",
+  "MULTI_APARTMENT",
+  "WHOLE_BUILDING",
+  "PUBLIC_AREA",
+  "HANDOVER",
+] as const;
 
 export type VisitScope = (typeof VISIT_SCOPES)[number];
 
@@ -237,6 +243,14 @@ export type PublicAreaDefinition = (typeof PUBLIC_AREA_DEFINITIONS)[number];
 
 export type PublicAreaId = PublicAreaDefinition["id"];
 
+/** דירה שנכללה בביקור מרובה דירות. */
+export type SupervisionVisitedApartment = {
+  apartment_id?: string | null;
+  apartment_number: string;
+  owner_name?: string | null;
+  ad_hoc_apartment?: boolean;
+};
+
 /** מטא-דאטה לדוח מפקח בשטח (header_fields.supervision_meta). */
 export type SupervisionReportMeta = {
   document_type?: FieldReportDocumentType;
@@ -248,6 +262,8 @@ export type SupervisionReportMeta = {
   apartment_number?: string | null;
   owner_name?: string | null;
   ad_hoc_apartment?: boolean;
+  /** דירות שנבקרו בביקור אחד (visit_scope = MULTI_APARTMENT). */
+  visited_apartments?: SupervisionVisitedApartment[];
   public_area_id?: PublicAreaId | null;
   public_area_label_he?: string | null;
 };

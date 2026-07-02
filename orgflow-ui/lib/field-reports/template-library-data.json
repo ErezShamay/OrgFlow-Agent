@@ -1,0 +1,1675 @@
+[
+  {
+    "id": "home_inspection",
+    "title_he": "בדק בית",
+    "items": [
+      {
+        "id": "בדק-בית-שטחים-משותפים",
+        "label_he": "בדק בית - שטחים משותפים",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "בדק+בית+-+שטחים+משותפים+.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטי השכלתי וניסיוני",
+            "required": false
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "דוח-בדיקת-קרינה-אלקטרומגנטית-בתדרי-rf-2025-05-10-הבונים-35-תל-אביב",
+        "label_he": "דוח בדיקת קרינה אלקטרומגנטית בתדרי RF - 2025-05-10 - הבונים 35 תל אביב",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח בדיקת קרינה אלקטרומגנטית בתדרי RF - 2025-05-10 - הבונים 35 תל אביב.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטי השכלתי וניסיוני",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-בדק-בית",
+        "label_he": "דוח בדק בית",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח בדק בית.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטי השכלתי וניסיוני",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "הצעת-מחיר-בדק-בית",
+        "label_he": "הצעת מחיר - בדק בית",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "הצעת+מחיר+-+בדק+בית.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "leak_detection",
+    "title_he": "מאתר נזילות",
+    "items": [
+      {
+        "id": "דוח-איתור-נזילות-דוגמא-דוח-פשוט",
+        "label_he": "דוח איתור נזילות - דוגמא דוח פשוט",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח איתור נזילות - דוגמא דוח פשוט.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-דוגמא-איתור-נזילות-עם-מאגר-ליקויים-מובנה",
+        "label_he": "דוח דוגמא איתור נזילות - עם מאגר ליקויים מובנה",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח דוגמא איתור נזילות - עם מאגר ליקויים מובנה.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטי השכלתי וניסיוני",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "construction_supervision",
+    "title_he": "פיקוח בניה",
+    "items": [
+      {
+        "id": "דוח-פיקוח-יזם-מפורט-מאוד",
+        "label_he": "דוח פיקוח יזם - מפורט מאוד",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+פיקוח+יזם+-+מפורט+מאוד+.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-פיקוח-יזם-מפורט-מאוד-1",
+        "label_he": "דוח פיקוח יזם - מפורט מאוד  (1)",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+פיקוח+יזם+-+מפורט+מאוד+ (1).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-פיקוח-יזם-מפורט-מאוד-2",
+        "label_he": "דוח פיקוח יזם - מפורט מאוד  (2)",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+פיקוח+יזם+-+מפורט+מאוד+ (2).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-פיקוח-עליון-יועץ-חשמל",
+        "label_he": "דוח פיקוח עליון - יועץ חשמל",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+פיקוח+עליון+-+יועץ+חשמל.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-פיקוח-דוח-ליזם-ריפורטו",
+        "label_he": "דוח פיקוח- דוח ליזם ריפורטו",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח פיקוח- דוח ליזם ריפורטו.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-קונסטרוקטור-פיקוח-עליון-באתר-ללא-צקליסט",
+        "label_he": "דוח קונסטרוקטור - פיקוח עליון באתר (ללא צ׳קליסט)",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+קונסטרוקטור+-+פיקוח+עליון+באתר+(ללא+צ׳קליסט).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "tenant_supervision",
+    "title_he": "פיקוח דיירים",
+    "items": [
+      {
+        "id": "דוח-דוגמא-פיקוח-דיירים-תמא-38-1-חיזוק-מבנה-שלד-גמרים",
+        "label_he": "דוח דוגמא -פיקוח דיירים - תמא 38-1 חיזוק מבנה - שלד _ גמרים",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+דוגמא+-פיקוח+דיירים+-+תמא+38-1+חיזוק+מבנה+-+שלד+_+גמרים.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "progress_table",
+            "title_he": "טבלת התקדמות",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-פיקוח-מטעם-הדיירים-תמא-382-הריסה-ובניה-מחדש-שלד-גמרים-1",
+        "label_he": "דוח פיקוח מטעם הדיירים - תמא 382 (הריסה ובניה מחדש) -שלד_גמרים (1)",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+פיקוח+מטעם+הדיירים+-+תמא+382+(הריסה+ובניה+מחדש)+-שלד_גמרים+(1).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "progress_table",
+            "title_he": "טבלת התקדמות",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "delivery_protocol",
+    "title_he": "פרוטוקול מסירת דירה",
+    "items": [
+      {
+        "id": "אישור-קבלת-חזקה-בדירה",
+        "label_he": "אישור קבלת חזקה בדירה",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "אישור+קבלת+חזקה+בדירה+.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "טופס-אישור-קבלת-אביזרים-לדירה",
+        "label_he": "טופס אישור קבלת אביזרים לדירה",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "טופס+אישור+קבלת+אביזרים+לדירה+.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "טופס-אישור-קבלת-רזרבות-לדירה",
+        "label_he": "טופס אישור קבלת רזרבות לדירה",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "טופס+אישור+קבלת+רזרבות+לדירה.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "פרוטוקול-מסירה-דירתי",
+        "label_he": "פרוטוקול מסירה דירתי",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "פרוטוקול+מסירה+דירתי+.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "פרוטוקול-מסירה-דירתי-2",
+        "label_he": "פרוטוקול מסירה דירתי  (2)",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "פרוטוקול+מסירה+דירתי++(2).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "פרוטוקול-מסירה-שטחים-ציבורים",
+        "label_he": "פרוטוקול מסירה שטחים ציבורים",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "פרוטוקול+מסירה+שטחים+ציבורים+.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "פרוטוקול-מסירת-דירה-קיימת-תמא-38-1",
+        "label_he": "פרוטוקול מסירת דירה קיימת תמא 38-1",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "פרוטוקול+מסירת+דירה+קיימת+תמא+38-1.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "construction",
+    "title_he": "קונסטרוקציה",
+    "items": [
+      {
+        "id": "סיכום-פגישה-ישיבת-אתר-לפי-פרויקטים-פיקוח-קונס",
+        "label_he": "סיכום פגישה ישיבת אתר לפי פרויקטים פיקוח , קונס",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "סיכום+פגישה+ישיבת+אתר+לפי+פרויקטים+פיקוח+,+קונס.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          },
+          {
+            "kind": "progress_table",
+            "title_he": "התקדמות עבודות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "architecture",
+    "title_he": "אדריכלות/עיצוב פנים",
+    "items": [
+      {
+        "id": "דוח-אדריכלות-ומעצב-פנים-לדוגמא-ריפורטו",
+        "label_he": "דוח אדריכלות ומעצב פנים לדוגמא ריפורטו",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "דוח אדריכלות ומעצב פנים לדוגמא ריפורטו.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "execution",
+    "title_he": "ביצוע",
+    "items": [
+      {
+        "id": "דוח-מדידות-התאמת-ביצוע-מול-תוכניות-הבניין-1",
+        "label_he": "דוח מדידות - התאמת ביצוע מול תוכניות הבניין (1)",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "דוח+מדידות+-+התאמת+ביצוע+מול+תוכניות+הבניין+(1).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "safety",
+    "title_he": "בטיחות",
+    "items": [
+      {
+        "id": "דוח-בטיחות-דוגמה-רפורטו",
+        "label_he": "דוח בטיחות - דוגמה רפורטו",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח בטיחות - דוגמה רפורטו.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-מבדק-בטיחות-במוסדות-חינוך",
+        "label_he": "דוח מבדק בטיחות במוסדות חינוך",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+מבדק+בטיחות+במוסדות+חינוך.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-סיור-בטיחות",
+        "label_he": "דוח סיור בטיחות",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+סיור+בטיחות.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטי השכלתי וניסיוני",
+            "required": false
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-סיור-בטיחות-אתר-פיתוח-בעבודה",
+        "label_he": "דוח סיור בטיחות -אתר פיתוח בעבודה",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+סיור+בטיחות+-אתר+פיתוח+בעבודה.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "appraiser",
+    "title_he": "שמאי רכוש",
+    "items": [
+      {
+        "id": "חוות-דעת-שמאי-רכוש-אופציה-א",
+        "label_he": "חוות דעת - שמאי רכוש - אופציה א",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "חוות+דעת+-+שמאי+רכוש+-+אופציה+א.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטי השכלתי וניסיוני",
+            "required": false
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "חוותדעתשמאירכושאופציהב",
+        "label_he": "חוות+דעת++שמאי+רכוש++אופציה+ב",
+        "visitType": "FINISHING_APARTMENTS",
+        "examplePdf": "_D7_97_D7_95_D7_95_D7_AA_2B_D7_93_D7_A2_D7_AA_2B-_2B_D7_A9_D7_9E_D7_90_D7_99_2B_D7_A8_D7_9B_D7_95_D7_A9_2B-_2B_D7_90_D7_95_D7_A4_D7_A6_D7_99_D7_94_2B_D7_91.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "quality",
+    "title_he": "בקרת איכות",
+    "items": [
+      {
+        "id": "דוח-בקרה-דירתי-כצנלסון-95-גבעתיים",
+        "label_he": "דוח בקרה דירתי - כצנלסון 95 גבעתיים",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+בקרה+דירתי+-+כצנלסון+95+גבעתיים.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-בקרה-דירתי-תמא-382",
+        "label_he": "דוח בקרה דירתי - תמא 382",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+בקרה+דירתי+-+תמא+382.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-בקרה-מפרט-טכני-אלי-כהן-חולון",
+        "label_he": "דוח בקרה מפרט טכני - אלי כהן חולון",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+בקרה+מפרט+טכני+-+אלי+כהן+חולון.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "progress_table",
+            "title_he": "התקדמות עבודות",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "דוח-בקרת-איכות",
+        "label_he": "דוח בקרת איכות",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+בקרת+איכות.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "general",
+    "title_he": "כללי",
+    "items": [
+      {
+        "id": "דוח-בדיקת-אלמנט-לפני-יציקה",
+        "label_he": "דוח בדיקת אלמנט לפני יציקה",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+בדיקת+אלמנט+לפני+יציקה.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-דוגמא-צקליסט-מוכן",
+        "label_he": "דוח דוגמא - צקליסט מוכן",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח דוגמא - צקליסט מוכן.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-דוגמא-קונ-תמונה-הערה",
+        "label_he": "דוח דוגמא קונ תמונה _הערה",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח דוגמא קונ תמונה _הערה.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-הדרכה-בגובה-דוגמה-רפורטו",
+        "label_he": "דוח הדרכה בגובה - דוגמה רפורטו",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח הדרכה בגובה - דוגמה רפורטו.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "הצהרה",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-טיפול-בממצאי-בודק-מוסמך",
+        "label_he": "דוח טיפול בממצאי בודק מוסמך",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+טיפול+בממצאי+בודק+מוסמך.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-יועץ-אלומיניום-אופציה-ב",
+        "label_he": "דוח יועץ אלומיניום - אופציה ב",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+יועץ+אלומיניום+-+אופציה+ב.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "דוח-ליקויים-באתר-הרצל-35-תל-אביב",
+        "label_he": "דוח ליקויים באתר - הרצל 35 תל אביב",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+ליקויים+באתר+-+הרצל+35+תל+אביב.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-ליקויים-באתר-הרצל-35-תל-אביב-1",
+        "label_he": "דוח ליקויים באתר - הרצל 35 תל אביב (1)",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+ליקויים+באתר+-+הרצל+35+תל+אביב (1).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-מסירת-תוכניות-עבודה",
+        "label_he": "דוח מסירת תוכניות עבודה",
+        "visitType": "MIXED",
+        "examplePdf": "דוח+מסירת+תוכניות+עבודה.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-נגדי",
+        "label_he": "דוח נגדי",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+נגדי.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטי השכלתי וניסיוני",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-נגישות-אופציה-א",
+        "label_he": "דוח נגישות אופציה א",
+        "visitType": "MIXED",
+        "examplePdf": "דוח+נגישות+אופציה+א.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-נגישות-אופציה-ב-עם-מאגר-ליקוים-ותקנים",
+        "label_he": "דוח נגישות אופציה ב עם מאגר ליקוים ותקנים",
+        "visitType": "MIXED",
+        "examplePdf": "דוח+נגישות+אופציה+ב+עם+מאגר+ליקוים+ותקנים.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "דוח-פיקוח-ללא-צקליסט-עם-טבלאות-הרצל-תל-אביב",
+        "label_he": "דוח פיקוח ללא צקליסט (עם טבלאות) _ הרצל תל אביב",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+פיקוח+ללא+צקליסט+(עם+טבלאות)+_+הרצל+תל+אביב.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוח-תחזוקה-למכפילים",
+        "label_he": "דוח תחזוקה למכפילים",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "דוח+תחזוקה+למכפילים.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוחבדיקתחשמלדוגמא",
+        "label_he": "דוחבדיקתחשמלדוגמא",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "_D7_93_D7_95_D7_97+_D7_91_D7_93_D7_99_D7_A7_D7_AA+_D7_97_D7_A9_D7_9E_D7_9C+-_D7_93_D7_95_D7_92_D7_9E_D7_90.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוחיועץאלומיניוםאופציהא",
+        "label_he": "דוחיועץאלומיניוםאופציהא",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "_D7_93_D7_95_D7_97+_D7_99_D7_95_D7_A2_D7_A5+_D7_90_D7_9C_D7_95_D7_9E_D7_99_D7_A0_D7_99_D7_95_D7_9D+-+_D7_90_D7_95_D7_A4_D7_A6_D7_99_D7_94+_D7_90.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "דוחפיקוחלמתקןרובוטי",
+        "label_he": "דוחפיקוחלמתקןרובוטי",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "_D7_93_D7_95_D7_97+_D7_A4_D7_99_D7_A7_D7_95_D7_97+_D7_9C_D7_9E_D7_AA_D7_A7_D7_9F+_D7_A8_D7_95_D7_91_D7_95_D7_98_D7_99.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "findings_table",
+            "title_he": "טבלת ממצאים / ליקויים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "הסכם-התקשורת-שירותי-תחזוקה-לוועד-הבית",
+        "label_he": "הסכם התקשורת שירותי תחזוקה לוועד הבית",
+        "visitType": "MIXED",
+        "examplePdf": "הסכם+התקשורת+שירותי+תחזוקה+לוועד+הבית.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "טבלת-מעקב-טופס-4",
+        "label_he": "טבלת מעקב טופס 4",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "טבלת+מעקב+טופס+4.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "טיפול-תקופתי-מתקן-רובוטי",
+        "label_he": "טיפול תקופתי מתקן רובוטי",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "טיפול+תקופתי+מתקן+רובוטי.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "checklist",
+            "title_he": "צ'קליסט בדיקות",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "סיכום-פגישה-ישיבת-אתר",
+        "label_he": "סיכום פגישה ישיבת אתר",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "סיכום+פגישה+ישיבת+אתר.pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "סיכום-פגישה-ישיבת-אתר-1",
+        "label_he": "סיכום פגישה ישיבת אתר (1)",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "סיכום+פגישה+ישיבת+אתר (1).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "סיכום-פגישה-ישיבת-אתר-2",
+        "label_he": "סיכום פגישה ישיבת אתר (2)",
+        "visitType": "STRUCTURE_SITE",
+        "examplePdf": "סיכום+פגישה+ישיבת+אתר (2).pdf",
+        "blocks": [
+          {
+            "kind": "free_text",
+            "title_he": "כותרת",
+            "required": true
+          },
+          {
+            "kind": "free_text",
+            "title_he": "פרטים כלליים",
+            "required": true
+          },
+          {
+            "kind": "image",
+            "title_he": "תמונות",
+            "required": false
+          },
+          {
+            "kind": "free_text",
+            "title_he": "סיכום והמלצות",
+            "required": false
+          }
+        ]
+      }
+    ]
+  }
+]

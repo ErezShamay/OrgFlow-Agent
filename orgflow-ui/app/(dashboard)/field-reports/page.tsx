@@ -9,7 +9,7 @@ import Badge from "@/components/ui/Badge";
 import LoadingState from "@/components/ui/LoadingState";
 import { apiFetch } from "@/lib/api/client";
 import { FIELD_REPORTS_UPLOAD_ROUTE } from "@/lib/qc-navigation";
-import { fieldReportDetailPath, projectFieldReportNewPath } from "@/lib/field-reports/routes";
+import { fieldReportDetailPath } from "@/lib/field-reports/routes";
 import { isFieldReportVisibleInList } from "@/lib/field-reports/field-report-list";
 import {
   fieldReportListStatusLabel,
@@ -244,7 +244,7 @@ export default function FieldReportsPage() {
   if (bootstrapping) {
     return (
       <div className="of-container mx-auto max-w-3xl p-8">
-        <LoadingState message="טוען הפקת דוחות..." variant="spinner" />
+        <LoadingState message="טוען יצירת דוחות..." variant="spinner" />
       </div>
     );
   }
@@ -267,9 +267,9 @@ export default function FieldReportsPage() {
   if (!isEnabled) {
     return (
       <div className="of-container mx-auto max-w-3xl space-y-4 p-8">
-        <h1 className="of-page-title text-2xl">הפקת דוחות</h1>
+        <h1 className="of-page-title text-2xl">יצירת דוחות</h1>
         <p className="of-page-desc text-sm">
-          מודול הפקת דוחות אינו מופעל עבור הארגון הנוכחי. פנה למנהל המערכת
+          מודול יצירת דוחות אינו מופעל עבור הארגון הנוכחי. פנה למנהל המערכת
           להפעלה.
         </p>
         {status?.storage_available === false ? (
@@ -322,7 +322,7 @@ export default function FieldReportsPage() {
       </p>
     ) : null;
 
-  const pageTitle = projectFilter ? "דוחות שטח לפרויקט" : "הפקת דוחות";
+  const pageTitle = projectFilter ? "דוחות שטח לפרויקט" : "יצירת דוחות";
   const pageSubtitle = projectFilter ? "כל הדוחות לפרויקט" : "הדוחות שלי";
 
   return (
@@ -342,19 +342,20 @@ export default function FieldReportsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {projectFilter ? (
-            <Link
-              href={projectFieldReportNewPath(projectFilter)}
+            <button
+              type="button"
               className={FR_PRIMARY_ACTION_BUTTON}
+              onClick={() => setProjectPickerOpen(true)}
             >
-              הפקת דוח
-            </Link>
+              יצירת דוח
+            </button>
           ) : (
             <button
               type="button"
               className={FR_PRIMARY_ACTION_BUTTON}
               onClick={() => setProjectPickerOpen(true)}
             >
-              הפקת דוח
+              יצירת דוח
             </button>
           )}
           <Link
@@ -400,19 +401,20 @@ export default function FieldReportsPage() {
         </h2>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {projectFilter ? (
-            <Link
-              href={projectFieldReportNewPath(projectFilter)}
+            <button
+              type="button"
               className={`${FR_PRIMARY_ACTION_BUTTON} w-full sm:w-auto`}
+              onClick={() => setProjectPickerOpen(true)}
             >
-              הפקת דוח
-            </Link>
+              יצירת דוח
+            </button>
           ) : (
             <button
               type="button"
               className={`${FR_PRIMARY_ACTION_BUTTON} w-full sm:w-auto`}
               onClick={() => setProjectPickerOpen(true)}
             >
-              הפקת דוח
+              יצירת דוח
             </button>
           )}
           <Link
@@ -437,6 +439,7 @@ export default function FieldReportsPage() {
       <ProjectPickerDialog
         open={projectPickerOpen}
         onClose={() => setProjectPickerOpen(false)}
+        initialProjectId={projectFilter}
       />
 
       {offlinePrep.isReady ? (
@@ -532,23 +535,24 @@ export default function FieldReportsPage() {
           </p>
           <p className="mt-2 text-sm text-zinc-500">
             {projectFilter
-              ? "ליצירת דוח חדש לחץ על «הפקת דוח»."
-              : "ליצירת דוח חדש לחץ על «הפקת דוח» ובחר פרויקט."}
+              ? "ליצירת דוח חדש לחץ על «יצירת דוח»."
+              : "ליצירת דוח חדש לחץ על «יצירת דוח» ובחר פרויקט."}
           </p>
           {projectFilter ? (
-            <Link
-              href={projectFieldReportNewPath(projectFilter)}
-              className={`${FR_PRIMARY_ACTION_BUTTON} mt-4 inline-flex`}
+            <button
+              type="button"
+              className={`${FR_PRIMARY_ACTION_BUTTON} mt-4`}
+              onClick={() => setProjectPickerOpen(true)}
             >
-              הפקת דוח
-            </Link>
+              יצירת דוח
+            </button>
           ) : (
             <button
               type="button"
               className={`${FR_PRIMARY_ACTION_BUTTON} mt-4`}
               onClick={() => setProjectPickerOpen(true)}
             >
-              הפקת דוח
+              יצירת דוח
             </button>
           )}
         </div>
